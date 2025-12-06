@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Briefcase, Phone, Plus, AlertCircle, FileText, Search, X, Truck, ArrowUpRight, ArrowDownLeft, MoreVertical, Edit2, Trash2, Save } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -125,7 +126,7 @@ const Suppliers: React.FC = () => {
             (a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         );
 
-        setHistoryItems(combined as HistoryItem[]);
+        setHistoryItems(combined as unknown as HistoryItem[]);
         setIsHistoryModalOpen(true);
         setActiveMenuId(null);
     };
