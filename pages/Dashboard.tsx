@@ -5,12 +5,12 @@ import {
   DollarSign, 
   ShoppingCart, 
   AlertTriangle, 
-  Sparkles,
   ArrowUpRight,
   ArrowDownRight,
   Lightbulb,
   ShieldAlert,
-  Rocket
+  Rocket,
+  Sparkles
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -57,8 +57,7 @@ const Dashboard: React.FC = () => {
       // Calculate Financials
       const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
       const totalSales = analytics.totalSales;
-      // Net Profit (Rough estimate: Sales - Expenses - Est. COGS 60% if exact cost not easy to calc per item in summary)
-      // Better: Net Profit = Sales - Expenses (Simple Cash Flow View for Dashboard)
+      // Net Profit = Sales - Expenses (Simple Cash Flow View for Dashboard)
       const netIncome = totalSales - totalExpenses; 
       
       // Calculate Top Products
@@ -122,9 +121,9 @@ const Dashboard: React.FC = () => {
 
   // Helper to choose icon for tip based on content keywords
   const getTipIcon = (text: string) => {
-      if (text.includes('خطر') || text.includes('تنبيه') || text.includes('حذر')) return <ShieldAlert size={18} className="text-red-300" />;
-      if (text.includes('فرصة') || text.includes('زيادة') || text.includes('نمو')) return <Rocket size={18} className="text-emerald-300" />;
-      return <Lightbulb size={18} className="text-yellow-300" />;
+      if (text.includes('تنبيه') || text.includes('خطر') || text.includes('انتباه')) return <ShieldAlert size={20} className="text-red-500" />;
+      if (text.includes('فرصة') || text.includes('زيادة') || text.includes('نمو')) return <Rocket size={20} className="text-emerald-500" />;
+      return <Lightbulb size={20} className="text-amber-500" />;
   };
 
   return (
@@ -186,51 +185,44 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* AI Insights Card (Enhanced UI) */}
-        <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl relative overflow-hidden flex flex-col">
-          {/* Background Decor */}
-          <div className="absolute top-0 right-0 p-32 bg-indigo-500 opacity-10 rounded-full -mr-16 -mt-16 pointer-events-none blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 p-24 bg-emerald-500 opacity-10 rounded-full -ml-10 -mb-10 pointer-events-none blur-3xl"></div>
-          
-          <div className="flex items-center gap-3 mb-6 relative z-10 border-b border-white/10 pb-4">
-            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-lg shadow-lg">
-                <Sparkles className="text-white" size={20} />
+        {/* AI Insights Card (Simple Style) */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+          <div className="flex items-center gap-2 mb-6">
+            <div className="bg-indigo-50 p-2 rounded-lg">
+                <Sparkles className="text-indigo-600" size={20} />
             </div>
-            <div>
-                <h3 className="text-lg font-bold">المستشار الذكي</h3>
-                <p className="text-xs text-slate-400">تحليل مالي ومخزني مباشر</p>
-            </div>
+            <h3 className="text-lg font-bold text-gray-800">تحليلات الذكاء الاصطناعي</h3>
           </div>
 
-          <div className="space-y-4 relative z-10 flex-1">
+          <div className="space-y-4 flex-1">
             {loadingAi ? (
-              <div className="space-y-4 animate-pulse mt-4">
-                <div className="h-16 bg-white/10 rounded-xl w-full"></div>
-                <div className="h-16 bg-white/10 rounded-xl w-full"></div>
-                <div className="h-16 bg-white/10 rounded-xl w-full"></div>
+              <div className="space-y-3 animate-pulse">
+                <div className="h-16 bg-gray-100 rounded-xl w-full"></div>
+                <div className="h-16 bg-gray-100 rounded-xl w-full"></div>
+                <div className="h-16 bg-gray-100 rounded-xl w-full"></div>
               </div>
             ) : aiTips.length > 0 ? (
               aiTips.map((tip, i) => (
-                <div key={i} className="flex gap-3 bg-white/5 p-3.5 rounded-xl border border-white/5 hover:bg-white/10 transition group">
+                <div key={i} className="flex gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100 transition hover:border-indigo-100">
                   <div className="mt-1 shrink-0">
                       {getTipIcon(tip)}
                   </div>
-                  <p className="text-sm text-slate-200 leading-relaxed font-medium group-hover:text-white transition-colors">{tip}</p>
+                  <p className="text-sm text-gray-700 leading-relaxed font-medium">{tip}</p>
                 </div>
               ))
             ) : (
-              <div className="flex flex-col items-center justify-center h-40 text-slate-400 text-sm">
+              <div className="flex flex-col items-center justify-center h-40 text-gray-400 text-sm">
                   <Lightbulb className="mb-2 opacity-50" />
                   جاري تحليل بيانات متجرك...
               </div>
             )}
           </div>
           
-          <div className="mt-6 pt-4 border-t border-white/10">
-            <div className="flex justify-between items-center text-xs text-slate-400">
-                <span>تم التحديث: {new Date().toLocaleTimeString('ar-MA', {hour: '2-digit', minute:'2-digit'})}</span>
-                <span className="flex items-center gap-1"><Sparkles size={10} className="text-emerald-400"/> مدعوم بـ Gemini 2.0</span>
-            </div>
+          <div className="mt-6 pt-4 border-t border-gray-100 text-center">
+            <p className="text-xs text-gray-400 flex items-center justify-center gap-1">
+               <Sparkles size={10} />
+               تم التحديث: {new Date().toLocaleTimeString('ar-MA', {hour: '2-digit', minute:'2-digit'})}
+            </p>
           </div>
         </div>
       </div>
