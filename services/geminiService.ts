@@ -1,6 +1,9 @@
+
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { Product, Invoice, Client, Expense, Supplier } from "../types";
 
+// Initialize AI with the API key from environment variables
+// Using process.env.API_KEY as per @google/genai guidelines
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const MODEL_NAME = 'gemini-2.5-flash';
 
