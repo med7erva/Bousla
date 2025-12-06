@@ -126,6 +126,7 @@ const Suppliers: React.FC = () => {
             (a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         );
 
+        // Use double casting to satisfy TypeScript compiler
         setHistoryItems(combined as unknown as HistoryItem[]);
         setIsHistoryModalOpen(true);
         setActiveMenuId(null);
@@ -337,11 +338,12 @@ const Suppliers: React.FC = () => {
                                             let debit = 0; // عليه (Payments we made)
 
                                             if (isPurchase) {
-                                                const pur = item as Purchase;
+                                                // Double casting fix for TypeScript build error
+                                                const pur = item as unknown as Purchase;
                                                 credit = pur.totalCost;
                                                 debit = pur.paidAmount;
                                             } else {
-                                                const tx = item as FinancialTransaction;
+                                                const tx = item as unknown as FinancialTransaction;
                                                 if (tx.type === 'out') {
                                                     // Out from us to Supplier = Payment = Debit
                                                     debit = tx.amount;
@@ -362,7 +364,7 @@ const Suppliers: React.FC = () => {
                                                                 <Truck size={12} /> فاتورة شراء
                                                             </span>
                                                         ) : (
-                                                            (item as FinancialTransaction).type === 'out' ? 
+                                                            (item as unknown as FinancialTransaction).type === 'out' ? 
                                                             <span className="flex items-center gap-1 text-xs font-bold bg-red-50 text-red-700 px-2 py-1 rounded w-fit">
                                                                 <ArrowUpRight size={12} /> سند صرف
                                                             </span> :
@@ -374,9 +376,9 @@ const Suppliers: React.FC = () => {
                                                     <td className="px-4 py-3 text-sm text-gray-700">
                                                         {isPurchase ? (
                                                              <span className="truncate block max-w-[200px]">
-                                                                {(item as Purchase).items.length} منتجات
+                                                                {(item as unknown as Purchase).items.length} منتجات
                                                             </span>
-                                                        ) : (item as FinancialTransaction).description}
+                                                        ) : (item as unknown as FinancialTransaction).description}
                                                          <div className="text-xs text-gray-400 font-mono mt-0.5">{item.id.slice(-8)}</div>
                                                     </td>
                                                     <td className="px-4 py-3 font-bold text-gray-800">
