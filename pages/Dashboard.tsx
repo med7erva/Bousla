@@ -7,7 +7,10 @@ import {
   AlertTriangle, 
   Sparkles,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Lightbulb,
+  ShieldAlert,
+  Rocket
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -19,8 +22,8 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { CURRENCY } from '../constants';
-import { getDashboardInsights } from '../services/geminiService';
-import { getProducts, getSalesAnalytics, initDB } from '../services/db';
+import { getDashboardInsights, DashboardContext } from '../services/geminiService';
+import { getProducts, getSalesAnalytics, initDB, getExpenses, getInvoices } from '../services/db';
 import { useAuth } from '../context/AuthContext';
 
 const Dashboard: React.FC = () => {
@@ -29,7 +32,8 @@ const Dashboard: React.FC = () => {
   const [loadingAi, setLoadingAi] = useState(false);
   const [stats, setStats] = useState({
     totalSales: 0,
-    totalProfit: 0,
+    totalExpenses: 0,
+    netProfit: 0,
     invoiceCount: 0,
     lowStockCount: 0,
     chartData: [] as any[]
@@ -40,25 +44,68 @@ const Dashboard: React.FC = () => {
       if (!user) return;
       
       await initDB();
-      const products = await getProducts(user.id);
-      const analytics = await getSalesAnalytics(user.id);
+      // Fetch all required data for a comprehensive analysis
+      const [products, analytics, expenses, invoices] = await Promise.all([
+          getProducts(user.id),
+          getSalesAnalytics(user.id),
+          getExpenses(user.id),
+          getInvoices(user.id)
+      ]);
       
-      const lowStock = products.filter(p => p.stock < 10).length;
+      const lowStockItems = products.filter(p => p.stock < 10).map(p => p.name);
       
-      // Calculate estimated profit
-      const estimatedProfit = Math.round(analytics.totalSales * 0.3); 
+      // Calculate Financials
+      const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+      const totalSales = analytics.totalSales;
+      // Net Profit (Rough estimate: Sales - Expenses - Est. COGS 60% if exact cost not easy to calc per item in summary)
+      // Better: Net Profit = Sales - Expenses (Simple Cash Flow View for Dashboard)
+      const netIncome = totalSales - totalExpenses; 
+      
+      // Calculate Top Products
+      const productSalesMap: Record<string, {name: string, qty: number, revenue: number}> = {};
+      invoices.forEach(inv => {
+          inv.items.forEach(item => {
+              if (!productSalesMap[item.productId]) {
+                  productSalesMap[item.productId] = { name: item.productName, qty: 0, revenue: 0 };
+              }
+              productSalesMap[item.productId].qty += item.quantity;
+              productSalesMap[item.productId].revenue += (item.quantity * item.priceAtSale);
+          });
+      });
+      const topSellingProducts = Object.values(productSalesMap)
+          .sort((a, b) => b.revenue - a.revenue)
+          .slice(0, 5);
+
+      // Trend Analysis (Simple)
+      const salesTrend = analytics.chartData.length > 2 && 
+        analytics.chartData[analytics.chartData.length - 1].sales > analytics.chartData[0].sales 
+        ? 'up' : 'down';
+
+      const expenseRatio = totalSales > 0 ? parseFloat(((totalExpenses / totalSales) * 100).toFixed(1)) : 0;
 
       setStats({
-        totalSales: analytics.totalSales,
-        totalProfit: estimatedProfit,
+        totalSales,
+        totalExpenses,
+        netProfit: netIncome,
         invoiceCount: analytics.totalInvoices,
-        lowStockCount: lowStock,
+        lowStockCount: lowStockItems.length,
         chartData: analytics.chartData
       });
 
-      // AI Insights
+      // AI Insights - Pass RICH Context
       setLoadingAi(true);
-      const tips = await getDashboardInsights(analytics.chartData, products);
+      const context: DashboardContext = {
+          totalSales,
+          totalExpenses,
+          totalProfit: netIncome, // Using Net Income as main profit indicator here
+          netIncome,
+          lowStockItems: lowStockItems.slice(0, 10),
+          topSellingProducts,
+          salesTrend: salesTrend as 'up' | 'down',
+          expenseRatio
+      };
+
+      const tips = await getDashboardInsights(context);
       setAiTips(tips);
       setLoadingAi(false);
     };
@@ -68,10 +115,17 @@ const Dashboard: React.FC = () => {
 
   const kpiCards = [
     { label: 'إجمالي المبيعات', value: `${stats.totalSales.toLocaleString()} ${CURRENCY}`, change: 12, icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-100' },
-    { label: 'تقدير الأرباح', value: `${stats.totalProfit.toLocaleString()} ${CURRENCY}`, change: 8, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-100' },
+    { label: 'صافي الدخل (تقريبي)', value: `${stats.netProfit.toLocaleString()} ${CURRENCY}`, change: 8, icon: DollarSign, color: stats.netProfit >= 0 ? 'text-emerald-600' : 'text-red-600', bg: stats.netProfit >= 0 ? 'bg-emerald-100' : 'bg-red-100' },
     { label: 'عدد الفواتير', value: stats.invoiceCount.toString(), change: -3, icon: ShoppingCart, color: 'text-purple-600', bg: 'bg-purple-100' },
     { label: 'تنبيهات المخزون', value: stats.lowStockCount.toString(), change: 0, icon: AlertTriangle, color: 'text-orange-600', bg: 'bg-orange-100' },
   ];
+
+  // Helper to choose icon for tip based on content keywords
+  const getTipIcon = (text: string) => {
+      if (text.includes('خطر') || text.includes('تنبيه') || text.includes('حذر')) return <ShieldAlert size={18} className="text-red-300" />;
+      if (text.includes('فرصة') || text.includes('زيادة') || text.includes('نمو')) return <Rocket size={18} className="text-emerald-300" />;
+      return <Lightbulb size={18} className="text-yellow-300" />;
+  };
 
   return (
     <div className="space-y-6">
@@ -132,37 +186,52 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* AI Insights Card */}
-        <div className="bg-gradient-to-br from-indigo-900 to-purple-900 text-white p-6 rounded-2xl shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-32 bg-white opacity-5 rounded-full -mr-16 -mt-16 pointer-events-none"></div>
+        {/* AI Insights Card (Enhanced UI) */}
+        <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl relative overflow-hidden flex flex-col">
+          {/* Background Decor */}
+          <div className="absolute top-0 right-0 p-32 bg-indigo-500 opacity-10 rounded-full -mr-16 -mt-16 pointer-events-none blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 p-24 bg-emerald-500 opacity-10 rounded-full -ml-10 -mb-10 pointer-events-none blur-3xl"></div>
           
-          <div className="flex items-center gap-2 mb-6 relative z-10">
-            <Sparkles className="text-yellow-400" />
-            <h3 className="text-lg font-bold">توصيات الذكاء الاصطناعي</h3>
+          <div className="flex items-center gap-3 mb-6 relative z-10 border-b border-white/10 pb-4">
+            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-lg shadow-lg">
+                <Sparkles className="text-white" size={20} />
+            </div>
+            <div>
+                <h3 className="text-lg font-bold">المستشار الذكي</h3>
+                <p className="text-xs text-slate-400">تحليل مالي ومخزني مباشر</p>
+            </div>
           </div>
 
-          <div className="space-y-4 relative z-10">
+          <div className="space-y-4 relative z-10 flex-1">
             {loadingAi ? (
-              <div className="space-y-3 animate-pulse">
-                <div className="h-4 bg-white/20 rounded w-3/4"></div>
-                <div className="h-4 bg-white/20 rounded w-full"></div>
-                <div className="h-4 bg-white/20 rounded w-5/6"></div>
+              <div className="space-y-4 animate-pulse mt-4">
+                <div className="h-16 bg-white/10 rounded-xl w-full"></div>
+                <div className="h-16 bg-white/10 rounded-xl w-full"></div>
+                <div className="h-16 bg-white/10 rounded-xl w-full"></div>
               </div>
             ) : aiTips.length > 0 ? (
               aiTips.map((tip, i) => (
-                <div key={i} className="flex gap-3 bg-white/10 p-3 rounded-xl border border-white/10 backdrop-blur-sm">
-                  <div className="mt-1 min-w-[6px] h-1.5 rounded-full bg-yellow-400"></div>
-                  <p className="text-sm text-indigo-100 leading-relaxed">{tip.replace(/^- /, '')}</p>
+                <div key={i} className="flex gap-3 bg-white/5 p-3.5 rounded-xl border border-white/5 hover:bg-white/10 transition group">
+                  <div className="mt-1 shrink-0">
+                      {getTipIcon(tip)}
+                  </div>
+                  <p className="text-sm text-slate-200 leading-relaxed font-medium group-hover:text-white transition-colors">{tip}</p>
                 </div>
               ))
             ) : (
-              <p className="text-indigo-200 text-sm">جاري تحليل بيانات متجرك...</p>
+              <div className="flex flex-col items-center justify-center h-40 text-slate-400 text-sm">
+                  <Lightbulb className="mb-2 opacity-50" />
+                  جاري تحليل بيانات متجرك...
+              </div>
             )}
           </div>
           
-          <button className="mt-6 w-full py-2.5 bg-white text-indigo-900 rounded-lg font-semibold text-sm hover:bg-indigo-50 transition">
-            اطلب تحليلًا مفصلاً
-          </button>
+          <div className="mt-6 pt-4 border-t border-white/10">
+            <div className="flex justify-between items-center text-xs text-slate-400">
+                <span>تم التحديث: {new Date().toLocaleTimeString('ar-MA', {hour: '2-digit', minute:'2-digit'})}</span>
+                <span className="flex items-center gap-1"><Sparkles size={10} className="text-emerald-400"/> مدعوم بـ Gemini 2.0</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

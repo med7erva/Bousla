@@ -63,31 +63,78 @@ ${dataContext}
 - لا تسأل المستخدم أسئلة، فقط قدّم أفضل تحليل ممكن بناءً على البيانات.
 `;
 
-// --- Dashboard ---
-export const getDashboardInsights = async (sales: any[], products: Product[]): Promise<string[]> => {
-  // Simple cache key based on item counts (not perfect but fast for dashboard)
-  const cacheKey = `dash_${sales.length}_${products.length}`;
+// --- Dashboard (Enhanced Professional Mode) ---
+export interface DashboardContext {
+    totalSales: number;
+    totalProfit: number;
+    totalExpenses: number;
+    netIncome: number;
+    lowStockItems: string[];
+    topSellingProducts: {name: string, qty: number, revenue: number}[];
+    salesTrend: 'up' | 'down' | 'stable';
+    expenseRatio: number; // Percentage of sales
+}
+
+export const getDashboardInsights = async (context: DashboardContext): Promise<string[]> => {
+  // Advanced cache key based on financial metrics to refresh when data changes significantly
+  const cacheKey = `dash_v2_${context.totalSales}_${context.totalExpenses}_${context.topSellingProducts.length}`;
   const cached = getCachedInsight(cacheKey);
   if (cached && Array.isArray(cached)) return cached;
 
   try {
-    const safeSales = sales.slice(-7);
-    const safeProducts = products.slice(0, 10).map(p => ({ n: p.name, c: p.category, s: p.stock }));
-
     const prompt = `
-      بصفتك مستشارًا ماليًا لمتجر ملابس بموريتانيا. حلل التالي:
-      المبيعات: ${JSON.stringify(safeSales)}
-      المنتجات: ${JSON.stringify(safeProducts)}
-      أعطني 3 نصائح قصيرة جداً وعملية لزيادة الأرباح.
+      بصفتك المدير المالي (CFO) وخبير تجارة التجزئة لهذا المتجر، قم بتحليل البيانات المالية التالية بدقة شديدة:
+
+      1. **الوضع المالي العام**:
+         - المبيعات: ${context.totalSales} أوقية
+         - إجمالي المصاريف: ${context.totalExpenses} أوقية (${context.expenseRatio}% من المبيعات)
+         - صافي الربح التشغيلي: ${context.netIncome} أوقية
+
+      2. **تحليل المخزون والمنتجات**:
+         - المنتجات الأكثر مبيعاً (الأبطال): ${JSON.stringify(context.topSellingProducts)}
+         - منتجات توشك على النفاذ (خطر): ${JSON.stringify(context.lowStockItems)}
+
+      3. **الاتجاه العام**: المبيعات في اتجاه ${context.salesTrend === 'up' ? 'تصاعدي 📈' : context.salesTrend === 'down' ? 'تنازلي 📉' : 'مستقر 😐'}
+
+      **المطلوب:**
+      قدم 3 توصيات استراتيجية ذكية جداً ومحددة (ليست عامة) تساعد التاجر على زيادة الربح الصافي.
+      
+      القواعد:
+      - التوصية الأولى: يجب أن تكون "تحذير مالي" أو "فرصة توفير" بناءً على المصاريف والربح.
+      - التوصية الثانية: يجب أن تكون "إجراء مخزني" يربط بين المنتجات الأكثر مبيعاً وتلك التي تنفد.
+      - التوصية الثالثة: نصيحة تسويقية ذكية لزيادة "صافي الربح" وليس فقط المبيعات.
+      - تحدث بلغة "بزنس" احترافية لكن مفهومة، بصيغة مباشرة (أفعل، تجنب، راقب).
+      - لا تستخدم مقدمات، ادخل في صلب الموضوع فوراً.
     `;
 
-    const response = await ai.models.generateContent({ model: MODEL_NAME, contents: prompt });
-    const tips = (response.text || "").split('\n').filter(l => l.trim().length > 0).slice(0, 3);
+    const response = await ai.models.generateContent({ 
+        model: MODEL_NAME, 
+        contents: prompt,
+        config: {
+            temperature: 0.7, // Slightly lower for more analytical results
+        }
+    });
+
+    const tips = (response.text || "")
+        .split('\n')
+        .filter(l => l.trim().length > 0)
+        .map(l => l.replace(/^[-*1-3\.]+\s*/, '').trim()) // Clean bullets
+        .slice(0, 3);
     
+    // Fallback if AI fails to give 3
+    if (tips.length < 3) {
+        tips.push("راجع تقرير المصاريف للتأكد من عدم تجاوز الميزانية.");
+    }
+
     setCachedInsight(cacheKey, tips);
     return tips;
   } catch (error) {
-    return ["توصية: ركز على المنتجات الأكثر مبيعاً.", "توصية: راقب المخزون المنخفض."];
+    console.error("AI Insight Error:", error);
+    return [
+        "نصيحة: ركز على زيادة مبيعات المنتجات ذات هامش الربح العالي.",
+        "تنبيه: تأكد من تسجيل جميع المصاريف للحصول على صافي ربح دقيق.",
+        "إجراء: راجع المخزون المنخفض وقم بطلب البضائع الرائجة فوراً."
+    ];
   }
 };
 
