@@ -1,6 +1,5 @@
 
 
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Plus, Trash2, Printer, CreditCard, CheckCircle, ShoppingBag, User, Banknote, X, PackagePlus, Wallet, Calendar, AlertCircle, History, FileDown, ChevronDown, ChevronUp, Eye, Loader2, MoreVertical, Edit2 } from 'lucide-react';
 import { CURRENCY } from '../constants';
@@ -25,6 +24,7 @@ const Sales: React.FC = () => {
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [exportingHistory, setExportingHistory] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 }); // Position for fixed menu
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Edit Invoice State
@@ -90,8 +90,17 @@ const Sales: React.FC = () => {
             setActiveMenuId(null);
         }
     };
+    
+    // Close menu on scroll to prevent detached floating menu
+    const handleScroll = () => setActiveMenuId(null);
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    window.addEventListener('scroll', handleScroll, true); 
+    
+    return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        window.removeEventListener('scroll', handleScroll, true);
+    };
   }, [user]);
 
   // --- Cart Actions ---
@@ -272,6 +281,9 @@ const Sales: React.FC = () => {
 
   // History Slice
   const displayedInvoices = showAllHistory ? invoices : invoices.slice(0, 7);
+
+  // Find active invoice for menu
+  const activeInvoice = invoices.find(i => i.id === activeMenuId);
 
   return (
     <div className="flex flex-col gap-6 h-full overflow-y-auto min-h-screen pb-10">
@@ -465,7 +477,7 @@ const Sales: React.FC = () => {
              <p className="text-sm text-gray-500">تاريخ الطباعة: {new Date().toLocaleDateString('ar-MA')}</p>
         </div>
 
-        <div className="overflow-visible">
+        <div className="overflow-x-auto"> {/* Changed back from overflow-visible to x-auto */}
             <table className="w-full text-right">
                 <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-semibold">
                     <tr>
@@ -502,29 +514,17 @@ const Sales: React.FC = () => {
                                 </td>
                                 <td className="px-6 py-4" data-html2canvas-ignore="true">
                                     <button 
-                                        onClick={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === inv.id ? null : inv.id); }}
+                                        onClick={(e) => { 
+                                            e.stopPropagation(); 
+                                            const rect = e.currentTarget.getBoundingClientRect();
+                                            // Set menu position fixed on screen
+                                            setMenuPos({ top: rect.bottom, left: rect.left });
+                                            setActiveMenuId(activeMenuId === inv.id ? null : inv.id); 
+                                        }}
                                         className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition"
                                     >
                                         <MoreVertical size={18} />
                                     </button>
-                                    
-                                    {/* Dropdown Menu */}
-                                    {activeMenuId === inv.id && (
-                                        <div ref={menuRef} className="absolute left-6 mt-1 w-40 bg-white rounded-lg shadow-xl border border-gray-100 z-50 animate-in fade-in zoom-in-95 duration-200">
-                                            <button 
-                                                onClick={(e) => { e.preventDefault(); openEditInvoiceModal(inv); }}
-                                                className="w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                                            >
-                                                <Edit2 size={14} /> تعديل
-                                            </button>
-                                            <button 
-                                                onClick={(e) => { e.preventDefault(); handleDeleteInvoice(inv.id); }}
-                                                className="w-full text-right px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-b-lg"
-                                            >
-                                                <Trash2 size={14} /> حذف
-                                            </button>
-                                        </div>
-                                    )}
                                 </td>
                             </tr>
                         ))
@@ -554,6 +554,28 @@ const Sales: React.FC = () => {
             </div>
         )}
       </div>
+
+      {/* Floating Action Menu (Portal-like) */}
+      {activeMenuId && activeInvoice && (
+          <div 
+            ref={menuRef}
+            className="fixed z-50 w-40 bg-white rounded-lg shadow-xl border border-gray-100 animate-in fade-in zoom-in-95 duration-200"
+            style={{ top: menuPos.top, left: menuPos.left }}
+          >
+               <button 
+                    onClick={(e) => { e.preventDefault(); openEditInvoiceModal(activeInvoice); }}
+                    className="w-full text-right px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                >
+                    <Edit2 size={14} /> تعديل
+                </button>
+                <button 
+                    onClick={(e) => { e.preventDefault(); handleDeleteInvoice(activeInvoice.id); }}
+                    className="w-full text-right px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-b-lg"
+                >
+                    <Trash2 size={14} /> حذف
+                </button>
+          </div>
+      )}
 
       <style>{`
          .pdf-header-sales { display: none; }
