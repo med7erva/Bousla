@@ -298,6 +298,52 @@ export const createInvoice = async (userId: string, items: SaleItem[], total: nu
     return invoice;
 };
 
+export const deleteInvoice = async (id: string) => {
+    // 1. Get Invoice
+    const { data: inv, error } = await supabase.from('invoices').select('*').eq('id', id).single();
+    if(error || !inv) throw new Error("Invoice not found");
+
+    // 2. Restock Products
+    for(const item of inv.items) {
+        if(!item.productId.startsWith('custom-')) {
+             const { data: prod } = await supabase.from('products').select('stock').eq('id', item.productId).single();
+             if(prod) {
+                 await supabase.from('products').update({ stock: prod.stock + item.quantity }).eq('id', item.productId);
+             }
+        }
+    }
+
+    // 3. Revert Financials
+    // Revert Client Debt
+    if(inv.remaining_amount > 0) {
+         const { data: client } = await supabase.from('clients').select('*').ilike('name', inv.customer_name).single();
+         if(client) {
+             const newDebt = Math.max(0, Number(client.debt) - Number(inv.remaining_amount));
+             await supabase.from('clients').update({ debt: newDebt }).eq('id', client.id);
+         }
+    }
+
+    // Revert Wallet Balance (Refund the paid amount)
+    if(inv.payment_method_id && inv.paid_amount > 0) {
+         const { data: pm } = await supabase.from('payment_methods').select('balance').eq('id', inv.payment_method_id).single();
+         if(pm) {
+             const newBalance = Number(pm.balance) - Number(inv.paid_amount);
+             await supabase.from('payment_methods').update({ balance: newBalance }).eq('id', inv.payment_method_id);
+         }
+    }
+
+    // 4. Delete Record
+    await supabase.from('invoices').delete().eq('id', id);
+};
+
+export const updateInvoice = async (invoice: Invoice) => {
+    // Only metadata updates allowed for safety (Customer Name change does NOT move debt in this simple version, just renames)
+    await supabase.from('invoices').update({
+        customer_name: invoice.customerName,
+        date: invoice.date
+    }).eq('id', invoice.id);
+};
+
 export const getSalesAnalytics = async (userId: string) => {
     const invoices = await getInvoices(userId);
     const totalSales = invoices.reduce((sum, inv) => sum + inv.total, 0);
@@ -527,7 +573,7 @@ export const getTransactions = async (userId: string): Promise<FinancialTransact
     return data.map((d: any) => ({
         id: d.id, userId: d.user_id, type: d.type, amount: d.amount, date: d.date, 
         paymentMethodId: d.payment_method_id, paymentMethodName: d.payment_methods?.name,
-        entityType: d.entity_type, entityId: d.entity_id, description: d.description
+        entityType: d.entity_type, entityId: d.entity_id, entityName: d.entity_name, description: d.description
     }));
 };
 

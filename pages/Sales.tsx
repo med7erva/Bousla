@@ -1,10 +1,11 @@
 
 
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Trash2, Printer, CreditCard, CheckCircle, ShoppingBag, User, Banknote, X, PackagePlus, Wallet, Calendar, AlertCircle, History, FileDown, ChevronDown, ChevronUp, Eye, Loader2 } from 'lucide-react';
+import { Search, Plus, Trash2, Printer, CreditCard, CheckCircle, ShoppingBag, User, Banknote, X, PackagePlus, Wallet, Calendar, AlertCircle, History, FileDown, ChevronDown, ChevronUp, Eye, Loader2, MoreVertical, Edit2 } from 'lucide-react';
 import { CURRENCY } from '../constants';
 import { Product, SaleItem, PaymentMethod, Client, Invoice, ProductCategory } from '../types';
-import { getProducts, createInvoice, getPaymentMethods, ensurePaymentMethodsExist, getClients, getInvoices, getProductCategories } from '../services/db';
+import { getProducts, createInvoice, getPaymentMethods, ensurePaymentMethodsExist, getClients, getInvoices, getProductCategories, deleteInvoice, updateInvoice } from '../services/db';
 import { useAuth } from '../context/AuthContext';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
@@ -23,6 +24,13 @@ const Sales: React.FC = () => {
   // History UI State
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [exportingHistory, setExportingHistory] = useState(false);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Edit Invoice State
+  const [isEditInvoiceModalOpen, setIsEditInvoiceModalOpen] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Checkout & Modal States
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -77,6 +85,9 @@ const Sales: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
         if (clientInputRef.current && !clientInputRef.current.contains(event.target as Node)) {
             setShowClientSuggestions(false);
+        }
+        if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+            setActiveMenuId(null);
         }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -188,6 +199,42 @@ const Sales: React.FC = () => {
         alert("حدث خطأ أثناء عملية الدفع");
         setCheckoutStep('input');
     }
+  };
+
+  // --- Invoice Actions ---
+  const handleDeleteInvoice = async (id: string) => {
+      if(window.confirm('هل أنت متأكد من حذف هذه الفاتورة؟ سيتم إرجاع المنتجات للمخزون وإلغاء أي ديون مسجلة.')) {
+          try {
+              await deleteInvoice(id);
+              loadData();
+              setActiveMenuId(null);
+          } catch (error) {
+              console.error(error);
+              alert("حدث خطأ أثناء حذف الفاتورة.");
+          }
+      }
+  };
+
+  const handleUpdateInvoice = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if(!editingInvoice) return;
+      setIsUpdating(true);
+      try {
+          await updateInvoice(editingInvoice);
+          setIsEditInvoiceModalOpen(false);
+          setEditingInvoice(null);
+          loadData();
+      } catch (error) {
+          alert("فشل تحديث الفاتورة");
+      } finally {
+          setIsUpdating(false);
+      }
+  };
+
+  const openEditInvoiceModal = (inv: Invoice) => {
+      setEditingInvoice(inv);
+      setIsEditInvoiceModalOpen(true);
+      setActiveMenuId(null);
   };
 
   const handleExportPDF = () => {
@@ -395,7 +442,7 @@ const Sales: React.FC = () => {
       </div>
 
       {/* --- BOTTOM SECTION: SALES HISTORY --- */}
-      <div id="sales-history-container" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <div id="sales-history-container" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 min-h-[300px]">
         <div className="flex justify-between items-center mb-6">
             <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
                 <History className="text-slate-500" />
@@ -418,7 +465,7 @@ const Sales: React.FC = () => {
              <p className="text-sm text-gray-500">تاريخ الطباعة: {new Date().toLocaleDateString('ar-MA')}</p>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-visible">
             <table className="w-full text-right">
                 <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-semibold">
                     <tr>
@@ -428,15 +475,16 @@ const Sales: React.FC = () => {
                         <th className="px-6 py-4">العناصر</th>
                         <th className="px-6 py-4">الإجمالي</th>
                         <th className="px-6 py-4">المدفوع</th>
-                        <th className="px-6 py-4 rounded-l-xl">الحالة</th>
+                        <th className="px-6 py-4">الحالة</th>
+                        <th className="px-6 py-4 rounded-l-xl" data-html2canvas-ignore="true">إجراءات</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                     {displayedInvoices.length === 0 ? (
-                        <tr><td colSpan={7} className="p-8 text-center text-gray-400">لا توجد مبيعات مسجلة حتى الآن</td></tr>
+                        <tr><td colSpan={8} className="p-8 text-center text-gray-400">لا توجد مبيعات مسجلة حتى الآن</td></tr>
                     ) : (
                         displayedInvoices.map(inv => (
-                            <tr key={inv.id} className="hover:bg-gray-50 transition group">
+                            <tr key={inv.id} className="hover:bg-gray-50 transition group relative">
                                 <td className="px-6 py-4 font-mono text-xs text-gray-500">{inv.id.slice(-6)}</td>
                                 <td className="px-6 py-4 text-sm text-gray-600">{new Date(inv.date).toLocaleDateString('ar-MA')}</td>
                                 <td className="px-6 py-4 font-bold text-gray-800">{inv.customerName}</td>
@@ -451,6 +499,32 @@ const Sales: React.FC = () => {
                                     }`}>
                                         {inv.remainingAmount > 0 ? 'آجل' : 'مكتمل'}
                                     </span>
+                                </td>
+                                <td className="px-6 py-4" data-html2canvas-ignore="true">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === inv.id ? null : inv.id); }}
+                                        className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition"
+                                    >
+                                        <MoreVertical size={18} />
+                                    </button>
+                                    
+                                    {/* Dropdown Menu */}
+                                    {activeMenuId === inv.id && (
+                                        <div ref={menuRef} className="absolute left-6 mt-1 w-40 bg-white rounded-lg shadow-xl border border-gray-100 z-50 animate-in fade-in zoom-in-95 duration-200">
+                                            <button 
+                                                onClick={(e) => { e.preventDefault(); openEditInvoiceModal(inv); }}
+                                                className="w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                            >
+                                                <Edit2 size={14} /> تعديل
+                                            </button>
+                                            <button 
+                                                onClick={(e) => { e.preventDefault(); handleDeleteInvoice(inv.id); }}
+                                                className="w-full text-right px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-b-lg"
+                                            >
+                                                <Trash2 size={14} /> حذف
+                                            </button>
+                                        </div>
+                                    )}
                                 </td>
                             </tr>
                         ))
@@ -618,6 +692,48 @@ const Sales: React.FC = () => {
           </div>
       )}
       
+      {/* Edit Invoice Metadata Modal */}
+      {isEditInvoiceModalOpen && editingInvoice && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl animate-in zoom-in-95 duration-200">
+                  <div className="flex justify-between items-center mb-4">
+                      <h3 className="font-bold text-gray-800">تعديل بيانات الفاتورة</h3>
+                      <button onClick={() => setIsEditInvoiceModalOpen(false)}><X size={20} className="text-gray-400" /></button>
+                  </div>
+                  <form onSubmit={handleUpdateInvoice} className="space-y-4">
+                      <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">اسم العميل</label>
+                          <input 
+                              type="text" 
+                              className="w-full p-2 border rounded-lg"
+                              value={editingInvoice.customerName}
+                              onChange={(e) => setEditingInvoice({...editingInvoice, customerName: e.target.value})}
+                          />
+                      </div>
+                      <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">تاريخ الفاتورة</label>
+                          <input 
+                              type="date" 
+                              className="w-full p-2 border rounded-lg"
+                              value={editingInvoice.date.split('T')[0]}
+                              onChange={(e) => setEditingInvoice({...editingInvoice, date: e.target.value})}
+                          />
+                      </div>
+                      <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                          ملاحظة: لتعديل المنتجات أو الكميات، يرجى حذف الفاتورة وإعادة إنشائها لضمان سلامة المخزون والحسابات.
+                      </div>
+                      <button 
+                          type="submit" 
+                          disabled={isUpdating}
+                          className="w-full bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900 flex justify-center items-center"
+                      >
+                          {isUpdating ? <Loader2 className="animate-spin" size={20} /> : 'حفظ التعديلات'}
+                      </button>
+                  </form>
+              </div>
+          </div>
+      )}
+
       {isCustomItemModalOpen && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl">
