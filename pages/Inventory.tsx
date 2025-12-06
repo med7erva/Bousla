@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, 
@@ -65,6 +66,7 @@ const Inventory: React.FC = () => {
 
   // Dropdown Management
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const menuRef = useRef<HTMLDivElement>(null);
 
   const loadData = async () => {
@@ -97,8 +99,15 @@ const Inventory: React.FC = () => {
             setActiveMenuId(null);
         }
     };
+    const handleScroll = () => setActiveMenuId(null);
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    window.addEventListener('scroll', handleScroll, true);
+    
+    return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        window.removeEventListener('scroll', handleScroll, true);
+    };
   }, [user]);
 
   // --- Product Actions ---
@@ -217,6 +226,8 @@ const Inventory: React.FC = () => {
 
   const getCategoryName = (id: string) => categories.find(c => c.id === id)?.name || id;
 
+  const activeProduct = activeMenuId ? products.find(p => p.id === activeMenuId) : null;
+
   return (
     <div className="space-y-6 relative">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -321,31 +332,18 @@ const Inventory: React.FC = () => {
                         </div>
                     )}
                   </td>
-                  <td className="px-6 py-4 relative">
+                  <td className="px-6 py-4">
                     <button 
-                        onMouseDown={(e) => { e.preventDefault(); setActiveMenuId(activeMenuId === product.id ? null : product.id); }}
+                        onClick={(e) => { 
+                            e.stopPropagation();
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setMenuPos({ top: rect.bottom, left: rect.left });
+                            setActiveMenuId(activeMenuId === product.id ? null : product.id); 
+                        }}
                         className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition"
                     >
                       <MoreVertical size={18} />
                     </button>
-                    
-                    {/* Dropdown Menu */}
-                    {activeMenuId === product.id && (
-                        <div ref={menuRef} className="absolute left-6 top-12 w-40 bg-white rounded-lg shadow-xl border border-gray-100 z-20 animate-in fade-in zoom-in-95 duration-200">
-                            <button 
-                                onMouseDown={(e) => { e.preventDefault(); openEditModal(product); }}
-                                className="w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                            >
-                                <Edit2 size={14} /> تعديل
-                            </button>
-                            <button 
-                                onMouseDown={(e) => { e.preventDefault(); handleDeleteProduct(product.id); }}
-                                className="w-full text-right px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-b-lg"
-                            >
-                                <Trash2 size={14} /> حذف
-                            </button>
-                        </div>
-                    )}
                   </td>
                 </tr>
               ))}
@@ -358,6 +356,28 @@ const Inventory: React.FC = () => {
             </div>
         )}
       </div>
+      
+      {/* Floating Action Menu (Fixed Position) */}
+      {activeMenuId && activeProduct && (
+        <div 
+            ref={menuRef} 
+            className="fixed z-50 w-40 bg-white rounded-lg shadow-xl border border-gray-100 animate-in fade-in zoom-in-95 duration-200"
+            style={{ top: menuPos.top, left: menuPos.left }}
+        >
+            <button 
+                onClick={() => openEditModal(activeProduct)}
+                className="w-full text-right px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+            >
+                <Edit2 size={14} /> تعديل
+            </button>
+            <button 
+                onClick={() => handleDeleteProduct(activeProduct.id)}
+                className="w-full text-right px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-b-lg"
+            >
+                <Trash2 size={14} /> حذف
+            </button>
+        </div>
+      )}
 
       {/* Add Product Modal */}
       {isAddModalOpen && (
