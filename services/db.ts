@@ -349,14 +349,35 @@ export const getSalesAnalytics = async (userId: string) => {
     const totalSales = invoices.reduce((sum, inv) => sum + inv.total, 0);
     const totalInvoices = invoices.length;
     
-    const salesByDay: Record<string, number> = {};
-    invoices.forEach(inv => {
-        const d = new Date(inv.date).toLocaleDateString('ar-MA', { weekday: 'long' });
-        salesByDay[d] = (salesByDay[d] || 0) + inv.total;
+    // Generate last 7 days array (dates) to ensure chronological order and include days with 0 sales
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (6 - i)); // Go back from today
+        return d.toISOString().split('T')[0]; // YYYY-MM-DD
     });
-    
-    const chartData = Object.keys(salesByDay).map(day => ({ name: day, sales: salesByDay[day] }));
-    return { totalSales, totalInvoices, chartData: chartData.length > 0 ? chartData : [{ name: 'اليوم', sales: 0 }] };
+
+    // Initialize sales map with 0 for all 7 days
+    const salesMap: Record<string, number> = {};
+    last7Days.forEach(date => {
+        salesMap[date] = 0;
+    });
+
+    // Fill with actual data
+    invoices.forEach(inv => {
+        const invDate = inv.date.split('T')[0];
+        // Only count if it falls within our last 7 days window
+        if (salesMap[invDate] !== undefined) {
+            salesMap[invDate] += inv.total;
+        }
+    });
+
+    // Format for Chart (ordered chronologically)
+    const chartData = last7Days.map(date => ({
+        name: new Date(date).toLocaleDateString('ar-MA', { weekday: 'long' }), // Arabic Day Name
+        sales: salesMap[date]
+    }));
+
+    return { totalSales, totalInvoices, chartData };
 };
 
 // --- Clients ---
