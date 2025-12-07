@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -15,7 +16,8 @@ import {
   Menu, 
   X,
   LogOut,
-  ChevronLeft
+  ChevronLeft,
+  Compass // Import Compass icon
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -64,10 +66,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         `}
       >
         <div className="h-20 flex items-center px-6 border-b border-slate-800/50">
-          <h1 className="text-2xl font-black flex items-center gap-3 text-white tracking-tight">
-            <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-900/20 text-xl">🧭</span> 
-            بوصلة
-          </h1>
+          <Link to="/" className="flex items-center gap-3 group">
+            <Compass className="text-emerald-500 w-8 h-8 transition-transform group-hover:rotate-12" />
+            <h1 className="text-3xl font-black text-white tracking-tighter">
+              بوصلة
+            </h1>
+          </Link>
         </div>
 
         <div className="flex flex-col h-[calc(100vh-5rem)] justify-between">

@@ -152,6 +152,12 @@ const Sales: React.FC = () => {
     }));
   };
 
+  const updatePrice = (productId: string, newPrice: number) => {
+      setCart(prev => prev.map(item => 
+          item.productId === productId ? { ...item, priceAtSale: newPrice } : item
+      ));
+  };
+
   const removeFromCart = (productId: string) => {
     setCart(prev => prev.filter(item => item.productId !== productId));
   };
@@ -405,9 +411,21 @@ const Sales: React.FC = () => {
                 cart.map(item => (
                     <div key={item.productId} className="flex flex-col gap-2 p-3 bg-gray-50 rounded-xl border border-gray-100">
                         <div className="flex justify-between items-start">
-                            <div>
+                            <div className="flex-1">
                                 <p className="font-bold text-gray-800 text-sm line-clamp-1">{item.productName}</p>
-                                <p className="text-emerald-600 text-xs font-bold mt-1">{item.priceAtSale} {CURRENCY}</p>
+                                <div className="flex items-center gap-2 mt-1.5">
+                                    <span className="text-xs text-gray-500">السعر:</span>
+                                    <div className="relative">
+                                        <input 
+                                            type="number" 
+                                            className="w-20 px-2 py-0.5 text-sm font-bold text-emerald-600 bg-white border border-gray-200 rounded focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                            value={item.priceAtSale}
+                                            onChange={(e) => updatePrice(item.productId, Number(e.target.value))}
+                                            onFocus={(e) => e.target.select()}
+                                        />
+                                    </div>
+                                    <span className="text-[10px] text-gray-400">{CURRENCY}</span>
+                                </div>
                             </div>
                             <button onClick={() => removeFromCart(item.productId)} className="text-gray-400 hover:text-red-500 transition p-1"><Trash2 size={16} /></button>
                         </div>
