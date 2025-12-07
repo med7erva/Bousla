@@ -10,6 +10,35 @@ export interface User {
   createdAt: string;
 }
 
+export interface AppSettings {
+  system: {
+    language: 'ar' | 'en';
+    darkMode: boolean;
+    dataView: 'compact' | 'detailed';
+  };
+  store: {
+    currency: 'MRU' | 'MRO'; // New vs Old Ouguiya
+    unit: 'piece' | 'pair' | 'box' | 'kg';
+    discountPolicy: 'none' | 'fixed' | 'product';
+    activityType?: string;
+    ownerName?: string;
+  };
+  notifications: {
+    lowStock: boolean;
+    lowStockThreshold: number;
+    outOfStock: boolean;
+    lowSales: boolean;
+    lowSalesPeriod: 'daily' | 'weekly';
+    highExpenses: boolean;
+    highExpensesThreshold: number;
+  };
+  ai: {
+    enabled: boolean;
+    level: 'basic' | 'medium' | 'deep';
+    smartAlerts: boolean;
+  };
+}
+
 export interface PaymentMethod {
   id: string;
   userId: string;

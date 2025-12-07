@@ -12,12 +12,13 @@ import Purchases from './pages/Purchases';
 import Suppliers from './pages/Suppliers'; 
 import Employees from './pages/Employees'; 
 import Finance from './pages/Finance';
-import Reports from './pages/Reports'; // New
+import Reports from './pages/Reports'; 
+import Settings from './pages/Settings'; // Imported
 import Landing from './pages/Landing';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { Settings, UserCircle, Wrench } from 'lucide-react';
+import { UserCircle, Wrench } from 'lucide-react';
 
 const PlaceholderPage: React.FC<{ title: string; icon: any }> = ({ title, icon: Icon }) => (
   <div className="flex flex-col items-center justify-center h-[60vh] text-center p-8 bg-white rounded-3xl border border-dashed border-gray-300">
@@ -70,7 +71,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             
-            <Route path="/settings" element={<ProtectedRoute><PlaceholderPage title="الإعدادات" icon={Settings} /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><PlaceholderPage title="الملف الشخصي" icon={UserCircle} /></ProtectedRoute>} />
             
             <Route path="*" element={<PlaceholderPage title="صفحة غير موجودة" icon={Wrench} />} />

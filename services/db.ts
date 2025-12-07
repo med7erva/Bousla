@@ -1,6 +1,6 @@
 
 import { supabase } from './supabase';
-import { Product, Invoice, SaleItem, User, Client, Expense, Purchase, Supplier, PurchaseItem, PaymentMethod, Employee, ExpenseCategory, FinancialTransaction, ProductCategory } from '../types';
+import { Product, Invoice, SaleItem, User, Client, Expense, Purchase, Supplier, PurchaseItem, PaymentMethod, Employee, ExpenseCategory, FinancialTransaction, ProductCategory, AppSettings } from '../types';
 import { SEED_PRODUCTS, SEED_PAYMENT_METHODS } from '../constants';
 
 // --- Auth Operations ---
@@ -106,6 +106,48 @@ export const loginUser = async (phone: string, password: string): Promise<User> 
 
 export const initDB = async () => {
     return true; 
+};
+
+// --- Settings & Profile ---
+const DEFAULT_SETTINGS: AppSettings = {
+    system: { language: 'ar', darkMode: false, dataView: 'detailed' },
+    store: { currency: 'MRU', unit: 'piece', discountPolicy: 'none' },
+    notifications: { lowStock: true, lowStockThreshold: 5, outOfStock: true, lowSales: false, lowSalesPeriod: 'daily', highExpenses: true, highExpensesThreshold: 10000 },
+    ai: { enabled: true, level: 'medium', smartAlerts: true }
+};
+
+export const getAppSettings = (): AppSettings => {
+    try {
+        const stored = localStorage.getItem('bousla_settings');
+        return stored ? { ...DEFAULT_SETTINGS, ...JSON.parse(stored) } : DEFAULT_SETTINGS;
+    } catch {
+        return DEFAULT_SETTINGS;
+    }
+};
+
+export const saveAppSettings = (settings: AppSettings) => {
+    localStorage.setItem('bousla_settings', JSON.stringify(settings));
+};
+
+export const updateUserProfile = async (userId: string, data: { name?: string, storeName?: string, activityType?: string }) => {
+    // Update Supabase Profile
+    const updates: any = {};
+    if (data.name) updates.name = data.name;
+    if (data.storeName) updates.store_name = data.storeName;
+    
+    // Note: 'activity_type' column might need to be added to supabase table manually if strict schema,
+    // but for now we update what we can.
+    
+    const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
+    
+    // Also update Auth Metadata (as backup)
+    if (!error) {
+        await supabase.auth.updateUser({
+            data: updates
+        });
+    }
+    
+    if (error) throw error;
 };
 
 // --- Payment Methods ---
