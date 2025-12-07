@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { 
   TrendingUp, 
@@ -71,7 +72,7 @@ const Dashboard: React.FC = () => {
           .sort((a, b) => b.revenue - a.revenue)
           .slice(0, 5);
 
-      const salesTrend = analytics.chartData.length > 2 && 
+      const salesTrend = analytics.chartData.length > 1 && 
         analytics.chartData[analytics.chartData.length - 1].sales > analytics.chartData[0].sales 
         ? 'up' : 'down';
 
@@ -157,16 +158,12 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Welcome Section */}
-      <div className="relative overflow-hidden rounded-3xl bg-slate-900 p-8 text-white shadow-xl">
-         <div className="absolute top-0 right-0 -mt-10 -mr-10 h-64 w-64 rounded-full bg-emerald-500 opacity-20 blur-3xl"></div>
-         <div className="absolute bottom-0 left-0 -mb-10 -ml-10 h-64 w-64 rounded-full bg-indigo-500 opacity-20 blur-3xl"></div>
-         <div className="relative z-10">
-            <h2 className="text-3xl font-bold mb-2">مرحباً، {user?.name.split(' ')[0]} 👋</h2>
-            <p className="text-slate-300 max-w-lg">
-                إليك نظرة سريعة على أداء متجرك اليوم. الأمور تبدو جيدة، استمر في العمل الرائع!
-            </p>
-         </div>
+      {/* Welcome Section - Simplified */}
+      <div>
+         <h2 className="text-3xl font-bold text-slate-800 mb-2 tracking-tight">مرحباً، {user?.name.split(' ')[0]} 👋</h2>
+         <p className="text-slate-500 text-lg">
+             إليك ملخص أداء متجرك <span className="font-bold text-slate-700">"{user?.storeName || 'الخاص'}"</span> اليوم.
+         </p>
       </div>
 
       {/* KPI Stats Grid */}
@@ -300,13 +297,6 @@ const Dashboard: React.FC = () => {
                   جاري تحليل البيانات...
               </div>
             )}
-          </div>
-          
-          <div className="bg-slate-50 p-3 text-center border-t border-slate-100">
-            <p className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
-               <Sparkles size={10} />
-               مدعوم بواسطة Google Gemini 2.0 Flash
-            </p>
           </div>
         </div>
       </div>

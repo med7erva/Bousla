@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -14,10 +15,6 @@ import {
   Menu, 
   X,
   LogOut,
-  UserCircle,
-  Briefcase,
-  Landmark,
-  IdCard,
   ChevronLeft
 } from 'lucide-react';
 
@@ -38,6 +35,8 @@ const NAV_ITEMS = [
   { label: 'التقارير', icon: FileText, path: '/reports' },
   { label: 'الإعدادات', icon: Settings, path: '/settings' },
 ];
+
+import { Landmark, Briefcase, IdCard } from 'lucide-react';
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -149,12 +148,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
           
           <div className="flex items-center gap-4">
-            <Link to="/settings" className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all relative">
-                <Settings size={20} />
-            </Link>
-            
-            <div className="h-8 w-px bg-slate-200 mx-1 hidden md:block"></div>
-
             <Link to="/profile" className="flex items-center gap-3 p-1.5 pr-3 rounded-full hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 transition-all duration-200 group">
               <div className="flex flex-col items-end hidden md:flex">
                 <span className="text-sm font-bold text-slate-700 group-hover:text-emerald-700 transition-colors">{user?.storeName || 'متجري'}</span>
