@@ -45,6 +45,7 @@ const Expenses: React.FC = () => {
 
     // Dropdown State
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+    const [menuPos, setMenuPos] = useState({ top: 0, left: 0 }); // Added position state
     const menuRef = useRef<HTMLDivElement>(null);
 
     const loadData = async () => {
@@ -91,8 +92,15 @@ const Expenses: React.FC = () => {
                 setActiveMenuId(null);
             }
         };
+        const handleScroll = () => setActiveMenuId(null);
+
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        window.addEventListener('scroll', handleScroll, true);
+        
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('scroll', handleScroll, true);
+        };
     }, [user]);
 
     // --- Expense Row Management ---
@@ -122,7 +130,6 @@ const Expenses: React.FC = () => {
         e.preventDefault();
         if (!user) return;
         
-        // Filter out empty rows (0 amount) unless user really intends it? Let's assume > 0 required.
         const validRows = expenseRows.filter(r => r.amount > 0);
         if (validRows.length === 0) {
             alert("الرجاء إدخال مبلغ لمصروف واحد على الأقل.");
@@ -131,10 +138,19 @@ const Expenses: React.FC = () => {
 
         setIsSubmitting(true);
         try {
+            // Logic to auto-fill title if empty
+            const processedRows = validRows.map(row => {
+                const category = categories.find(c => c.id === row.categoryId);
+                return {
+                    ...row,
+                    title: row.title.trim() ? row.title : (category?.name || 'مصروف عام')
+                };
+            });
+
             await addExpensesBatch(user.id, {
                 date: batchDate,
                 paymentMethodId: batchPaymentMethodId,
-                expenses: validRows
+                expenses: processedRows
             });
 
             setIsAddExpenseModalOpen(false);
@@ -160,7 +176,15 @@ const Expenses: React.FC = () => {
         
         setIsSubmitting(true);
         try {
-            await updateExpense(editingExpense);
+            // Also apply the title logic here
+            const category = categories.find(c => c.id === editingExpense.categoryId);
+            const finalTitle = editingExpense.title.trim() ? editingExpense.title : (category?.name || 'مصروف عام');
+            
+            await updateExpense({
+                ...editingExpense,
+                title: finalTitle
+            });
+
             setIsEditExpenseModalOpen(false);
             setEditingExpense(null);
             loadData();
@@ -231,6 +255,8 @@ const Expenses: React.FC = () => {
         return { ...cat, total, count };
     });
 
+    const activeExpense = expenses.find(e => e.id === activeMenuId);
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -298,7 +324,7 @@ const Expenses: React.FC = () => {
                                                 <TrendingDown size={20} />
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-gray-800">{exp.title || 'بدون وصف'}</h4>
+                                                <h4 className="font-bold text-gray-800">{exp.title || exp.categoryName || 'بدون وصف'}</h4>
                                                 <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
                                                     <Calendar size={12} />
                                                     <span>{exp.date}</span>
@@ -315,24 +341,18 @@ const Expenses: React.FC = () => {
                                         <div className="flex items-center gap-4">
                                             <div className="font-bold text-red-600 text-lg">-{exp.amount}</div>
                                             <button 
-                                                onMouseDown={(e) => { e.preventDefault(); setActiveMenuId(activeMenuId === exp.id ? null : exp.id); }}
+                                                onMouseDown={(e) => { 
+                                                    e.stopPropagation();
+                                                    e.preventDefault();
+                                                    const rect = e.currentTarget.getBoundingClientRect();
+                                                    setMenuPos({ top: rect.bottom, left: rect.left });
+                                                    setActiveMenuId(activeMenuId === exp.id ? null : exp.id);
+                                                }}
                                                 className="text-gray-400 hover:text-gray-600 p-1"
                                             >
                                                 <MoreVertical size={18} />
                                             </button>
                                         </div>
-
-                                        {/* Dropdown */}
-                                        {activeMenuId === exp.id && (
-                                            <div ref={menuRef} className="absolute left-10 top-10 w-40 bg-white shadow-xl rounded-lg border border-gray-100 z-10 overflow-hidden">
-                                                <button onMouseDown={(e) => { e.preventDefault(); openEditModal(exp); }} className="w-full text-right px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                                    <Edit2 size={14} /> تعديل
-                                                </button>
-                                                <button onMouseDown={(e) => { e.preventDefault(); handleDeleteExpense(exp.id); }} className="w-full text-right px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
-                                                    <Trash2 size={14} /> حذف
-                                                </button>
-                                            </div>
-                                        )}
                                     </div>
                                 ))
                             )}
@@ -395,6 +415,28 @@ const Expenses: React.FC = () => {
                             </tbody>
                         </table>
                     </div>
+                </div>
+            )}
+
+            {/* Floating Action Menu (Fixed Position) - Moved outside the loop/container */}
+            {activeMenuId && activeExpense && (
+                <div 
+                    ref={menuRef} 
+                    className="fixed z-50 w-40 bg-white rounded-lg shadow-xl border border-gray-100 animate-in fade-in zoom-in-95 duration-200"
+                    style={{ top: menuPos.top, left: menuPos.left }}
+                >
+                    <button 
+                        onMouseDown={(e) => { e.preventDefault(); openEditModal(activeExpense); }}
+                        className="w-full text-right px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    >
+                        <Edit2 size={14} /> تعديل
+                    </button>
+                    <button 
+                        onMouseDown={(e) => { e.preventDefault(); handleDeleteExpense(activeExpense.id); }}
+                        className="w-full text-right px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-b-lg"
+                    >
+                        <Trash2 size={14} /> حذف
+                    </button>
                 </div>
             )}
 
@@ -482,7 +524,7 @@ const Expenses: React.FC = () => {
                                                 <div className={isSalaryRow ? "md:col-span-3" : "md:col-span-7"}>
                                                     <input 
                                                         type="text" 
-                                                        placeholder="الوصف (اختياري)" 
+                                                        placeholder={catName || "الوصف (اختياري)"} 
                                                         className="w-full p-2 border rounded-md text-sm outline-none focus:ring-1 focus:ring-emerald-500"
                                                         value={row.title}
                                                         onChange={(e) => updateRow(row.id, 'title', e.target.value)}
