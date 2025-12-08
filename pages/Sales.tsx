@@ -419,7 +419,8 @@ const Sales: React.FC = () => {
                                         <input 
                                             type="number" 
                                             className="w-20 px-2 py-0.5 text-sm font-bold text-emerald-600 bg-white border border-gray-200 rounded focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
-                                            value={item.priceAtSale}
+                                            value={item.priceAtSale === 0 ? '' : item.priceAtSale}
+                                            placeholder="0"
                                             onChange={(e) => updatePrice(item.productId, Number(e.target.value))}
                                             onFocus={(e) => e.target.select()}
                                         />
@@ -695,7 +696,8 @@ const Sales: React.FC = () => {
                                       <input 
                                           type="number" 
                                           className="w-full p-3 rounded-xl border border-gray-200 bg-gray-50 focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-center"
-                                          value={paymentDetails.discount}
+                                          value={paymentDetails.discount === 0 ? '' : paymentDetails.discount}
+                                          placeholder="0"
                                           onChange={(e) => setPaymentDetails({...paymentDetails, discount: Number(e.target.value)})}
                                           onFocus={(e) => e.target.select()}
                                       />
@@ -705,7 +707,8 @@ const Sales: React.FC = () => {
                                       <input 
                                           type="number" 
                                           className="w-full p-3 rounded-xl border-2 border-emerald-500 bg-white focus:ring-4 focus:ring-emerald-100 outline-none font-bold text-center text-lg"
-                                          value={paymentDetails.amountPaid}
+                                          value={paymentDetails.amountPaid === 0 ? '' : paymentDetails.amountPaid}
+                                          placeholder="0"
                                           onChange={(e) => setPaymentDetails({...paymentDetails, amountPaid: Number(e.target.value)})}
                                           onFocus={(e) => e.target.select()}
                                       />
@@ -791,7 +794,7 @@ const Sales: React.FC = () => {
                         <input type="number" placeholder="السعر" className="w-full p-3 border rounded-lg"
                             value={customItem.price || ''} onChange={(e) => setCustomItem({...customItem, price: Number(e.target.value)})} required />
                         <input type="number" placeholder="الكمية" className="w-full p-3 border rounded-lg"
-                            value={customItem.quantity} onChange={(e) => setCustomItem({...customItem, quantity: Number(e.target.value)})} required />
+                            value={customItem.quantity || ''} onChange={(e) => setCustomItem({...customItem, quantity: Number(e.target.value)})} required />
                       </div>
                       <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold">إضافة</button>
                   </form>

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { getPaymentMethods, ensurePaymentMethodsExist, getTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction, getClients, getSuppliers, getEmployees } from '../services/db';
 import { PaymentMethod, FinancialTransaction, Client, Supplier, Employee } from '../types';
 import { CURRENCY } from '../constants';
-import { Landmark, Wallet, Smartphone, ArrowDownLeft, ArrowUpRight, Plus, Minus, User, Briefcase, Users, X, Edit2, Trash2 } from 'lucide-react';
+import { Landmark, Wallet, Smartphone, ArrowDownLeft, ArrowUpRight, Plus, Minus, User, Briefcase, Users, X, Edit2, Trash2, Loader2 } from 'lucide-react';
 
 const Finance: React.FC = () => {
   const { user } = useAuth();
@@ -20,6 +20,7 @@ const Finance: React.FC = () => {
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [txType, setTxType] = useState<'in' | 'out'>('in'); // 'in' = Receipt, 'out' = Payment
   const [editingTxId, setEditingTxId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -86,11 +87,14 @@ const Finance: React.FC = () => {
   const handleTransactionSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!user) return;
+      if (isSubmitting) return;
+
       if (formData.entityType !== 'Other' && !formData.entityId) {
           alert("الرجاء اختيار الطرف المستفيد/الدافع");
           return;
       }
 
+      setIsSubmitting(true);
       try {
           if (editingTxId) {
               await updateFinancialTransaction(editingTxId, {
@@ -122,6 +126,8 @@ const Finance: React.FC = () => {
       } catch (error) {
           console.error(error);
           alert("حدث خطأ أثناء حفظ العملية.");
+      } finally {
+          setIsSubmitting(false);
       }
   };
 
@@ -362,7 +368,7 @@ const Finance: React.FC = () => {
                             required 
                             type="number" 
                             className="w-full p-2.5 border rounded-lg font-bold text-lg"
-                            value={formData.amount}
+                            value={formData.amount === 0 ? '' : formData.amount}
                             onChange={(e) => setFormData({...formData, amount: Number(e.target.value)})}
                         />
                     </div>
@@ -406,11 +412,19 @@ const Finance: React.FC = () => {
 
                     <button 
                         type="submit" 
-                        className={`w-full py-3 rounded-xl font-bold text-white transition ${
+                        disabled={isSubmitting}
+                        className={`w-full py-3 rounded-xl font-bold text-white transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                             txType === 'in' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'
                         }`}
                     >
-                        {editingTxId ? 'حفظ التغييرات' : 'تأكيد العملية'}
+                         {isSubmitting ? (
+                            <>
+                                <Loader2 className="animate-spin" size={20} />
+                                <span>جاري المعالجة...</span>
+                            </>
+                        ) : (
+                            <span>{editingTxId ? 'حفظ التغييرات' : 'تأكيد العملية'}</span>
+                        )}
                     </button>
                 </form>
             </div>

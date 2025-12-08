@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Truck, Plus, Trash2, Save, ShoppingCart, User, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -159,11 +160,13 @@ const Purchases: React.FC = () => {
                                 </select>
                                 <input 
                                     type="number" placeholder="الكمية" className="w-20 p-2 border rounded-lg text-sm"
-                                    value={tempProduct.qty} onChange={e => setTempProduct({...tempProduct, qty: Number(e.target.value)})}
+                                    value={tempProduct.qty || ''}
+                                    onChange={e => setTempProduct({...tempProduct, qty: Number(e.target.value)})}
                                 />
                                 <input 
                                     type="number" placeholder="التكلفة" className="w-24 p-2 border rounded-lg text-sm"
-                                    value={tempProduct.cost} onChange={e => setTempProduct({...tempProduct, cost: Number(e.target.value)})}
+                                    value={tempProduct.cost === 0 ? '' : tempProduct.cost}
+                                    onChange={e => setTempProduct({...tempProduct, cost: Number(e.target.value)})}
                                 />
                                 <button 
                                     onClick={addToCart}
@@ -206,7 +209,8 @@ const Purchases: React.FC = () => {
                                 <input 
                                     type="number" 
                                     className="w-full p-3 border rounded-lg font-bold text-emerald-700"
-                                    value={paidAmount}
+                                    value={paidAmount === 0 ? '' : paidAmount}
+                                    placeholder="0"
                                     onChange={e => setPaidAmount(Number(e.target.value))}
                                 />
                             </div>
