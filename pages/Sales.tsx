@@ -419,7 +419,7 @@ const Sales: React.FC = () => {
                                         <input 
                                             type="number" 
                                             className="w-20 px-2 py-0.5 text-sm font-bold text-emerald-600 bg-white border border-gray-200 rounded focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
-                                            value={item.priceAtSale === 0 ? '' : item.priceAtSale}
+                                            value={item.priceAtSale || ''}
                                             placeholder="0"
                                             onChange={(e) => updatePrice(item.productId, Number(e.target.value))}
                                             onFocus={(e) => e.target.select()}
@@ -519,7 +519,15 @@ const Sales: React.FC = () => {
                                 <td className="px-6 py-4 font-mono text-xs text-gray-500">{inv.id.slice(-6)}</td>
                                 <td className="px-6 py-4 text-sm text-gray-600">{new Date(inv.date).toLocaleDateString('ar-MA')}</td>
                                 <td className="px-6 py-4 font-bold text-gray-800">{inv.customerName}</td>
-                                <td className="px-6 py-4 text-sm text-gray-600">{inv.items.length} منتجات</td>
+                                <td className="px-6 py-4 text-sm text-gray-600">
+                                    <div className="font-bold text-gray-800">
+                                        {inv.items.length === 1 
+                                            ? `1 "${inv.items[0].productName}"` 
+                                            : `${inv.items.length} منتجات`
+                                        }
+                                        {inv.items.length > 1 && <span className="text-xs font-normal text-gray-400 mr-1">...</span>}
+                                    </div>
+                                </td>
                                 <td className="px-6 py-4 font-bold text-emerald-600">{inv.total} {CURRENCY}</td>
                                 <td className="px-6 py-4 text-sm text-gray-600">{inv.paidAmount}</td>
                                 <td className="px-6 py-4">

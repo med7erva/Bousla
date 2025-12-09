@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getPaymentMethods, ensurePaymentMethodsExist, getTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction, getClients, getSuppliers, getEmployees } from '../services/db';
@@ -368,7 +369,7 @@ const Finance: React.FC = () => {
                             required 
                             type="number" 
                             className="w-full p-2.5 border rounded-lg font-bold text-lg"
-                            value={formData.amount === 0 ? '' : formData.amount}
+                            value={formData.amount || ''}
                             onChange={(e) => setFormData({...formData, amount: Number(e.target.value)})}
                         />
                     </div>

@@ -260,7 +260,7 @@ const Reports: React.FC = () => {
                     <button 
                         onClick={handleExportPDF}
                         disabled={exporting}
-                        className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2.5 rounded-xl hover:bg-slate-900 transition shadow-sm font-bold text-sm disabled:opacity-70"
+                        className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2.5 rounded-xl hover:bg-emerald-700 transition shadow-sm font-bold text-sm disabled:opacity-70"
                     >
                         {exporting ? <Loader2 className="animate-spin" size={18} /> : <FileDown size={18} />}
                         تصدير PDF

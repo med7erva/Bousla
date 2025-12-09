@@ -40,7 +40,7 @@ const Suppliers: React.FC = () => {
 
     // Dropdown State
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-    const menuRef = useRef<HTMLDivElement>(null);
+    const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
 
     const loadData = async () => {
         if (!user) return;
@@ -55,13 +55,10 @@ const Suppliers: React.FC = () => {
 
     useEffect(() => {
         loadData();
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setActiveMenuId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        // Close menu on scroll to handle fixed positioning logic
+        const handleScroll = () => setActiveMenuId(null);
+        window.addEventListener('scroll', handleScroll, true);
+        return () => window.removeEventListener('scroll', handleScroll, true);
     }, [user]);
 
     const handleAdd = async (e: React.FormEvent) => {
@@ -136,13 +133,15 @@ const Suppliers: React.FC = () => {
         s.name.includes(searchTerm) || s.phone.includes(searchTerm)
     );
 
+    const activeSupplier = suppliers.find(s => s.id === activeMenuId);
+
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" onClick={() => setActiveMenuId(null)}>
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-gray-800">الموردين</h1>
                 <button 
                     onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-xl hover:bg-slate-900 transition shadow-sm"
+                    className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl hover:bg-emerald-700 transition shadow-sm"
                 >
                     <Plus size={20} />
                     <span>مورد جديد</span>
@@ -163,7 +162,7 @@ const Suppliers: React.FC = () => {
                 <input 
                     type="text" 
                     placeholder="بحث باسم المورد..." 
-                    className="w-full pl-4 pr-12 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-slate-500"
+                    className="w-full pl-4 pr-12 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -172,24 +171,20 @@ const Suppliers: React.FC = () => {
             {/* Suppliers Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filtered.map(supplier => (
-                    <div key={supplier.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition relative">
-                         <div className="absolute top-4 left-4">
+                    <div key={supplier.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition relative group">
+                         <div className="absolute top-4 left-4 z-10">
                              <button 
-                                onMouseDown={(e) => { e.preventDefault(); setActiveMenuId(activeMenuId === supplier.id ? null : supplier.id); }}
-                                className="text-gray-400 hover:text-gray-600 p-1"
+                                onClick={(e) => { 
+                                    e.preventDefault(); 
+                                    e.stopPropagation();
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    setMenuPos({ top: rect.bottom, left: rect.left });
+                                    setActiveMenuId(activeMenuId === supplier.id ? null : supplier.id);
+                                }}
+                                className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
                              >
                                  <MoreVertical size={20} />
                              </button>
-                             {activeMenuId === supplier.id && (
-                                 <div ref={menuRef} className="absolute left-0 top-8 w-40 bg-white shadow-xl rounded-lg border border-gray-100 z-10 overflow-hidden">
-                                     <button onMouseDown={(e) => { e.preventDefault(); openEditModal(supplier); }} className="w-full text-right px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                         <Edit2 size={14} /> تعديل
-                                     </button>
-                                     <button onMouseDown={(e) => { e.preventDefault(); handleDeleteSupplier(supplier.id); }} className="w-full text-right px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
-                                         <Trash2 size={14} /> حذف
-                                     </button>
-                                 </div>
-                             )}
                          </div>
 
                         <div className="flex items-start justify-between mb-4">
@@ -229,6 +224,30 @@ const Suppliers: React.FC = () => {
                 ))}
             </div>
 
+            {/* Floating Action Menu - Fixed with Transparent Overlay for reliable closing */}
+            {activeMenuId && activeSupplier && (
+                <>
+                    <div className="fixed inset-0 z-40" onClick={() => setActiveMenuId(null)}></div>
+                    <div 
+                        className="fixed z-50 w-40 bg-white rounded-lg shadow-xl border border-gray-100 animate-in fade-in zoom-in-95 duration-200"
+                        style={{ top: menuPos.top, left: menuPos.left }}
+                    >
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); openEditModal(activeSupplier); }}
+                            className="w-full text-right px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                        >
+                            <Edit2 size={14} /> تعديل
+                        </button>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); handleDeleteSupplier(activeSupplier.id); }}
+                            className="w-full text-right px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-b-lg"
+                        >
+                            <Trash2 size={14} /> حذف
+                        </button>
+                    </div>
+                </>
+            )}
+
             {/* Add Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -254,9 +273,11 @@ const Suppliers: React.FC = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">رصيد افتتاحي (دين)</label>
                                 <input type="number" className="w-full p-2 border rounded-lg"
-                                    value={newSupplier.debt} onChange={e => setNewSupplier({...newSupplier, debt: Number(e.target.value)})} />
+                                    value={newSupplier.debt || ''} 
+                                    onChange={e => setNewSupplier({...newSupplier, debt: Number(e.target.value)})} 
+                                />
                             </div>
-                            <button type="submit" className="w-full bg-slate-800 text-white py-3 rounded-lg font-bold">حفظ</button>
+                            <button type="submit" className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold">حفظ</button>
                             <button type="button" onClick={() => setIsModalOpen(false)} className="w-full text-gray-500 py-2">إلغاء</button>
                         </form>
                     </div>
@@ -287,9 +308,11 @@ const Suppliers: React.FC = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">رصيد الدين (تصحيح)</label>
                                 <input type="number" className="w-full p-2 border rounded-lg"
-                                    value={editingSupplier.debt} onChange={e => setEditingSupplier({...editingSupplier, debt: Number(e.target.value)})} />
+                                    value={editingSupplier.debt || ''} 
+                                    onChange={e => setEditingSupplier({...editingSupplier, debt: Number(e.target.value)})} 
+                                />
                             </div>
-                            <button type="submit" className="w-full bg-slate-800 text-white py-3 rounded-lg font-bold">حفظ التعديلات</button>
+                            <button type="submit" className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold">حفظ التعديلات</button>
                             <button type="button" onClick={() => setIsEditModalOpen(false)} className="w-full text-gray-500 py-2">إلغاء</button>
                         </form>
                     </div>

@@ -48,7 +48,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   return (
-    <div className="min-h-screen flex bg-slate-50 text-slate-900 font-sans selection:bg-emerald-100 selection:text-emerald-900">
+    <div className="h-[100dvh] flex bg-slate-50 text-slate-900 font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-hidden">
       {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div 
@@ -57,15 +57,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Fixed width, full height of viewport */}
       <aside 
         className={`
-          fixed top-0 right-0 z-50 h-full w-72 bg-slate-900 text-white transition-transform duration-300 ease-out shadow-2xl
-          lg:translate-x-0 lg:static lg:block
+          fixed inset-y-0 right-0 z-50 w-72 bg-slate-900 text-white transition-transform duration-300 ease-out shadow-2xl flex flex-col h-full
+          lg:static lg:translate-x-0
           ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}
         `}
       >
-        <div className="h-20 flex items-center px-6 border-b border-slate-800/50">
+        <div className="h-20 shrink-0 flex items-center px-6 border-b border-slate-800/50">
           <Link to="/" className="flex items-center gap-3 group">
             <Compass className="text-emerald-500 w-8 h-8 transition-transform group-hover:rotate-12" />
             <h1 className="text-3xl font-black text-white tracking-tighter">
@@ -74,7 +74,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </Link>
         </div>
 
-        <div className="flex flex-col h-[calc(100vh-5rem)] justify-between">
+        <div className="flex-1 flex flex-col justify-between overflow-hidden min-h-0">
           <div className="p-4 space-y-1 overflow-y-auto custom-scrollbar flex-1">
             <p className="px-4 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 mt-2">القائمة الرئيسية</p>
             <nav className="space-y-1">
@@ -101,7 +101,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </nav>
           </div>
 
-          <div className="p-4 bg-slate-950/30 border-t border-slate-800/50">
+          <div className="p-4 bg-slate-950/30 border-t border-slate-800/50 shrink-0">
              <Link
               to="/ai-chat"
               onClick={() => setIsSidebarOpen(false)}
@@ -128,10 +128,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 transition-all duration-300">
+      {/* Main Content Area - Scrollable */}
+      <main className="flex-1 flex flex-col min-w-0 h-full relative transition-all duration-300">
         {/* Glass Header */}
-        <header className="sticky top-0 z-30 h-20 px-6 lg:px-10 flex items-center justify-between glass-effect border-b border-slate-200/60 shadow-sm">
+        <header className="shrink-0 h-20 px-6 lg:px-10 flex items-center justify-between glass-effect border-b border-slate-200/60 shadow-sm z-30">
           <div className="flex items-center gap-4">
             <button 
               onClick={toggleSidebar}
@@ -164,9 +164,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </header>
 
-        {/* Page Content Container */}
+        {/* Scrollable Page Content */}
         <div className="flex-1 overflow-y-auto p-4 lg:p-8 custom-scrollbar">
-          <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
             {children}
           </div>
         </div>

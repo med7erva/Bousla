@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Wallet, Plus, TrendingDown, Calendar, AlertTriangle, Trash2, LayoutList, Layers, User, AlertOctagon, MoreVertical, Edit2, Save, X, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -230,30 +231,14 @@ const Expenses: React.FC = () => {
         }
     };
 
-    const handleDeleteCategory = async (catId: string) => {
-        if (!user) return;
-        try {
-            if(window.confirm('هل أنت متأكد من حذف هذا الحساب؟')) {
-                await deleteExpenseCategory(user.id, catId);
-                loadData();
-            }
-        } catch (error: any) {
-            if (error.message === 'HAS_EXPENSES') {
-                alert("عذراً، لا يمكن حذف حساب عليه عمليات مالية حالياً. يرجى حذف العمليات المرتبطة به أولاً.");
-            } else {
-                alert("حدث خطأ أثناء حذف الحساب.");
-            }
+    const handleDeleteCategory = async (id: string, isDefault: boolean) => {
+        if (isDefault) return;
+        if (window.confirm("حذف هذا التصنيف؟ سيتم إلغاء تصنيف المصاريف المرتبطة به.")) {
+            if (!user) return;
+            await deleteExpenseCategory(user.id, id);
+            loadData();
         }
     };
-
-    const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
-
-    // Calculate per category for Accounts Tab
-    const expensesByCategory = categories.map(cat => {
-        const total = expenses.filter(e => e.categoryId === cat.id).reduce((sum, e) => sum + e.amount, 0);
-        const count = expenses.filter(e => e.categoryId === cat.id).length;
-        return { ...cat, total, count };
-    });
 
     const activeExpense = expenses.find(e => e.id === activeMenuId);
 
@@ -262,163 +247,134 @@ const Expenses: React.FC = () => {
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-gray-800">المصاريف</h1>
                 
-                <div className="flex bg-white rounded-lg p-1 shadow-sm border border-gray-200">
+                {/* Tabs */}
+                <div className="flex bg-gray-100 p-1 rounded-xl">
                     <button 
                         onClick={() => setActiveTab('expenses')}
-                        className={`px-4 py-2 rounded-md text-sm font-bold transition ${activeTab === 'expenses' ? 'bg-slate-800 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition ${activeTab === 'expenses' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
-                        <LayoutList size={16} className="inline ml-2" />
+                        <LayoutList size={18} />
                         سجل العمليات
                     </button>
                     <button 
                         onClick={() => setActiveTab('accounts')}
-                        className={`px-4 py-2 rounded-md text-sm font-bold transition ${activeTab === 'accounts' ? 'bg-slate-800 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition ${activeTab === 'accounts' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
-                        <Layers size={16} className="inline ml-2" />
+                        <Layers size={18} />
                         إدارة الحسابات
                     </button>
                 </div>
             </div>
 
+            {/* AI Insight (Collapsible) */}
+            <AIInsightAlert 
+                title="تحليل المصاريف"
+                insight={aiTips}
+                icon={TrendingDown}
+                baseColor="rose"
+            />
+
+            {/* --- EXPENSES TAB --- */}
             {activeTab === 'expenses' && (
                 <>
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl p-6 text-white shadow-lg">
-                            <div className="flex items-center gap-3 mb-2 opacity-90">
-                                <Wallet size={24} />
-                                <span className="font-medium">إجمالي المصاريف</span>
-                            </div>
-                            <div className="text-4xl font-bold">{totalExpenses.toLocaleString()} {CURRENCY}</div>
-                        </div>
-
-                        {/* AI Analysis (Collapsible) */}
-                        <div className="md:col-span-2">
-                             <AIInsightAlert 
-                                title="تحليل المصاريف الذكي"
-                                insight={aiTips}
-                                icon={AlertTriangle}
-                                baseColor="rose"
-                            />
-                        </div>
+                    <div className="flex justify-end">
+                        <button 
+                            onClick={() => setIsAddExpenseModalOpen(true)}
+                            className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-3 rounded-xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-200"
+                        >
+                            <Plus size={20} />
+                            <span>تسجيل مصروفات</span>
+                        </button>
                     </div>
 
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-                            <span className="font-bold text-gray-700">سجل العمليات الأخيرة</span>
-                            <button 
-                                onClick={() => setIsAddExpenseModalOpen(true)}
-                                className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition shadow-sm text-sm"
-                            >
-                                <Plus size={16} />
-                                <span>تسجيل مصروفات</span>
-                            </button>
-                        </div>
-                        <div className="divide-y divide-gray-100">
-                            {expenses.length === 0 ? (
-                                <div className="p-8 text-center text-gray-400">لا توجد مصاريف مسجلة</div>
-                            ) : (
-                                expenses.map(exp => (
-                                    <div key={exp.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition relative">
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-gray-100 text-gray-600`}>
-                                                <TrendingDown size={20} />
-                                            </div>
-                                            <div>
-                                                <h4 className="font-bold text-gray-800">{exp.title || exp.categoryName || 'بدون وصف'}</h4>
-                                                <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                                                    <Calendar size={12} />
-                                                    <span>{exp.date}</span>
-                                                    <span className="bg-gray-100 px-2 rounded-full">{exp.categoryName || 'مصروف عام'}</span>
-                                                    {exp.employeeId && (
-                                                        <span className="flex items-center gap-1 text-purple-600 bg-purple-50 px-2 rounded-full">
-                                                            <User size={10} />
-                                                            {employees.find(e => e.id === exp.employeeId)?.name}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <div className="font-bold text-red-600 text-lg">-{exp.amount}</div>
-                                            <button 
-                                                onMouseDown={(e) => { 
-                                                    e.stopPropagation();
-                                                    e.preventDefault();
-                                                    const rect = e.currentTarget.getBoundingClientRect();
-                                                    setMenuPos({ top: rect.bottom, left: rect.left });
-                                                    setActiveMenuId(activeMenuId === exp.id ? null : exp.id);
-                                                }}
-                                                className="text-gray-400 hover:text-gray-600 p-1"
-                                            >
-                                                <MoreVertical size={18} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
+                        <table className="w-full text-right">
+                            <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-semibold">
+                                <tr>
+                                    <th className="px-6 py-4">التاريخ</th>
+                                    <th className="px-6 py-4">العنوان / البيان</th>
+                                    <th className="px-6 py-4">التصنيف</th>
+                                    <th className="px-6 py-4">المبلغ</th>
+                                    <th className="px-6 py-4">إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {expenses.length === 0 ? (
+                                    <tr><td colSpan={5} className="p-8 text-center text-gray-400">لا توجد مصاريف مسجلة</td></tr>
+                                ) : (
+                                    expenses.map(exp => (
+                                        <tr key={exp.id} className="hover:bg-gray-50 group">
+                                            <td className="px-6 py-4 text-sm text-gray-500">{new Date(exp.date).toLocaleDateString('ar-MA')}</td>
+                                            <td className="px-6 py-4 font-medium text-gray-800">{exp.title}</td>
+                                            <td className="px-6 py-4">
+                                                <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold">{exp.categoryName}</span>
+                                            </td>
+                                            <td className="px-6 py-4 font-bold text-red-600">{exp.amount} {CURRENCY}</td>
+                                            <td className="px-6 py-4">
+                                                <button 
+                                                    onClick={(e) => { 
+                                                        e.stopPropagation(); 
+                                                        const rect = e.currentTarget.getBoundingClientRect();
+                                                        setMenuPos({ top: rect.bottom, left: rect.left });
+                                                        setActiveMenuId(activeMenuId === exp.id ? null : exp.id); 
+                                                    }}
+                                                    className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition"
+                                                >
+                                                    <MoreVertical size={18} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </>
             )}
 
+            {/* --- ACCOUNTS TAB --- */}
             {activeTab === 'accounts' && (
-                <div className="space-y-6">
-                    <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex gap-3">
-                        <AlertOctagon className="text-blue-600 shrink-0" />
-                        <div>
-                            <h4 className="font-bold text-blue-900 text-sm">إدارة حسابات الصرف</h4>
-                            <p className="text-blue-800 text-xs mt-1">
-                                هنا يمكنك إضافة تصنيفات مخصصة للمصاريف (مثل: ضيافة، صيانة مكيفات). كن حذراً عند حذف الحسابات.
-                            </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="font-bold text-gray-800">تصنيفات المصاريف</h3>
+                            <button 
+                                onClick={() => setIsAddCategoryModalOpen(true)}
+                                className="text-sm bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg font-bold hover:bg-emerald-100 transition"
+                            >
+                                + إضافة تصنيف
+                            </button>
+                        </div>
+                        <div className="space-y-3">
+                            {categories.map(cat => (
+                                <div key={cat.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                    <span className="font-medium text-gray-700">{cat.name}</span>
+                                    {cat.isDefault ? (
+                                        <span className="text-xs text-gray-400 bg-white px-2 py-1 rounded border">افتراضي</span>
+                                    ) : (
+                                        <button onClick={() => handleDeleteCategory(cat.id, !!cat.isDefault)} className="text-gray-400 hover:text-red-500 p-1">
+                                            <Trash2 size={16} />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
-                         <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-                            <span className="font-bold text-gray-700">قائمة الحسابات</span>
-                            <button 
-                                onClick={() => setIsAddCategoryModalOpen(true)}
-                                className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-900 transition shadow-sm text-sm"
-                            >
-                                <Plus size={16} />
-                                <span>إضافة حساب</span>
-                            </button>
+                    <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100">
+                        <div className="flex items-center gap-3 mb-4 text-emerald-800">
+                            <AlertOctagon />
+                            <h3 className="font-bold">نصيحة مالية</h3>
                         </div>
-                        <table className="w-full text-right">
-                            <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
-                                <tr>
-                                    <th className="px-6 py-4">اسم الحساب</th>
-                                    <th className="px-6 py-4">عدد العمليات</th>
-                                    <th className="px-6 py-4">إجمالي المصروف</th>
-                                    <th className="px-6 py-4">إجراء</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {expensesByCategory.map(cat => (
-                                    <tr key={cat.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 font-bold text-gray-800">{cat.name}</td>
-                                        <td className="px-6 py-4 text-sm">{cat.count} عملية</td>
-                                        <td className="px-6 py-4 font-bold text-red-600">{cat.total} {CURRENCY}</td>
-                                        <td className="px-6 py-4">
-                                            {!cat.isDefault && (
-                                                <button 
-                                                    onClick={() => handleDeleteCategory(cat.id)}
-                                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition"
-                                                    title="حذف الحساب"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                        <p className="text-emerald-700 text-sm leading-relaxed">
+                            قم بتقسيم مصاريفك بدقة (إيجار، رواتب، كهرباء...) لتتمكن من معرفة أين تذهب أموالك بالضبط. 
+                            التحكم في المصاريف الصغيرة هو الخطوة الأولى لزيادة الأرباح.
+                        </p>
                     </div>
                 </div>
             )}
 
-            {/* Floating Action Menu (Fixed Position) - Moved outside the loop/container */}
+            {/* Floating Action Menu */}
             {activeMenuId && activeExpense && (
                 <div 
                     ref={menuRef} 
@@ -426,13 +382,13 @@ const Expenses: React.FC = () => {
                     style={{ top: menuPos.top, left: menuPos.left }}
                 >
                     <button 
-                        onMouseDown={(e) => { e.preventDefault(); openEditModal(activeExpense); }}
+                        onClick={() => openEditModal(activeExpense)}
                         className="w-full text-right px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                     >
                         <Edit2 size={14} /> تعديل
                     </button>
                     <button 
-                        onMouseDown={(e) => { e.preventDefault(); handleDeleteExpense(activeExpense.id); }}
+                        onClick={() => handleDeleteExpense(activeExpense.id)}
                         className="w-full text-right px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-b-lg"
                     >
                         <Trash2 size={14} /> حذف
@@ -440,209 +396,183 @@ const Expenses: React.FC = () => {
                 </div>
             )}
 
-            {/* Add Expense BATCH Modal */}
+            {/* Batch Expense Modal */}
             {isAddExpenseModalOpen && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-3xl p-6 shadow-xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-bold text-gray-800">تسجيل مصاريف (متعدد)</h2>
-                            <button onClick={() => setIsAddExpenseModalOpen(false)} className="text-gray-400 hover:text-gray-800">
-                                <X size={24} />
-                            </button>
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+                        <div className="p-6 bg-gray-50 border-b border-gray-100 flex justify-between items-center shrink-0">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-800">تسجيل مصروفات جديدة</h2>
+                                <p className="text-sm text-gray-500">يمكنك إضافة عدة مصاريف دفعة واحدة</p>
+                            </div>
+                            <button onClick={() => setIsAddExpenseModalOpen(false)}><X size={24} className="text-gray-400" /></button>
                         </div>
-                        
-                        <form onSubmit={handleSaveBatch} className="space-y-6">
-                            
-                            {/* Header: Date & Payment Method */}
-                            <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+
+                        <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+                            <div className="grid grid-cols-2 gap-4 mb-6 bg-blue-50 p-4 rounded-xl border border-blue-100">
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 mb-1">التاريخ</label>
+                                    <label className="block text-xs font-bold text-blue-700 mb-1">تاريخ المصروفات</label>
                                     <input 
                                         type="date" 
-                                        className="w-full p-2 border rounded-lg bg-white"
-                                        value={batchDate} 
-                                        onChange={e => setBatchDate(e.target.value)} 
+                                        className="w-full p-2 border border-blue-200 rounded-lg bg-white text-sm"
+                                        value={batchDate}
+                                        onChange={(e) => setBatchDate(e.target.value)}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-500 mb-1">طريقة الدفع</label>
+                                    <label className="block text-xs font-bold text-blue-700 mb-1">طريقة الدفع (الخزينة)</label>
                                     <select 
-                                        className="w-full p-2 border rounded-lg bg-white"
+                                        className="w-full p-2 border border-blue-200 rounded-lg bg-white text-sm"
                                         value={batchPaymentMethodId}
-                                        onChange={e => setBatchPaymentMethodId(e.target.value)}
-                                        required
+                                        onChange={(e) => setBatchPaymentMethodId(e.target.value)}
                                     >
                                         {paymentMethods.map(pm => (
-                                            <option key={pm.id} value={pm.id}>{pm.name} (رصيد: {pm.balance})</option>
+                                            <option key={pm.id} value={pm.id}>{pm.name}</option>
                                         ))}
                                     </select>
                                 </div>
                             </div>
 
-                            {/* Rows */}
                             <div className="space-y-3">
-                                {expenseRows.map((row, index) => {
-                                    // Check if Salary category selected for this row
-                                    const catName = categories.find(c => c.id === row.categoryId)?.name || '';
-                                    const isSalaryRow = catName.includes('رواتب') || catName.includes('Salaries');
-
-                                    return (
-                                        <div key={row.id} className="flex flex-col md:flex-row gap-2 items-start md:items-center p-3 border border-gray-200 rounded-lg hover:border-emerald-300 transition bg-white">
-                                            <div className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-xs font-bold text-gray-500 shrink-0">
-                                                {index + 1}
+                                {expenseRows.map((row, index) => (
+                                    <div key={row.id} className="flex gap-2 items-start animate-in slide-in-from-right-4 duration-300">
+                                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-500 mt-1 shrink-0">
+                                            {index + 1}
+                                        </div>
+                                        <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-2">
+                                            <div className="md:col-span-3">
+                                                <select 
+                                                    className="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white transition"
+                                                    value={row.categoryId}
+                                                    onChange={(e) => updateRow(row.id, 'categoryId', e.target.value)}
+                                                >
+                                                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                                </select>
                                             </div>
                                             
-                                            <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-2 w-full">
-                                                {/* Category */}
+                                            {/* Show Employee Dropdown ONLY if "Salaries" (رواتب) category is selected */}
+                                            {categories.find(c => c.id === row.categoryId)?.name === 'رواتب' ? (
                                                 <div className="md:col-span-3">
                                                     <select 
-                                                        className="w-full p-2 border rounded-md text-sm outline-none focus:ring-1 focus:ring-emerald-500"
-                                                        value={row.categoryId}
-                                                        onChange={(e) => updateRow(row.id, 'categoryId', e.target.value)}
-                                                        required
+                                                        className="w-full p-2 border rounded-lg text-sm bg-gray-50 focus:bg-white transition"
+                                                        value={row.employeeId}
+                                                        onChange={(e) => updateRow(row.id, 'employeeId', e.target.value)}
                                                     >
-                                                        {categories.map(cat => (
-                                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                                        ))}
+                                                        <option value="">اختر الموظف...</option>
+                                                        {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
                                                     </select>
                                                 </div>
-
-                                                {/* Amount */}
-                                                <div className="md:col-span-2">
-                                                    <input 
-                                                        type="number" 
-                                                        placeholder="المبلغ" 
-                                                        className="w-full p-2 border rounded-md text-sm font-bold text-red-600 outline-none focus:ring-1 focus:ring-emerald-500"
-                                                        value={row.amount || ''}
-                                                        onChange={(e) => updateRow(row.id, 'amount', Number(e.target.value))}
-                                                        min="0"
-                                                        required
-                                                    />
-                                                </div>
-
-                                                {/* Description / Employee */}
-                                                <div className={isSalaryRow ? "md:col-span-3" : "md:col-span-7"}>
-                                                    <input 
+                                            ) : (
+                                                <div className="md:col-span-3">
+                                                     <input 
                                                         type="text" 
-                                                        placeholder={catName || "الوصف (اختياري)"} 
-                                                        className="w-full p-2 border rounded-md text-sm outline-none focus:ring-1 focus:ring-emerald-500"
+                                                        placeholder="تفاصيل المصروف..." 
+                                                        className="w-full p-2 border rounded-lg text-sm"
                                                         value={row.title}
                                                         onChange={(e) => updateRow(row.id, 'title', e.target.value)}
                                                     />
                                                 </div>
+                                            )}
 
-                                                {isSalaryRow && (
-                                                    <div className="md:col-span-4 animate-in fade-in">
-                                                        <select 
-                                                            className="w-full p-2 border border-purple-200 rounded-md text-sm outline-none bg-purple-50 text-purple-700"
-                                                            value={row.employeeId}
-                                                            onChange={(e) => updateRow(row.id, 'employeeId', e.target.value)}
-                                                            required
-                                                        >
-                                                            <option value="">اختر الموظف...</option>
-                                                            {employees.map(emp => (
-                                                                <option key={emp.id} value={emp.id}>{emp.name}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                )}
+                                            <div className="md:col-span-3">
+                                                <div className="relative">
+                                                    <input 
+                                                        type="number" 
+                                                        placeholder="المبلغ" 
+                                                        className="w-full p-2 border rounded-lg text-sm font-bold text-red-600"
+                                                        value={row.amount || ''}
+                                                        onChange={(e) => updateRow(row.id, 'amount', Number(e.target.value))}
+                                                    />
+                                                    <span className="absolute left-2 top-2 text-xs text-gray-400">{CURRENCY}</span>
+                                                </div>
                                             </div>
 
-                                            {/* Delete Row */}
-                                            {expenseRows.length > 1 && (
-                                                <button 
-                                                    type="button" 
-                                                    onClick={() => removeRow(row.id)}
-                                                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition shrink-0"
-                                                >
+                                            <div className="md:col-span-1 flex justify-center">
+                                                <button onClick={() => removeRow(row.id)} className="text-gray-400 hover:text-red-500 p-2">
                                                     <Trash2 size={18} />
                                                 </button>
-                                            )}
+                                            </div>
                                         </div>
-                                    );
-                                })}
+                                    </div>
+                                ))}
                             </div>
+                            
+                            <button 
+                                onClick={addRow}
+                                className="mt-4 flex items-center gap-2 text-sm font-bold text-emerald-600 hover:bg-emerald-50 px-3 py-2 rounded-lg transition"
+                            >
+                                <Plus size={16} /> إضافة سطر جديد
+                            </button>
+                        </div>
 
-                            {/* Footer Actions */}
-                            <div className="flex justify-between items-center pt-2">
-                                <button 
-                                    type="button" 
-                                    onClick={addRow}
-                                    className="flex items-center gap-2 text-emerald-600 font-bold hover:bg-emerald-50 px-3 py-2 rounded-lg transition text-sm"
-                                >
-                                    <Plus size={18} />
-                                    إضافة بند آخر
-                                </button>
-                                
-                                <div className="text-xl font-bold text-gray-800">
-                                    الإجمالي: <span className="text-red-600">{calculateTotalBatch().toLocaleString()} {CURRENCY}</span>
-                                </div>
+                        <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-between items-center shrink-0">
+                            <div>
+                                <span className="text-sm text-gray-500 block">الإجمالي الكلي</span>
+                                <span className="text-2xl font-black text-slate-800">{calculateTotalBatch()} {CURRENCY}</span>
                             </div>
-
-                            <div className="border-t border-gray-100 pt-4 flex gap-3">
-                                <button 
-                                    type="submit" 
-                                    disabled={isSubmitting}
-                                    className="flex-1 bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
-                                >
-                                    {isSubmitting ? <Loader2 className="animate-spin" /> : <Save size={20} />}
-                                    <span>{isSubmitting ? 'جاري الحفظ...' : 'حفظ الفاتورة'}</span>
-                                </button>
-                                <button 
-                                    type="button" 
-                                    onClick={() => setIsAddExpenseModalOpen(false)} 
-                                    className="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition"
-                                >
-                                    إلغاء
-                                </button>
-                            </div>
-                        </form>
+                            <button 
+                                onClick={handleSaveBatch}
+                                disabled={isSubmitting}
+                                className="bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-emerald-700 transition shadow-lg shadow-emerald-200 disabled:opacity-50 flex items-center gap-2"
+                            >
+                                {isSubmitting ? <Loader2 className="animate-spin" /> : <Save size={20} />}
+                                <span>حفظ المصاريف</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
 
-             {/* Edit Expense Modal (Single Edit remains simple) */}
-             {isEditExpenseModalOpen && editingExpense && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            {/* Edit Modal */}
+            {isEditExpenseModalOpen && editingExpense && (
+                <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
                     <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl animate-in zoom-in-95 duration-200">
-                        <h2 className="text-xl font-bold mb-4">تعديل مصروف</h2>
+                        <h2 className="text-xl font-bold mb-6 text-gray-800">تعديل مصروف</h2>
                         <form onSubmit={handleUpdateExpense} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">حساب المصروف</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">التصنيف</label>
                                 <select 
-                                    className="w-full p-2 border rounded-lg bg-gray-50"
-                                    value={editingExpense.categoryId} 
-                                    onChange={e => setEditingExpense({...editingExpense, categoryId: e.target.value})}
+                                    className="w-full p-2 border rounded-lg"
+                                    value={editingExpense.categoryId}
+                                    onChange={(e) => setEditingExpense({...editingExpense, categoryId: e.target.value})}
                                 >
-                                    {categories.map(cat => (
-                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                    ))}
+                                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
                             </div>
-
-                            <input type="text" placeholder="الوصف (اختياري)" className="w-full p-2 border rounded-lg"
-                                value={editingExpense.title} onChange={e => setEditingExpense({...editingExpense, title: e.target.value})} />
-                            
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">المبلغ (تصحيح)</label>
-                                    <input required type="number" className="w-full p-2 border rounded-lg"
-                                        value={editingExpense.amount} onChange={e => setEditingExpense({...editingExpense, amount: Number(e.target.value)})} />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">التاريخ</label>
-                                    <input type="date" className="w-full p-2 border rounded-lg"
-                                        value={editingExpense.date} onChange={e => setEditingExpense({...editingExpense, date: e.target.value})} />
-                                </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">العنوان / التفاصيل</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full p-2 border rounded-lg"
+                                    value={editingExpense.title}
+                                    onChange={(e) => setEditingExpense({...editingExpense, title: e.target.value})}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">المبلغ</label>
+                                <input 
+                                    type="number" 
+                                    className="w-full p-2 border rounded-lg"
+                                    value={editingExpense.amount || ''}
+                                    onChange={(e) => setEditingExpense({...editingExpense, amount: Number(e.target.value)})}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">التاريخ</label>
+                                <input 
+                                    type="date" 
+                                    className="w-full p-2 border rounded-lg"
+                                    value={editingExpense.date.split('T')[0]}
+                                    onChange={(e) => setEditingExpense({...editingExpense, date: e.target.value})}
+                                />
                             </div>
                             <button 
                                 type="submit" 
                                 disabled={isSubmitting}
-                                className="w-full bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900 mt-2 flex justify-center items-center gap-2"
+                                className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold hover:bg-emerald-700 flex justify-center"
                             >
                                 {isSubmitting ? <Loader2 className="animate-spin" /> : 'حفظ التعديلات'}
                             </button>
-                            <button type="button" onClick={() => setIsEditExpenseModalOpen(false)} className="w-full text-gray-500 py-2">إلغاء</button>
                         </form>
                     </div>
                 </div>
@@ -650,29 +580,27 @@ const Expenses: React.FC = () => {
 
             {/* Add Category Modal */}
             {isAddCategoryModalOpen && (
-                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl animate-in zoom-in-95 duration-200">
-                        <h2 className="text-xl font-bold mb-4">إضافة حساب مصروفات</h2>
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl w-full max-w-sm p-6 shadow-xl animate-in zoom-in-95 duration-200">
+                        <h3 className="text-lg font-bold mb-4">تصنيف جديد</h3>
                         <form onSubmit={handleAddCategory} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">اسم الحساب (التصنيف)</label>
-                                <input required type="text" className="w-full p-2 border rounded-lg"
-                                    value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} 
-                                    placeholder="مثلاً: ضيافة، انترنت..."
-                                    autoFocus
-                                />
+                            <input 
+                                autoFocus
+                                type="text" 
+                                placeholder="اسم التصنيف (مثلاً: تسويق)"
+                                className="w-full p-3 border rounded-lg"
+                                value={newCategoryName}
+                                onChange={(e) => setNewCategoryName(e.target.value)}
+                            />
+                            <div className="flex gap-2">
+                                <button type="submit" disabled={isSubmitting} className="flex-1 bg-emerald-600 text-white py-2 rounded-lg font-bold">
+                                    {isSubmitting ? <Loader2 className="animate-spin mx-auto"/> : 'إضافة'}
+                                </button>
+                                <button type="button" onClick={() => setIsAddCategoryModalOpen(false)} className="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg font-bold">إلغاء</button>
                             </div>
-                            <button 
-                                type="submit" 
-                                disabled={isSubmitting}
-                                className="w-full bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900 mt-2 flex justify-center items-center gap-2"
-                            >
-                                {isSubmitting ? <Loader2 className="animate-spin" /> : 'إضافة الحساب'}
-                            </button>
-                            <button type="button" onClick={() => setIsAddCategoryModalOpen(false)} className="w-full text-gray-500 py-2">إلغاء</button>
                         </form>
                     </div>
-                 </div>
+                </div>
             )}
         </div>
     );

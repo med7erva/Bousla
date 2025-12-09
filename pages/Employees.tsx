@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { UserPlus, User, Phone, Briefcase, DollarSign, Calendar, Users, Wallet } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -85,7 +86,7 @@ const Employees: React.FC = () => {
                 </div>
                 <button 
                     onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-xl hover:bg-slate-900 transition shadow-sm"
+                    className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl hover:bg-emerald-700 transition shadow-sm"
                 >
                     <UserPlus size={20} />
                     <span>موظف جديد</span>
@@ -187,7 +188,7 @@ const Employees: React.FC = () => {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">الراتب الشهري</label>
                                     <input required type="number" className="w-full p-2.5 border rounded-lg"
-                                        value={newEmp.salary} onChange={e => setNewEmp({...newEmp, salary: Number(e.target.value)})} />
+                                        value={newEmp.salary || ''} onChange={e => setNewEmp({...newEmp, salary: Number(e.target.value)})} />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">تاريخ التعيين</label>
@@ -197,7 +198,7 @@ const Employees: React.FC = () => {
                             </div>
 
                             <div className="pt-4 flex gap-3">
-                                <button type="submit" className="flex-1 bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-slate-900 transition">حفظ البيانات</button>
+                                <button type="submit" className="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition">حفظ البيانات</button>
                                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition">إلغاء</button>
                             </div>
                         </form>

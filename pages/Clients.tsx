@@ -37,7 +37,7 @@ const Clients: React.FC = () => {
 
     // Dropdown State
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-    const menuRef = useRef<HTMLDivElement>(null);
+    const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
 
     const loadClients = async () => {
         if (!user) return;
@@ -52,13 +52,10 @@ const Clients: React.FC = () => {
 
     useEffect(() => {
         loadClients();
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setActiveMenuId(null);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        // Close menu on scroll
+        const handleScroll = () => setActiveMenuId(null);
+        window.addEventListener('scroll', handleScroll, true);
+        return () => window.removeEventListener('scroll', handleScroll, true);
     }, [user]);
 
     const handleAddClient = async (e: React.FormEvent) => {
@@ -129,8 +126,10 @@ const Clients: React.FC = () => {
         c.name.includes(searchTerm) || c.phone.includes(searchTerm)
     );
 
+    const activeClient = clients.find(c => c.id === activeMenuId);
+
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" onClick={() => setActiveMenuId(null)}>
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-gray-800">إدارة العملاء</h1>
                 <button 
@@ -163,24 +162,20 @@ const Clients: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredClients.map(client => (
-                    <div key={client.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition relative">
-                         <div className="absolute top-4 left-4">
+                    <div key={client.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition relative group">
+                         <div className="absolute top-4 left-4 z-10">
                              <button 
-                                onMouseDown={(e) => { e.preventDefault(); setActiveMenuId(activeMenuId === client.id ? null : client.id); }}
-                                className="text-gray-400 hover:text-gray-600 p-1"
+                                onClick={(e) => { 
+                                    e.preventDefault(); 
+                                    e.stopPropagation();
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    setMenuPos({ top: rect.bottom, left: rect.left });
+                                    setActiveMenuId(activeMenuId === client.id ? null : client.id);
+                                }}
+                                className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
                              >
                                  <MoreVertical size={20} />
                              </button>
-                             {activeMenuId === client.id && (
-                                 <div ref={menuRef} className="absolute left-0 top-8 w-40 bg-white shadow-xl rounded-lg border border-gray-100 z-10 overflow-hidden">
-                                     <button onMouseDown={(e) => { e.preventDefault(); openEditModal(client); }} className="w-full text-right px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                         <Edit2 size={14} /> تعديل
-                                     </button>
-                                     <button onMouseDown={(e) => { e.preventDefault(); handleDeleteClient(client.id); }} className="w-full text-right px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
-                                         <Trash2 size={14} /> حذف
-                                     </button>
-                                 </div>
-                             )}
                          </div>
 
                         <div className="flex items-start justify-between mb-4">
@@ -227,6 +222,30 @@ const Clients: React.FC = () => {
                 ))}
             </div>
 
+            {/* Floating Action Menu - Fixed with Transparent Overlay */}
+            {activeMenuId && activeClient && (
+                 <>
+                    <div className="fixed inset-0 z-40" onClick={() => setActiveMenuId(null)}></div>
+                    <div 
+                        className="fixed z-50 w-40 bg-white rounded-lg shadow-xl border border-gray-100 animate-in fade-in zoom-in-95 duration-200"
+                        style={{ top: menuPos.top, left: menuPos.left }}
+                    >
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); openEditModal(activeClient); }}
+                            className="w-full text-right px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                        >
+                            <Edit2 size={14} /> تعديل
+                        </button>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); handleDeleteClient(activeClient.id); }}
+                            className="w-full text-right px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-b-lg"
+                        >
+                            <Trash2 size={14} /> حذف
+                        </button>
+                    </div>
+                 </>
+             )}
+
             {/* Add Client Modal */}
             {isAddModalOpen && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -238,7 +257,9 @@ const Clients: React.FC = () => {
                             <input required type="text" placeholder="رقم الهاتف" className="w-full p-2 border rounded-lg"
                                 value={newClient.phone} onChange={e => setNewClient({...newClient, phone: e.target.value})} />
                             <input type="number" placeholder="ديون سابقة (اختياري)" className="w-full p-2 border rounded-lg"
-                                value={newClient.debt} onChange={e => setNewClient({...newClient, debt: Number(e.target.value)})} />
+                                value={newClient.debt || ''} 
+                                onChange={e => setNewClient({...newClient, debt: Number(e.target.value)})} 
+                            />
                             <button type="submit" className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold">حفظ</button>
                             <button type="button" onClick={() => setIsAddModalOpen(false)} className="w-full text-gray-500 py-2">إلغاء</button>
                         </form>
@@ -266,7 +287,9 @@ const Clients: React.FC = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">رصيد الدين (تصحيح)</label>
                                 <input type="number" className="w-full p-2 border rounded-lg"
-                                    value={editingClient.debt} onChange={e => setEditingClient({...editingClient, debt: Number(e.target.value)})} />
+                                    value={editingClient.debt || ''} 
+                                    onChange={e => setEditingClient({...editingClient, debt: Number(e.target.value)})} 
+                                />
                             </div>
                             <button type="submit" className="w-full bg-slate-800 text-white py-3 rounded-lg font-bold">حفظ التعديلات</button>
                             <button type="button" onClick={() => setIsEditModalOpen(false)} className="w-full text-gray-500 py-2">إلغاء</button>

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { 
     Monitor, 
@@ -105,7 +106,7 @@ const Settings: React.FC = () => {
                 <button 
                     onClick={handleSave}
                     disabled={saving}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-white transition-all shadow-md ${success ? 'bg-emerald-500' : 'bg-slate-900 hover:bg-slate-800'}`}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-white transition-all shadow-md ${success ? 'bg-emerald-500' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                 >
                     {saving ? <Loader2 className="animate-spin" size={20} /> : success ? <Check size={20} /> : <Save size={20} />}
                     <span>{saving ? 'جاري الحفظ...' : success ? 'تم الحفظ' : 'حفظ التغييرات'}</span>
@@ -188,13 +189,13 @@ const Settings: React.FC = () => {
                                         <div className="flex gap-2">
                                             <button 
                                                 onClick={() => updateSetting('system', 'dataView', 'compact')}
-                                                className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold border transition ${settings.system.dataView === 'compact' ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-gray-200'}`}
+                                                className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold border transition ${settings.system.dataView === 'compact' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-600 border-gray-200'}`}
                                             >
                                                 مختصر
                                             </button>
                                             <button 
                                                 onClick={() => updateSetting('system', 'dataView', 'detailed')}
-                                                className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold border transition ${settings.system.dataView === 'detailed' ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-gray-200'}`}
+                                                className={`flex-1 py-2 px-3 rounded-lg text-sm font-bold border transition ${settings.system.dataView === 'detailed' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-600 border-gray-200'}`}
                                             >
                                                 تفصيلي
                                             </button>
