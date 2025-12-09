@@ -288,46 +288,48 @@ const Expenses: React.FC = () => {
                     </div>
 
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        <table className="w-full text-right">
-                            <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-semibold">
-                                <tr>
-                                    <th className="px-6 py-4">التاريخ</th>
-                                    <th className="px-6 py-4">العنوان / البيان</th>
-                                    <th className="px-6 py-4">التصنيف</th>
-                                    <th className="px-6 py-4">المبلغ</th>
-                                    <th className="px-6 py-4">إجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {expenses.length === 0 ? (
-                                    <tr><td colSpan={5} className="p-8 text-center text-gray-400">لا توجد مصاريف مسجلة</td></tr>
-                                ) : (
-                                    expenses.map(exp => (
-                                        <tr key={exp.id} className="hover:bg-gray-50 group">
-                                            <td className="px-6 py-4 text-sm text-gray-500">{new Date(exp.date).toLocaleDateString('ar-MA')}</td>
-                                            <td className="px-6 py-4 font-medium text-gray-800">{exp.title}</td>
-                                            <td className="px-6 py-4">
-                                                <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold">{exp.categoryName}</span>
-                                            </td>
-                                            <td className="px-6 py-4 font-bold text-red-600">{exp.amount} {CURRENCY}</td>
-                                            <td className="px-6 py-4">
-                                                <button 
-                                                    onClick={(e) => { 
-                                                        e.stopPropagation(); 
-                                                        const rect = e.currentTarget.getBoundingClientRect();
-                                                        setMenuPos({ top: rect.bottom, left: rect.left });
-                                                        setActiveMenuId(activeMenuId === exp.id ? null : exp.id); 
-                                                    }}
-                                                    className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition"
-                                                >
-                                                    <MoreVertical size={18} />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-right whitespace-nowrap min-w-[600px]">
+                                <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-semibold">
+                                    <tr>
+                                        <th className="px-6 py-4">التاريخ</th>
+                                        <th className="px-6 py-4">العنوان / البيان</th>
+                                        <th className="px-6 py-4">التصنيف</th>
+                                        <th className="px-6 py-4">المبلغ</th>
+                                        <th className="px-6 py-4">إجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {expenses.length === 0 ? (
+                                        <tr><td colSpan={5} className="p-8 text-center text-gray-400">لا توجد مصاريف مسجلة</td></tr>
+                                    ) : (
+                                        expenses.map(exp => (
+                                            <tr key={exp.id} className="hover:bg-gray-50 group">
+                                                <td className="px-6 py-4 text-sm text-gray-500">{new Date(exp.date).toLocaleDateString('ar-MA')}</td>
+                                                <td className="px-6 py-4 font-medium text-gray-800">{exp.title}</td>
+                                                <td className="px-6 py-4">
+                                                    <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold">{exp.categoryName}</span>
+                                                </td>
+                                                <td className="px-6 py-4 font-bold text-red-600">{exp.amount} {CURRENCY}</td>
+                                                <td className="px-6 py-4">
+                                                    <button 
+                                                        onClick={(e) => { 
+                                                            e.stopPropagation(); 
+                                                            const rect = e.currentTarget.getBoundingClientRect();
+                                                            setMenuPos({ top: rect.bottom, left: rect.left });
+                                                            setActiveMenuId(activeMenuId === exp.id ? null : exp.id); 
+                                                        }}
+                                                        className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition"
+                                                    >
+                                                        <MoreVertical size={18} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </>
             )}
