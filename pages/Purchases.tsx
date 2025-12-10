@@ -1,7 +1,6 @@
 
-
 import React, { useState, useEffect } from 'react';
-import { Truck, Plus, Trash2, Save, ShoppingCart, User, AlertCircle } from 'lucide-react';
+import { Truck, Plus, Trash2, Save, ShoppingCart, User, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getSuppliers, getProducts, createPurchase, getPurchases, getPaymentMethods, ensurePaymentMethodsExist } from '../services/db';
 import { Supplier, Product, PurchaseItem, Purchase, PaymentMethod } from '../types';
@@ -22,7 +21,8 @@ const Purchases: React.FC = () => {
     const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState('');
     const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
     const [cartItems, setCartItems] = useState<PurchaseItem[]>([]);
-    const [paidAmount, setPaidAmount] = useState(0);
+    const [paidAmount, setPaidAmount] = useState<number | string>('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     
     // Temp item input
     const [tempProduct, setTempProduct] = useState({ id: '', qty: 1, cost: 0 });
@@ -76,10 +76,12 @@ const Purchases: React.FC = () => {
 
     const handleSavePurchase = async () => {
         if(!user || !selectedSupplierId || cartItems.length === 0) return;
+        if(isSubmitting) return; // Prevent double click
         
         const supplier = suppliers.find(s => s.id === selectedSupplierId);
         if(!supplier) return;
 
+        setIsSubmitting(true);
         try {
             await createPurchase(
                 user.id,
@@ -87,24 +89,27 @@ const Purchases: React.FC = () => {
                 supplier.name,
                 cartItems,
                 calculateTotal(),
-                paidAmount,
+                Number(paidAmount) || 0,
                 invoiceDate,
                 selectedPaymentMethodId
             );
             
             // Reset and go back to list
             setCartItems([]);
-            setPaidAmount(0);
+            setPaidAmount('');
             setSelectedSupplierId('');
             setView('list');
         } catch (error) {
             alert("حدث خطأ أثناء حفظ الفاتورة");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     if (view === 'create') {
         const total = calculateTotal();
-        const debt = Math.max(0, total - paidAmount);
+        const numericPaid = Number(paidAmount) || 0;
+        const debt = Math.max(0, total - numericPaid);
 
         return (
             <div className="space-y-6">
@@ -146,9 +151,9 @@ const Purchases: React.FC = () => {
                                 <ShoppingCart size={20} className="text-emerald-600" />
                                 المنتجات
                             </h3>
-                            <div className="flex gap-2 mb-4 bg-gray-50 p-3 rounded-xl">
+                            <div className="flex gap-2 mb-4 bg-gray-50 p-3 rounded-xl flex-wrap">
                                 <select 
-                                    className="flex-1 p-2 border rounded-lg text-sm"
+                                    className="flex-1 p-2 border rounded-lg text-sm min-w-[150px]"
                                     value={tempProduct.id}
                                     onChange={e => {
                                         const p = products.find(x => x.id === e.target.value);
@@ -160,7 +165,7 @@ const Purchases: React.FC = () => {
                                 </select>
                                 <input 
                                     type="number" placeholder="الكمية" className="w-20 p-2 border rounded-lg text-sm"
-                                    value={tempProduct.qty || ''}
+                                    value={tempProduct.qty === 0 ? '' : tempProduct.qty}
                                     onChange={e => setTempProduct({...tempProduct, qty: Number(e.target.value)})}
                                 />
                                 <input 
@@ -209,9 +214,9 @@ const Purchases: React.FC = () => {
                                 <input 
                                     type="number" 
                                     className="w-full p-3 border rounded-lg font-bold text-emerald-700"
-                                    value={paidAmount === 0 ? '' : paidAmount}
+                                    value={paidAmount}
                                     placeholder="0"
-                                    onChange={e => setPaidAmount(Number(e.target.value))}
+                                    onChange={e => setPaidAmount(e.target.value === '' ? '' : Number(e.target.value))}
                                 />
                             </div>
                              <div>
@@ -235,11 +240,20 @@ const Purchases: React.FC = () => {
                         </div>
                         <button 
                             onClick={handleSavePurchase}
-                            disabled={cartItems.length === 0 || !selectedSupplierId}
-                            className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition disabled:opacity-50"
+                            disabled={cartItems.length === 0 || !selectedSupplierId || isSubmitting}
+                            className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
                         >
-                            <Save className="inline-block ml-2 w-5 h-5" />
-                            حفظ الفاتورة
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="animate-spin" size={20} />
+                                    <span>جاري الحفظ...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Save size={20} />
+                                    <span>حفظ الفاتورة</span>
+                                </>
+                            )}
                         </button>
                     </div>
                 </div>
@@ -264,8 +278,8 @@ const Purchases: React.FC = () => {
                 </button>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <table className="w-full text-right">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden overflow-x-auto">
+                <table className="w-full text-right min-w-[700px]">
                     <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-semibold">
                         <tr>
                             <th className="px-6 py-4">رقم الفاتورة</th>
@@ -282,12 +296,14 @@ const Purchases: React.FC = () => {
                         ) : (
                             purchases.map(p => (
                                 <tr key={p.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 font-mono text-xs text-gray-500">{p.id}</td>
+                                    <td className="px-6 py-4 font-mono text-xs text-gray-500">{p.id.slice(0, 8)}...</td>
                                     <td className="px-6 py-4 font-bold text-gray-800 flex items-center gap-2">
                                         <Truck size={16} className="text-gray-400" />
                                         {p.supplierName}
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-gray-500">{p.date}</td>
+                                    <td className="px-6 py-4 text-sm text-gray-500" dir="ltr">
+                                        {new Date(p.date).toLocaleDateString('ar-MA')}
+                                    </td>
                                     <td className="px-6 py-4 font-bold">{p.totalCost} {CURRENCY}</td>
                                     <td className="px-6 py-4 text-emerald-600">{p.paidAmount}</td>
                                     <td className="px-6 py-4">
