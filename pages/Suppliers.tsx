@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Briefcase, Phone, Plus, AlertCircle, FileText, Search, X, Truck, ArrowUpRight, ArrowDownLeft, MoreVertical, Edit2, Trash2, Save } from 'lucide-react';
+import { Briefcase, Phone, Plus, AlertCircle, FileText, Search, X, Truck, ArrowUpRight, ArrowDownLeft, MoreVertical, Edit2, Trash2, Save, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getSuppliers, addSupplier, getPurchases, getTransactions, updateSupplier, deleteSupplier } from '../services/db';
 import { getSupplierInsights } from '../services/geminiService';
@@ -33,6 +33,9 @@ const Suppliers: React.FC = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
 
+    // Loading State
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     // History Modal State
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
     const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
@@ -63,25 +66,42 @@ const Suppliers: React.FC = () => {
 
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user) return;
+        if (!user || isSubmitting) return;
         
-        await addSupplier({
-            userId: user.id,
-            ...newSupplier
-        });
-        
-        setIsModalOpen(false);
-        setNewSupplier({ name: '', phone: '', debt: 0, productsSummary: '' });
-        loadData();
+        setIsSubmitting(true);
+        try {
+            await addSupplier({
+                userId: user.id,
+                ...newSupplier
+            });
+            
+            setIsModalOpen(false);
+            setNewSupplier({ name: '', phone: '', debt: 0, productsSummary: '' });
+            loadData();
+        } catch (error) {
+            console.error(error);
+            alert("حدث خطأ أثناء إضافة المورد.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleUpdateSupplier = async (e: React.FormEvent) => {
         e.preventDefault();
-        if(!editingSupplier) return;
-        await updateSupplier(editingSupplier);
-        setIsEditModalOpen(false);
-        setEditingSupplier(null);
-        loadData();
+        if(!editingSupplier || isSubmitting) return;
+
+        setIsSubmitting(true);
+        try {
+            await updateSupplier(editingSupplier);
+            setIsEditModalOpen(false);
+            setEditingSupplier(null);
+            loadData();
+        } catch (error) {
+            console.error(error);
+            alert("حدث خطأ أثناء تحديث بيانات المورد.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleDeleteSupplier = async (id: string) => {
@@ -277,7 +297,13 @@ const Suppliers: React.FC = () => {
                                     onChange={e => setNewSupplier({...newSupplier, debt: Number(e.target.value)})} 
                                 />
                             </div>
-                            <button type="submit" className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold">حفظ</button>
+                            <button 
+                                type="submit" 
+                                disabled={isSubmitting}
+                                className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold flex justify-center items-center gap-2 hover:bg-emerald-700 disabled:opacity-50"
+                            >
+                                {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : 'حفظ'}
+                            </button>
                             <button type="button" onClick={() => setIsModalOpen(false)} className="w-full text-gray-500 py-2">إلغاء</button>
                         </form>
                     </div>
@@ -312,7 +338,13 @@ const Suppliers: React.FC = () => {
                                     onChange={e => setEditingSupplier({...editingSupplier, debt: Number(e.target.value)})} 
                                 />
                             </div>
-                            <button type="submit" className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold">حفظ التعديلات</button>
+                            <button 
+                                type="submit" 
+                                disabled={isSubmitting}
+                                className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold flex justify-center items-center gap-2 hover:bg-emerald-700 disabled:opacity-50"
+                            >
+                                {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : 'حفظ التعديلات'}
+                            </button>
                             <button type="button" onClick={() => setIsEditModalOpen(false)} className="w-full text-gray-500 py-2">إلغاء</button>
                         </form>
                     </div>
