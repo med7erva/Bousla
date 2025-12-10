@@ -718,21 +718,58 @@ export const addFinancialTransaction = async (txData: Omit<FinancialTransaction,
     // Apply impact on Wallet
     const { data: pm } = await supabase.from('payment_methods').select('balance').eq('id', paymentMethodId).single();
     if (pm) {
-        const newBal = type === 'in' ? Number(pm.balance) + amount : Number(pm.balance) - amount;
+        const newBal = type === 'in' ? Number(pm.balance) + Number(amount) : Number(pm.balance) - Number(amount);
         await supabase.from('payment_methods').update({ balance: newBal }).eq('id', paymentMethodId);
     }
 
     return tx;
 };
 
+// Transfer Funds Between Accounts
+export const transferFunds = async (userId: string, fromPmId: string, toPmId: string, amount: number, date: string, description: string) => {
+    // 1. Get Payment Methods names for better history log
+    const { data: fromPm } = await supabase.from('payment_methods').select('name').eq('id', fromPmId).single();
+    const { data: toPm } = await supabase.from('payment_methods').select('name').eq('id', toPmId).single();
+
+    if (!fromPm || !toPm) throw new Error("حساب الدفع غير موجود");
+
+    // 2. Create Out Transaction from Source
+    await addFinancialTransaction({
+        userId,
+        type: 'out',
+        amount: Number(amount),
+        date: date,
+        paymentMethodId: fromPmId,
+        entityType: 'Other', // Internal
+        entityId: null,
+        description: `تحويل إلى: ${toPm.name} ${description ? `(${description})` : ''}`
+    });
+
+    // 3. Create In Transaction to Destination
+    await addFinancialTransaction({
+        userId,
+        type: 'in',
+        amount: Number(amount),
+        date: date,
+        paymentMethodId: toPmId,
+        entityType: 'Other', // Internal
+        entityId: null,
+        description: `تحويل من: ${fromPm.name} ${description ? `(${description})` : ''}`
+    });
+
+    return true;
+};
+
 // Helper to adjust balance for entities
 const adjustEntityBalance = async (entityType: string, entityId: string, txType: 'in' | 'out', amount: number) => {
+    const numAmount = Number(amount);
+    
     if (entityType === 'Client') {
         // Client IN (Receipt) = Debt Decreases
         // Client OUT (Loan) = Debt Increases
         const { data: ent } = await supabase.from('clients').select('debt').eq('id', entityId).single();
         if (ent) {
-            const newDebt = txType === 'in' ? Number(ent.debt) - amount : Number(ent.debt) + amount;
+            const newDebt = txType === 'in' ? Number(ent.debt) - numAmount : Number(ent.debt) + numAmount;
             await supabase.from('clients').update({ debt: newDebt }).eq('id', entityId);
         }
     } else if (entityType === 'Supplier') {
@@ -740,7 +777,7 @@ const adjustEntityBalance = async (entityType: string, entityId: string, txType:
         // Supplier IN (Loan from them) = Debt Increases
         const { data: ent } = await supabase.from('suppliers').select('debt').eq('id', entityId).single();
         if (ent) {
-            const newDebt = txType === 'out' ? Number(ent.debt) - amount : Number(ent.debt) + amount;
+            const newDebt = txType === 'out' ? Number(ent.debt) - numAmount : Number(ent.debt) + numAmount;
             await supabase.from('suppliers').update({ debt: newDebt }).eq('id', entityId);
         }
     } else if (entityType === 'Employee') {
@@ -748,7 +785,7 @@ const adjustEntityBalance = async (entityType: string, entityId: string, txType:
         // Employee IN (Repayment) = Balance Decreases
         const { data: ent } = await supabase.from('employees').select('loan_balance').eq('id', entityId).single();
         if (ent) {
-            const newLoan = txType === 'out' ? Number(ent.loan_balance) + amount : Number(ent.loan_balance) - amount;
+            const newLoan = txType === 'out' ? Number(ent.loan_balance) + numAmount : Number(ent.loan_balance) - numAmount;
             await supabase.from('employees').update({ loan_balance: newLoan }).eq('id', entityId);
         }
     }
@@ -759,34 +796,39 @@ export const updateFinancialTransaction = async (txId: string, newData: Omit<Fin
     const { data: oldTx, error } = await supabase.from('transactions').select('*').eq('id', txId).single();
     if (error || !oldTx) throw new Error("Transaction not found");
 
+    // Optimization: If entity is unchanged, only apply the difference to prevent race conditions
+    // However, simplicity and robustness is preferred over complexity unless absolutely necessary.
+    // The previous implementation had a potential race condition if multiple rapid updates happened.
+    // We will stick to Revert -> Apply but ensure proper Number coercion.
+
     // 2. Revert Old Balances
     if (oldTx.entity_id) {
-        let reverseAmount = -oldTx.amount; // Negative amount reverses the addition
+        let reverseAmount = -Number(oldTx.amount); // Negative amount reverses the addition/subtraction logic in adjustEntityBalance
         await adjustEntityBalance(oldTx.entity_type, oldTx.entity_id, oldTx.type as 'in' | 'out', reverseAmount);
     }
 
     // Reverse Wallet Balance
     const { data: oldPm } = await supabase.from('payment_methods').select('balance').eq('id', oldTx.payment_method_id).single();
     if (oldPm) {
-        const revertBal = oldTx.type === 'in' ? Number(oldPm.balance) - oldTx.amount : Number(oldPm.balance) + oldTx.amount;
+        const revertBal = oldTx.type === 'in' ? Number(oldPm.balance) - Number(oldTx.amount) : Number(oldPm.balance) + Number(oldTx.amount);
         await supabase.from('payment_methods').update({ balance: revertBal }).eq('id', oldTx.payment_method_id);
     }
 
     // 3. Apply New Balances (New Data)
     if (newData.entityId) {
-        await adjustEntityBalance(newData.entityType, newData.entityId, newData.type, newData.amount);
+        await adjustEntityBalance(newData.entityType, newData.entityId, newData.type, Number(newData.amount));
     }
 
     const { data: newPm } = await supabase.from('payment_methods').select('balance').eq('id', newData.paymentMethodId).single();
     if (newPm) {
-        const newBal = newData.type === 'in' ? Number(newPm.balance) + newData.amount : Number(newPm.balance) - newData.amount;
+        const newBal = newData.type === 'in' ? Number(newPm.balance) + Number(newData.amount) : Number(newPm.balance) - Number(newData.amount);
         await supabase.from('payment_methods').update({ balance: newBal }).eq('id', newData.paymentMethodId);
     }
 
     // 4. Update Record
     await supabase.from('transactions').update({
         type: newData.type,
-        amount: newData.amount,
+        amount: Number(newData.amount),
         date: newData.date,
         payment_method_id: newData.paymentMethodId,
         entity_type: newData.entityType,
@@ -803,13 +845,13 @@ export const deleteFinancialTransaction = async (txId: string) => {
     // 2. Revert Balances (Entity & Wallet)
     if (oldTx.entity_id) {
         // Revert by applying negative amount
-        await adjustEntityBalance(oldTx.entity_type, oldTx.entity_id, oldTx.type as 'in' | 'out', -oldTx.amount);
+        await adjustEntityBalance(oldTx.entity_type, oldTx.entity_id, oldTx.type as 'in' | 'out', -Number(oldTx.amount));
     }
 
     const { data: pm } = await supabase.from('payment_methods').select('balance').eq('id', oldTx.payment_method_id).single();
     if (pm) {
         // Revert Wallet
-        const revertBal = oldTx.type === 'in' ? Number(pm.balance) - oldTx.amount : Number(pm.balance) + oldTx.amount;
+        const revertBal = oldTx.type === 'in' ? Number(pm.balance) - Number(oldTx.amount) : Number(pm.balance) + Number(oldTx.amount);
         await supabase.from('payment_methods').update({ balance: revertBal }).eq('id', oldTx.payment_method_id);
     }
 

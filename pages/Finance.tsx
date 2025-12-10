@@ -1,11 +1,10 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getPaymentMethods, ensurePaymentMethodsExist, getTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction, getClients, getSuppliers, getEmployees } from '../services/db';
+import { getPaymentMethods, ensurePaymentMethodsExist, getTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction, getClients, getSuppliers, getEmployees, transferFunds } from '../services/db';
 import { PaymentMethod, FinancialTransaction, Client, Supplier, Employee } from '../types';
 import { CURRENCY } from '../constants';
-import { Landmark, Wallet, Smartphone, ArrowDownLeft, ArrowUpRight, Plus, Minus, User, Briefcase, Users, X, Edit2, Trash2, Loader2 } from 'lucide-react';
+import { Landmark, Wallet, Smartphone, ArrowDownLeft, ArrowUpRight, ArrowRightLeft, User, Briefcase, Users, X, Edit2, Trash2, Loader2 } from 'lucide-react';
 
 const Finance: React.FC = () => {
   const { user } = useAuth();
@@ -19,6 +18,7 @@ const Finance: React.FC = () => {
 
   // Modal State
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false); // New Transfer Modal
   const [txType, setTxType] = useState<'in' | 'out'>('in'); // 'in' = Receipt, 'out' = Payment
   const [editingTxId, setEditingTxId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,6 +31,15 @@ const Finance: React.FC = () => {
       paymentMethodId: '',
       date: new Date().toISOString().split('T')[0],
       description: '',
+  });
+
+  // Transfer Form State
+  const [transferData, setTransferData] = useState({
+      fromId: '',
+      toId: '',
+      amount: 0,
+      date: new Date().toISOString().split('T')[0],
+      description: ''
   });
 
   const loadData = async () => {
@@ -78,7 +87,7 @@ const Finance: React.FC = () => {
               ...prev, 
               amount: 0, 
               description: '', 
-              entityType: 'Client', // reset default
+              entityType: 'Client', 
               entityId: '' 
           }));
       }
@@ -101,7 +110,7 @@ const Finance: React.FC = () => {
               await updateFinancialTransaction(editingTxId, {
                   userId: user.id,
                   type: txType,
-                  amount: formData.amount,
+                  amount: Number(formData.amount),
                   date: formData.date,
                   paymentMethodId: formData.paymentMethodId,
                   entityType: formData.entityType,
@@ -112,7 +121,7 @@ const Finance: React.FC = () => {
               await addFinancialTransaction({
                   userId: user.id,
                   type: txType,
-                  amount: formData.amount,
+                  amount: Number(formData.amount),
                   date: formData.date,
                   paymentMethodId: formData.paymentMethodId,
                   entityType: formData.entityType,
@@ -144,6 +153,37 @@ const Finance: React.FC = () => {
       }
   }
 
+  const handleTransferSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!user) return;
+      if (isSubmitting) return;
+
+      if (transferData.fromId === transferData.toId) {
+          alert("لا يمكن التحويل لنفس الحساب");
+          return;
+      }
+      
+      setIsSubmitting(true);
+      try {
+          await transferFunds(
+              user.id,
+              transferData.fromId,
+              transferData.toId,
+              Number(transferData.amount),
+              transferData.date,
+              transferData.description
+          );
+          setIsTransferModalOpen(false);
+          setTransferData({ fromId: '', toId: '', amount: 0, date: new Date().toISOString().split('T')[0], description: '' });
+          loadData();
+      } catch (error) {
+          console.error(error);
+          alert("حدث خطأ أثناء التحويل");
+      } finally {
+          setIsSubmitting(false);
+      }
+  };
+
   const totalBalance = methods.reduce((sum, m) => sum + m.balance, 0);
 
   const getProviderStyle = (provider: string) => {
@@ -154,6 +194,22 @@ const Finance: React.FC = () => {
           case 'Cash': return 'bg-gradient-to-br from-gray-800 to-gray-600 text-white';
           default: return 'bg-white border border-gray-200 text-gray-800';
       }
+  };
+
+  const getEntityDisplayName = (tx: FinancialTransaction) => {
+      if (tx.entityType === 'Client') {
+          const client = clients.find(c => c.id === tx.entityId);
+          return client ? client.name : (tx.entityName || '-');
+      }
+      if (tx.entityType === 'Supplier') {
+          const supplier = suppliers.find(s => s.id === tx.entityId);
+          return supplier ? supplier.name : (tx.entityName || '-');
+      }
+      if (tx.entityType === 'Employee') {
+          const employee = employees.find(e => e.id === tx.entityId);
+          return employee ? employee.name : (tx.entityName || '-');
+      }
+      return tx.entityName || '-';
   };
 
   return (
@@ -177,6 +233,13 @@ const Finance: React.FC = () => {
             >
                 <ArrowUpRight size={20} />
                 <span>صرف (دفع)</span>
+            </button>
+            <button 
+                onClick={() => setIsTransferModalOpen(true)}
+                className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl hover:bg-indigo-700 transition shadow-sm font-bold"
+            >
+                <ArrowRightLeft size={20} />
+                <span>تحويل</span>
             </button>
         </div>
       </div>
@@ -257,7 +320,7 @@ const Finance: React.FC = () => {
                                     <span className="text-xs text-gray-400 block mb-0.5">
                                         {tx.entityType === 'Client' ? 'عميل' : tx.entityType === 'Supplier' ? 'مورد' : tx.entityType === 'Employee' ? 'موظف' : 'آخر'}
                                     </span>
-                                    {tx.entityName || '-'}
+                                    {getEntityDisplayName(tx)}
                                 </td>
                                 <td className="px-6 py-4 text-gray-600 text-sm">{tx.description}</td>
                                 <td className="px-6 py-4 text-gray-600 text-sm">{tx.paymentMethodName}</td>
@@ -369,7 +432,7 @@ const Finance: React.FC = () => {
                             required 
                             type="number" 
                             className="w-full p-2.5 border rounded-lg font-bold text-lg"
-                            value={formData.amount || ''}
+                            value={formData.amount === 0 ? '' : formData.amount}
                             onChange={(e) => setFormData({...formData, amount: Number(e.target.value)})}
                         />
                     </div>
@@ -429,6 +492,104 @@ const Finance: React.FC = () => {
                     </button>
                 </form>
             </div>
+        </div>
+      )}
+
+      {/* Transfer Modal */}
+      {isTransferModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+             <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl animate-in zoom-in-95 duration-200">
+                <div className="flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-2">
+                        <div className="p-2 rounded-lg bg-indigo-100 text-indigo-600">
+                            <ArrowRightLeft size={24} />
+                        </div>
+                        <h2 className="text-xl font-bold text-gray-800">تحويل بين الحسابات</h2>
+                    </div>
+                    <button onClick={() => setIsTransferModalOpen(false)}><X size={24} className="text-gray-400 hover:text-gray-800" /></button>
+                </div>
+
+                <form onSubmit={handleTransferSubmit} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">من حساب (المصدر)</label>
+                            <select 
+                                required
+                                className="w-full p-2.5 border rounded-lg bg-red-50"
+                                value={transferData.fromId}
+                                onChange={(e) => setTransferData({...transferData, fromId: e.target.value})}
+                            >
+                                <option value="">اختر الحساب...</option>
+                                {methods.map(m => (
+                                    <option key={m.id} value={m.id} disabled={m.id === transferData.toId}>{m.name} ({m.balance})</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">إلى حساب (المستلم)</label>
+                            <select 
+                                required
+                                className="w-full p-2.5 border rounded-lg bg-emerald-50"
+                                value={transferData.toId}
+                                onChange={(e) => setTransferData({...transferData, toId: e.target.value})}
+                            >
+                                <option value="">اختر الحساب...</option>
+                                {methods.map(m => (
+                                    <option key={m.id} value={m.id} disabled={m.id === transferData.fromId}>{m.name} ({m.balance})</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">المبلغ</label>
+                        <input 
+                            required 
+                            type="number" 
+                            className="w-full p-2.5 border rounded-lg font-bold text-lg"
+                            value={transferData.amount === 0 ? '' : transferData.amount}
+                            onChange={(e) => setTransferData({...transferData, amount: Number(e.target.value)})}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">التاريخ</label>
+                        <input 
+                            required 
+                            type="date" 
+                            className="w-full p-2.5 border rounded-lg bg-gray-50"
+                            value={transferData.date}
+                            onChange={(e) => setTransferData({...transferData, date: e.target.value})}
+                        />
+                    </div>
+
+                     <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">ملاحظات (اختياري)</label>
+                        <input 
+                            type="text" 
+                            className="w-full p-2.5 border rounded-lg"
+                            placeholder="سبب التحويل..."
+                            value={transferData.description}
+                            onChange={(e) => setTransferData({...transferData, description: e.target.value})}
+                        />
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        disabled={isSubmitting}
+                        className="w-full py-3 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                         {isSubmitting ? (
+                            <>
+                                <Loader2 className="animate-spin" size={20} />
+                                <span>جاري التحويل...</span>
+                            </>
+                        ) : (
+                            <span>تأكيد التحويل</span>
+                        )}
+                    </button>
+                </form>
+             </div>
         </div>
       )}
     </div>
