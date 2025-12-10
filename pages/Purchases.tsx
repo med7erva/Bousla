@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
-import { Truck, Plus, Trash2, Save, ShoppingCart, User, AlertCircle, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Truck, Plus, Trash2, Save, ShoppingCart, User, AlertCircle, Loader2, MoreVertical, Edit2, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getSuppliers, getProducts, createPurchase, getPurchases, getPaymentMethods, ensurePaymentMethodsExist } from '../services/db';
+import { getSuppliers, getProducts, createPurchase, getPurchases, getPaymentMethods, ensurePaymentMethodsExist, deletePurchase, updatePurchase } from '../services/db';
 import { Supplier, Product, PurchaseItem, Purchase, PaymentMethod } from '../types';
 import { CURRENCY } from '../constants';
 
@@ -27,10 +27,21 @@ const Purchases: React.FC = () => {
     // Temp item input
     const [tempProduct, setTempProduct] = useState({ id: '', qty: 1, cost: 0 });
 
+    // Dropdown & Edit State
+    const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+    const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingPurchase, setEditingPurchase] = useState<Purchase | null>(null);
+
     useEffect(() => {
         if(user) {
             loadInitialData();
         }
+        
+        const handleScroll = () => setActiveMenuId(null);
+        window.addEventListener('scroll', handleScroll, true);
+        return () => window.removeEventListener('scroll', handleScroll, true);
+
     }, [user, view]);
 
     const loadInitialData = async () => {
@@ -103,6 +114,46 @@ const Purchases: React.FC = () => {
             alert("حدث خطأ أثناء حفظ الفاتورة");
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleDeletePurchase = async (id: string) => {
+        if(window.confirm('هل أنت متأكد من حذف فاتورة الشراء؟ سيتم خصم الكميات من المخزون وإلغاء الدين. (لن يتم الحذف إذا تم بيع جزء من المنتجات)')) {
+            try {
+                await deletePurchase(id);
+                loadInitialData();
+                setActiveMenuId(null);
+            } catch (error: any) {
+                console.error(error);
+                alert(error.message || "حدث خطأ أثناء حذف الفاتورة");
+            }
+        }
+    };
+
+    const openEditModal = (purchase: Purchase) => {
+        setEditingPurchase(purchase);
+        setIsEditModalOpen(true);
+        setActiveMenuId(null);
+    };
+
+    const handleUpdatePurchase = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if(!editingPurchase) return;
+        
+        // Find supplier name if changed
+        const supplier = suppliers.find(s => s.id === editingPurchase.supplierId);
+        const updatedPurchase = {
+            ...editingPurchase,
+            supplierName: supplier ? supplier.name : editingPurchase.supplierName
+        };
+
+        try {
+            await updatePurchase(updatedPurchase);
+            setIsEditModalOpen(false);
+            setEditingPurchase(null);
+            loadInitialData();
+        } catch (error) {
+            alert("فشل تحديث الفاتورة");
         }
     };
 
@@ -263,7 +314,7 @@ const Purchases: React.FC = () => {
 
     // LIST VIEW
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" onClick={() => setActiveMenuId(null)}>
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800">سجل المشتريات</h1>
@@ -278,7 +329,7 @@ const Purchases: React.FC = () => {
                 </button>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden overflow-x-auto">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden overflow-x-auto min-h-[400px]">
                 <table className="w-full text-right min-w-[700px]">
                     <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-semibold">
                         <tr>
@@ -288,21 +339,22 @@ const Purchases: React.FC = () => {
                             <th className="px-6 py-4">إجمالي التكلفة</th>
                             <th className="px-6 py-4">المدفوع</th>
                             <th className="px-6 py-4">الدين</th>
+                            <th className="px-6 py-4">إجراءات</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {purchases.length === 0 ? (
-                            <tr><td colSpan={6} className="p-8 text-center text-gray-400">لا توجد مشتريات مسجلة</td></tr>
+                            <tr><td colSpan={7} className="p-8 text-center text-gray-400">لا توجد مشتريات مسجلة</td></tr>
                         ) : (
                             purchases.map(p => (
-                                <tr key={p.id} className="hover:bg-gray-50">
+                                <tr key={p.id} className="hover:bg-gray-50 relative group">
                                     <td className="px-6 py-4 font-mono text-xs text-gray-500">{p.id.slice(0, 8)}...</td>
                                     <td className="px-6 py-4 font-bold text-gray-800 flex items-center gap-2">
                                         <Truck size={16} className="text-gray-400" />
                                         {p.supplierName}
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-gray-500" dir="ltr">
-                                        {new Date(p.date).toLocaleDateString('ar-MA')}
+                                    <td className="px-6 py-4 text-sm text-gray-500 font-medium">
+                                        {new Date(p.date).toLocaleDateString('ar-MA', { year: 'numeric', month: '2-digit', day: '2-digit' })}
                                     </td>
                                     <td className="px-6 py-4 font-bold">{p.totalCost} {CURRENCY}</td>
                                     <td className="px-6 py-4 text-emerald-600">{p.paidAmount}</td>
@@ -315,12 +367,111 @@ const Purchases: React.FC = () => {
                                             <span className="text-gray-400 text-xs">خالص</span>
                                         )}
                                     </td>
+                                    <td className="px-6 py-4">
+                                        <button 
+                                            onClick={(e) => { 
+                                                e.stopPropagation(); 
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                setMenuPos({ top: rect.bottom, left: rect.left });
+                                                setActiveMenuId(activeMenuId === p.id ? null : p.id); 
+                                            }}
+                                            className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition"
+                                        >
+                                            <MoreVertical size={18} />
+                                        </button>
+                                    </td>
                                 </tr>
                             ))
                         )}
                     </tbody>
                 </table>
             </div>
+
+            {/* Floating Action Menu */}
+            {activeMenuId && (
+                <>
+                <div className="fixed inset-0 z-40" onClick={() => setActiveMenuId(null)}></div>
+                <div 
+                    className="fixed z-50 w-40 bg-white rounded-lg shadow-xl border border-gray-100 animate-in fade-in zoom-in-95 duration-200"
+                    style={{ top: menuPos.top, left: menuPos.left }}
+                >
+                    <button 
+                        onClick={(e) => { 
+                            e.stopPropagation(); 
+                            const p = purchases.find(x => x.id === activeMenuId);
+                            if(p) openEditModal(p);
+                        }}
+                        className="w-full text-right px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    >
+                        <Edit2 size={14} /> تعديل
+                    </button>
+                    <button 
+                        onClick={(e) => { 
+                            e.stopPropagation(); 
+                            handleDeletePurchase(activeMenuId);
+                        }}
+                        className="w-full text-right px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-b-lg"
+                    >
+                        <Trash2 size={14} /> حذف
+                    </button>
+                </div>
+                </>
+            )}
+
+            {/* Edit Modal */}
+            {isEditModalOpen && editingPurchase && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-bold text-gray-800">تعديل الفاتورة</h3>
+                            <button onClick={() => setIsEditModalOpen(false)}><X size={20} className="text-gray-400" /></button>
+                        </div>
+                        
+                        <div className="bg-amber-50 text-amber-800 p-3 rounded-lg text-xs mb-4">
+                            تنبيه: لا يمكن تعديل المنتجات أو الكميات بعد الحفظ لضمان سلامة المخزون. إذا كان هناك خطأ في الكميات، يرجى حذف الفاتورة وإعادة إنشائها.
+                        </div>
+
+                        <form onSubmit={handleUpdatePurchase} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">المورد</label>
+                                <select 
+                                    className="w-full p-2 border rounded-lg"
+                                    value={editingPurchase.supplierId}
+                                    onChange={(e) => setEditingPurchase({...editingPurchase, supplierId: e.target.value})}
+                                >
+                                    {suppliers.map(s => (
+                                        <option key={s.id} value={s.id}>{s.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">تاريخ الفاتورة</label>
+                                <input 
+                                    type="date" 
+                                    className="w-full p-2 border rounded-lg"
+                                    value={editingPurchase.date.split('T')[0]}
+                                    onChange={(e) => setEditingPurchase({...editingPurchase, date: e.target.value})}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">المبلغ المدفوع (تعديل القيمة)</label>
+                                <input 
+                                    type="number" 
+                                    className="w-full p-2 border rounded-lg"
+                                    value={editingPurchase.paidAmount || ''}
+                                    onChange={(e) => setEditingPurchase({...editingPurchase, paidAmount: Number(e.target.value)})}
+                                />
+                            </div>
+                            <button 
+                                type="submit" 
+                                className="w-full bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900"
+                            >
+                                حفظ التعديلات
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
