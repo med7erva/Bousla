@@ -293,7 +293,7 @@ const Suppliers: React.FC = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">رصيد افتتاحي (دين)</label>
                                 <input type="number" className="w-full p-2 border rounded-lg"
-                                    value={newSupplier.debt || ''} 
+                                    value={newSupplier.debt === 0 ? '' : newSupplier.debt} 
                                     onChange={e => setNewSupplier({...newSupplier, debt: Number(e.target.value)})} 
                                 />
                             </div>
@@ -334,7 +334,7 @@ const Suppliers: React.FC = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">رصيد الدين (تصحيح)</label>
                                 <input type="number" className="w-full p-2 border rounded-lg"
-                                    value={editingSupplier.debt || ''} 
+                                    value={editingSupplier.debt === 0 ? '' : editingSupplier.debt} 
                                     onChange={e => setEditingSupplier({...editingSupplier, debt: Number(e.target.value)})} 
                                 />
                             </div>
@@ -430,8 +430,8 @@ const Suppliers: React.FC = () => {
                                                     </td>
                                                     <td className="px-4 py-3 text-sm text-gray-700">
                                                         {isPurchase ? (
-                                                             <span className="truncate block max-w-[200px]">
-                                                                {(item as unknown as Purchase).items.length} منتجات
+                                                            <span className="truncate block max-w-[200px]" title={(item as unknown as Purchase).items.map(i => i.productName).join(', ')}>
+                                                                {(item as unknown as Purchase).items.map(i => i.productName).join(', ')}
                                                             </span>
                                                         ) : (item as unknown as FinancialTransaction).description}
                                                          <div className="text-xs text-gray-400 font-mono mt-0.5">{item.id.slice(-8)}</div>
