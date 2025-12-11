@@ -1,4 +1,5 @@
 
+
 import { supabase } from './supabase';
 import { Product, Invoice, SaleItem, User, Client, Expense, Purchase, Supplier, PurchaseItem, PaymentMethod, Employee, ExpenseCategory, FinancialTransaction, ProductCategory, AppSettings } from '../types';
 import { SEED_PRODUCTS, SEED_PAYMENT_METHODS } from '../constants';
@@ -290,8 +291,7 @@ export const getInvoices = async (userId: string): Promise<Invoice[]> => {
 
 export const createInvoice = async (userId: string, items: SaleItem[], total: number, paidAmount: number, customerName: string, paymentMethodId: string, customDate?: string) => {
     const date = customDate || new Date().toISOString();
-    const remainingAmount = total - paidAmount;
-    const isDebt = remainingAmount > 0;
+    const netChange = total - paidAmount; // Positive = Debt Increase, Negative = Debt Decrease (Overpayment)
     const finalCustomerName = (customerName && customerName.trim() !== '') ? customerName : 'عميل افتراضي';
 
     const { data: invoice, error } = await supabase.from('invoices').insert({
@@ -300,8 +300,8 @@ export const createInvoice = async (userId: string, items: SaleItem[], total: nu
         date: date,
         total: total,
         paid_amount: paidAmount,
-        remaining_amount: isDebt ? remainingAmount : 0,
-        status: isDebt ? 'Pending' : 'Completed',
+        remaining_amount: netChange, // Allow negative here for credit tracking
+        status: netChange > 0 ? 'Pending' : 'Completed',
         payment_method_id: paymentMethodId,
         items: items 
     }).select().single();
@@ -322,11 +322,13 @@ export const createInvoice = async (userId: string, items: SaleItem[], total: nu
 
     if (client) {
         const updateData: any = { last_purchase_date: date };
-        if (isDebt) updateData.debt = Number(client.debt) + remainingAmount;
+        // Update debt regardless of whether it's positive (debt) or negative (payment)
+        updateData.debt = Number(client.debt) + netChange;
         await supabase.from('clients').update(updateData).eq('id', client.id);
-    } else if (isDebt) {
+    } else if (netChange !== 0) {
+        // Create new client if there is a balance change (debt or credit)
         await supabase.from('clients').insert({
-            user_id: userId, name: finalCustomerName, phone: '', debt: remainingAmount, last_purchase_date: date
+            user_id: userId, name: finalCustomerName, phone: '', debt: netChange, last_purchase_date: date, opening_balance: 0
         });
     }
 
@@ -356,11 +358,12 @@ export const deleteInvoice = async (id: string) => {
     }
 
     // 3. Revert Financials
-    // Revert Client Debt
-    if(inv.remaining_amount > 0) {
+    // Revert Client Debt/Credit
+    if(inv.remaining_amount !== 0) {
          const { data: client } = await supabase.from('clients').select('*').ilike('name', inv.customer_name).single();
          if(client) {
-             const newDebt = Math.max(0, Number(client.debt) - Number(inv.remaining_amount));
+             // We subtract the remaining_amount (netChange) that was added
+             const newDebt = Number(client.debt) - Number(inv.remaining_amount);
              await supabase.from('clients').update({ debt: newDebt }).eq('id', client.id);
          }
     }
@@ -427,19 +430,41 @@ export const getClients = async (userId: string): Promise<Client[]> => {
     const { data, error } = await supabase.from('clients').select('*');
     if (error) throw error;
     return data.map((d: any) => ({
-        id: d.id, userId: d.user_id, name: d.name, phone: d.phone, debt: d.debt, lastPurchaseDate: d.last_purchase_date, notes: d.notes
+        id: d.id, userId: d.user_id, name: d.name, phone: d.phone, debt: d.debt, lastPurchaseDate: d.last_purchase_date, notes: d.notes, openingBalance: d.opening_balance
     }));
 };
 
 export const addClient = async (client: Omit<Client, 'id'>) => {
+    // Determine debt: Manual debt + Opening Balance are essentially the same in this context, 
+    // but we store opening_balance for reference. 
+    // The 'debt' column holds the CURRENT total.
+    const initialDebt = (client.debt || 0) + (client.openingBalance || 0);
+    
+    // If user enters 'debt' in the form, we treat it as the initial state
     await supabase.from('clients').insert({
-        user_id: client.userId, name: client.name, phone: client.phone, debt: client.debt, notes: client.notes
+        user_id: client.userId, name: client.name, phone: client.phone, debt: initialDebt, notes: client.notes, opening_balance: client.openingBalance || 0
     });
 };
 
 export const updateClient = async (client: Client) => {
+    // When updating, we update the metadata. 
+    // Careful: Updating 'debt' directly here overrides calculated history. 
+    // We assume the UI allows correcting the *Current Debt* or *Opening Balance*.
+    
+    // If Opening Balance changes, we should adjust the current debt by the difference
+    const { data: oldClient } = await supabase.from('clients').select('opening_balance, debt').eq('id', client.id).single();
+    
+    let newDebt = client.debt;
+    
+    if (oldClient && client.openingBalance !== undefined) {
+        const diff = (client.openingBalance || 0) - (oldClient.opening_balance || 0);
+        if (diff !== 0) {
+            newDebt = Number(oldClient.debt) + diff;
+        }
+    }
+
     await supabase.from('clients').update({
-        name: client.name, phone: client.phone, debt: client.debt, notes: client.notes
+        name: client.name, phone: client.phone, debt: newDebt, notes: client.notes, opening_balance: client.openingBalance
     }).eq('id', client.id);
 };
 

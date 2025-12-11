@@ -92,6 +92,7 @@ export interface Client {
   name: string;
   phone: string;
   debt: number;
+  openingBalance?: number; // Manual opening balance
   lastPurchaseDate?: string;
   notes?: string;
 }

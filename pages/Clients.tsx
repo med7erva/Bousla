@@ -13,7 +13,7 @@ import AIInsightAlert from '../components/AIInsightAlert';
 interface LedgerItem {
     id: string;
     date: Date;
-    type: 'invoice_sale' | 'invoice_payment' | 'receipt' | 'payment' | 'opening_balance'; // receipt = قبض, payment = صرف
+    type: 'invoice' | 'receipt' | 'payment' | 'opening_balance'; 
     description: string;
     debit: number; // عليه (Sales / Loans given to him)
     credit: number; // له (Payments from him / Refunds)
@@ -29,7 +29,7 @@ const Clients: React.FC = () => {
     // Add Client Modal State
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [newClient, setNewClient] = useState({
-        name: '', phone: '', debt: 0, notes: ''
+        name: '', phone: '', debt: 0, openingBalance: 0, notes: ''
     });
 
     // Edit State
@@ -69,7 +69,7 @@ const Clients: React.FC = () => {
         if (!user) return;
         await addClient({ userId: user.id, ...newClient });
         setIsAddModalOpen(false);
-        setNewClient({ name: '', phone: '', debt: 0, notes: '' });
+        setNewClient({ name: '', phone: '', debt: 0, openingBalance: 0, notes: '' });
         loadClients();
     };
 
@@ -125,7 +125,6 @@ const Clients: React.FC = () => {
 
         // Invoices
         clientInvoices.forEach(inv => {
-            // Add quantity to description
             const description = inv.items.map(i => 
                 i.quantity > 1 ? `${i.productName} (${i.quantity})` : i.productName
             ).join('، ');
@@ -133,7 +132,7 @@ const Clients: React.FC = () => {
             rawItems.push({
                 id: `inv-${inv.id}`,
                 date: new Date(inv.date),
-                type: 'invoice_sale',
+                type: 'invoice',
                 description: description || 'فاتورة بيع',
                 debit: inv.total,      // عليه (Total Bill)
                 credit: inv.paidAmount // له (Paid Now)
@@ -153,7 +152,7 @@ const Clients: React.FC = () => {
                     credit: tx.amount
                 });
             } else {
-                // Payment (صرف) = Debit for Client
+                // Payment (صرف) = Debit for Client (Loan)
                 rawItems.push({
                     id: tx.id,
                     date: new Date(tx.date),
@@ -166,44 +165,37 @@ const Clients: React.FC = () => {
         });
 
         // 4. Sort Chronologically (Oldest to Newest) for correct running balance calc
+        // IMPORTANT: Forward Calculation starts here
         rawItems.sort((a, b) => a.date.getTime() - b.date.getTime());
 
-        // 5. Calculate Opening Balance
-        // Logic: The "Opening Balance" is the difference between the Current Actual Debt (DB)
-        // and the Net Sum of all recorded history.
-        // Opening = CurrentDebt - (SumDebits - SumCredits)
-        const totalDebits = rawItems.reduce((sum, item) => sum + item.debit, 0);
-        const totalCredits = rawItems.reduce((sum, item) => sum + item.credit, 0);
-        const netHistoryChange = totalDebits - totalCredits;
-        
-        const openingBalance = client.debt - netHistoryChange;
-
-        // 6. Build Final Ledger with Running Balance
-        let currentBalance = openingBalance;
+        // 5. Initial Balance from explicit Opening Balance field
+        let currentBalance = client.openingBalance || 0;
         const processedItems: LedgerItem[] = [];
 
         // Add Opening Balance Row if it exists (non-zero)
-        // We push it to a separate array or handle it first
-        const openingRow: LedgerItem | null = Math.abs(openingBalance) > 0 ? {
+        const openingRow: LedgerItem | null = (client.openingBalance && client.openingBalance !== 0) ? {
             id: 'opening-bal',
-            date: rawItems.length > 0 ? new Date(rawItems[0].date.getTime() - 60000) : new Date(), // 1 min before first item
+            // Set date to slightly before the first item or now if empty
+            date: rawItems.length > 0 ? new Date(rawItems[0].date.getTime() - 60000) : new Date(), 
             type: 'opening_balance',
             description: 'رصيد افتتاحي / سابق',
-            debit: openingBalance > 0 ? openingBalance : 0,
-            credit: openingBalance < 0 ? Math.abs(openingBalance) : 0,
-            balance: openingBalance
+            debit: client.openingBalance > 0 ? client.openingBalance : 0,
+            credit: client.openingBalance < 0 ? Math.abs(client.openingBalance) : 0,
+            balance: client.openingBalance
         } : null;
 
         // Process items chronologically
         rawItems.forEach(item => {
+            // Debit increases debt, Credit decreases debt
             currentBalance = currentBalance + item.debit - item.credit;
+            
             processedItems.push({
                 ...item,
                 balance: currentBalance
             });
         });
 
-        // 7. Final Assembly & Reverse for Display (Newest First)
+        // 6. Final Assembly & Reverse for Display (Newest First)
         // If opening row exists, it should be at the bottom of the display list (which means first in chrono list)
         const finalLedger = openingRow ? [openingRow, ...processedItems] : [...processedItems];
         
@@ -220,20 +212,20 @@ const Clients: React.FC = () => {
 
     const getRowStyle = (type: string) => {
         switch (type) {
-            case 'invoice_sale': return 'bg-white';
+            case 'invoice': return 'bg-white';
             case 'receipt': return 'bg-emerald-50/60';
             case 'payment': return 'bg-red-50/50';
-            case 'opening_balance': return 'bg-amber-50';
+            case 'opening_balance': return 'bg-amber-100 border-b-2 border-amber-200';
             default: return 'bg-white';
         }
     };
 
     const getTypeLabel = (type: string) => {
         switch (type) {
-            case 'invoice_sale': return { text: 'فاتورة بيع', icon: ShoppingBag, color: 'text-blue-600' };
+            case 'invoice': return { text: 'فاتورة بيع', icon: ShoppingBag, color: 'text-blue-600' };
             case 'receipt': return { text: 'سند قبض', icon: ArrowDownLeft, color: 'text-emerald-700' };
             case 'payment': return { text: 'سند صرف', icon: ArrowUpRight, color: 'text-red-600' };
-            case 'opening_balance': return { text: 'رصيد سابق', icon: Clock, color: 'text-amber-600' };
+            case 'opening_balance': return { text: 'رصيد سابق', icon: Clock, color: 'text-amber-700 font-bold' };
             default: return { text: type, icon: FileText, color: 'text-gray-600' };
         }
     };
@@ -366,10 +358,17 @@ const Clients: React.FC = () => {
                                 value={newClient.name} onChange={e => setNewClient({...newClient, name: e.target.value})} />
                             <input required type="text" placeholder="رقم الهاتف" className="w-full p-2 border rounded-lg"
                                 value={newClient.phone} onChange={e => setNewClient({...newClient, phone: e.target.value})} />
-                            <input type="number" placeholder="ديون سابقة (افتتاحي)" className="w-full p-2 border rounded-lg"
-                                value={newClient.debt === 0 ? '' : newClient.debt} 
-                                onChange={e => setNewClient({...newClient, debt: Number(e.target.value)})} 
-                            />
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">رصيد افتتاحي (سابق)</label>
+                                <input type="number" className="w-full p-2 border rounded-lg bg-gray-50"
+                                    placeholder="0"
+                                    value={newClient.openingBalance === 0 ? '' : newClient.openingBalance} 
+                                    onChange={e => setNewClient({...newClient, openingBalance: Number(e.target.value)})} 
+                                />
+                                <p className="text-xs text-gray-500 mt-1">الرصيد الافتتاحي يتم إضافته تلقائياً إلى مجموع الديون</p>
+                            </div>
+
                             <button type="submit" className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold">حفظ</button>
                             <button type="button" onClick={() => setIsAddModalOpen(false)} className="w-full text-gray-500 py-2">إلغاء</button>
                         </form>
@@ -394,8 +393,16 @@ const Clients: React.FC = () => {
                                     value={editingClient.phone} onChange={e => setEditingClient({...editingClient, phone: e.target.value})} />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">رصيد الدين (تصحيح)</label>
-                                <input type="number" className="w-full p-2 border rounded-lg"
+                                <label className="block text-sm font-medium text-gray-700 mb-1">الرصيد الافتتاحي</label>
+                                <input type="number" className="w-full p-2 border rounded-lg bg-gray-50"
+                                    value={editingClient.openingBalance === 0 ? '' : editingClient.openingBalance} 
+                                    onChange={e => setEditingClient({...editingClient, openingBalance: Number(e.target.value)})} 
+                                />
+                                <p className="text-xs text-gray-500 mt-1">تعديل الرصيد الافتتاحي سيؤثر على الرصيد الكلي</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">رصيد الدين الحالي (للتصحيح اليدوي فقط)</label>
+                                <input type="number" className="w-full p-2 border rounded-lg border-dashed"
                                     value={editingClient.debt === 0 ? '' : editingClient.debt} 
                                     onChange={e => setEditingClient({...editingClient, debt: Number(e.target.value)})} 
                                 />
