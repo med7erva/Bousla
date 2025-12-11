@@ -230,6 +230,13 @@ const Clients: React.FC = () => {
         }
     };
 
+    // Calculate final balance for display in Modal Header
+    // Since ledgerItems is reversed (Index 0 is the newest), we take index 0 balance.
+    // If empty, we take opening balance or 0.
+    const calculatedFinalBalance = ledgerItems.length > 0 
+        ? ledgerItems[0].balance 
+        : (selectedClient?.openingBalance || 0);
+
     return (
         <div className="space-y-6" onClick={() => setActiveMenuId(null)}>
             <div className="flex justify-between items-center">
@@ -309,7 +316,7 @@ const Clients: React.FC = () => {
                             <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
                                 <span className="text-sm text-gray-500">رصيد الديون</span>
                                 <span className={`font-bold ${client.debt > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                                    {client.debt} {CURRENCY}
+                                    {client.debt.toLocaleString()} {CURRENCY}
                                 </span>
                             </div>
                             <button 
@@ -426,7 +433,7 @@ const Clients: React.FC = () => {
                                     كشف حساب: {selectedClient.name}
                                 </h2>
                                 <p className="text-sm text-gray-500 mt-1">
-                                    الرصيد النهائي (المطلوب): <span className={`${selectedClient.debt > 0 ? 'text-red-600' : 'text-emerald-600'} font-bold`}>{selectedClient.debt} {CURRENCY}</span>
+                                    الرصيد النهائي (المطلوب): <span className={`${calculatedFinalBalance > 0 ? 'text-red-600' : 'text-emerald-600'} font-bold`}>{calculatedFinalBalance.toLocaleString()} {CURRENCY}</span>
                                 </p>
                             </div>
                             <div className="flex gap-2">
