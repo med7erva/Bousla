@@ -131,7 +131,7 @@ const Clients: React.FC = () => {
                 id: `inv-${inv.id}`,
                 date: new Date(inv.date),
                 type: 'invoice_sale',
-                description: `فاتورة #${inv.id.slice(-4)}: ${productNames}`,
+                description: productNames || 'فاتورة بيع',
                 debit: inv.total,      // عليه (قيمة الفاتورة كاملة)
                 credit: inv.paidAmount // له (المبلغ المدفوع فوراً)
             });
