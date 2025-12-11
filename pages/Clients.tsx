@@ -123,29 +123,18 @@ const Clients: React.FC = () => {
         // 3. Transform to Ledger Items (Unsorted)
         let rawItems: Omit<LedgerItem, 'balance'>[] = [];
 
-        // Invoices: Split into Sale (Debit) and Payment (Credit)
+        // Invoices: Single Row Logic (Debit = Total, Credit = Paid)
         clientInvoices.forEach(inv => {
-            // A. The Sale (Debit)
+            const productNames = inv.items.map(i => i.productName).join('، ');
+            
             rawItems.push({
-                id: `inv-sale-${inv.id}`,
+                id: `inv-${inv.id}`,
                 date: new Date(inv.date),
                 type: 'invoice_sale',
-                description: `فاتورة رقم ${inv.id.slice(-6)} (${inv.items.length} منتجات)`,
-                debit: inv.total,
-                credit: 0
+                description: `فاتورة #${inv.id.slice(-4)}: ${productNames}`,
+                debit: inv.total,      // عليه (قيمة الفاتورة كاملة)
+                credit: inv.paidAmount // له (المبلغ المدفوع فوراً)
             });
-
-            // B. The Payment (Credit) - Only if paid > 0
-            if (inv.paidAmount > 0) {
-                rawItems.push({
-                    id: `inv-pay-${inv.id}`,
-                    date: new Date(inv.date),
-                    type: 'invoice_payment',
-                    description: `دفعة عن فاتورة ${inv.id.slice(-6)}`,
-                    debit: 0,
-                    credit: inv.paidAmount
-                });
-            }
         });
 
         // Transactions (Financial Receipts/Payments)
@@ -225,7 +214,6 @@ const Clients: React.FC = () => {
     const getRowStyle = (type: string) => {
         switch (type) {
             case 'invoice_sale': return 'bg-white';
-            case 'invoice_payment': return 'bg-emerald-50/30';
             case 'receipt': return 'bg-emerald-50/60';
             case 'payment': return 'bg-red-50/50';
             case 'opening_balance': return 'bg-amber-50';
@@ -236,7 +224,6 @@ const Clients: React.FC = () => {
     const getTypeLabel = (type: string) => {
         switch (type) {
             case 'invoice_sale': return { text: 'فاتورة بيع', icon: ShoppingBag, color: 'text-blue-600' };
-            case 'invoice_payment': return { text: 'سداد فاتورة', icon: Banknote, color: 'text-emerald-600' };
             case 'receipt': return { text: 'سند قبض', icon: ArrowDownLeft, color: 'text-emerald-700' };
             case 'payment': return { text: 'سند صرف', icon: ArrowUpRight, color: 'text-red-600' };
             case 'opening_balance': return { text: 'رصيد سابق', icon: Clock, color: 'text-amber-600' };
@@ -447,9 +434,9 @@ const Clients: React.FC = () => {
                                             <tr>
                                                 <th className="px-4 py-4 w-24">التاريخ</th>
                                                 <th className="px-4 py-4 w-32">نوع العملية</th>
-                                                <th className="px-4 py-4">الوصف</th>
-                                                <th className="px-4 py-4 w-28 text-red-600">عليه (مدين)</th>
-                                                <th className="px-4 py-4 w-28 text-emerald-600">له (دائن)</th>
+                                                <th className="px-4 py-4">الوصف (المنتجات)</th>
+                                                <th className="px-4 py-4 w-28 text-red-600">عليه (مبلغ الفاتورة)</th>
+                                                <th className="px-4 py-4 w-28 text-emerald-600">له (المدفوع)</th>
                                                 <th className="px-4 py-4 w-28 bg-gray-100">الباقي</th>
                                             </tr>
                                         </thead>
@@ -470,7 +457,7 @@ const Clients: React.FC = () => {
                                                                     <Icon size={14} /> {meta.text}
                                                                 </span>
                                                             </td>
-                                                            <td className="px-4 py-3 text-sm text-gray-700 font-medium">
+                                                            <td className="px-4 py-3 text-sm text-gray-700 font-medium max-w-xs truncate" title={item.description}>
                                                                 {item.description}
                                                             </td>
                                                             <td className="px-4 py-3 font-bold text-red-600">
