@@ -373,7 +373,7 @@ const Clients: React.FC = () => {
                             <input required type="text" placeholder="رقم الهاتف" className="w-full p-2 border rounded-lg"
                                 value={newClient.phone} onChange={e => setNewClient({...newClient, phone: e.target.value})} />
                             <input type="number" placeholder="ديون سابقة (افتتاحي)" className="w-full p-2 border rounded-lg"
-                                value={newClient.debt || ''} 
+                                value={newClient.debt === 0 ? '' : newClient.debt} 
                                 onChange={e => setNewClient({...newClient, debt: Number(e.target.value)})} 
                             />
                             <button type="submit" className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold">حفظ</button>
@@ -402,7 +402,7 @@ const Clients: React.FC = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">رصيد الدين (تصحيح)</label>
                                 <input type="number" className="w-full p-2 border rounded-lg"
-                                    value={editingClient.debt || ''} 
+                                    value={editingClient.debt === 0 ? '' : editingClient.debt} 
                                     onChange={e => setEditingClient({...editingClient, debt: Number(e.target.value)})} 
                                 />
                             </div>
@@ -440,53 +440,55 @@ const Clients: React.FC = () => {
 
                         {/* Content */}
                         <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
-                            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                                <table className="w-full text-right">
-                                    <thead className="bg-gray-50 text-gray-500 text-xs uppercase sticky top-0 z-10 font-bold border-b border-gray-200">
-                                        <tr>
-                                            <th className="px-4 py-4 w-24">التاريخ</th>
-                                            <th className="px-4 py-4 w-32">نوع العملية</th>
-                                            <th className="px-4 py-4">الوصف</th>
-                                            <th className="px-4 py-4 w-28 text-red-600">عليه (مدين)</th>
-                                            <th className="px-4 py-4 w-28 text-emerald-600">له (دائن)</th>
-                                            <th className="px-4 py-4 w-28 bg-gray-100">الباقي</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {ledgerItems.length === 0 ? (
-                                            <tr><td colSpan={6} className="p-8 text-center text-gray-400">لا توجد حركات مسجلة لهذا العميل</td></tr>
-                                        ) : (
-                                            ledgerItems.map(item => {
-                                                const meta = getTypeLabel(item.type);
-                                                const Icon = meta.icon;
-                                                return (
-                                                    <tr key={item.id} className={`hover:bg-gray-50 transition ${getRowStyle(item.type)}`}>
-                                                        <td className="px-4 py-3 text-sm text-gray-600 font-mono">
-                                                            {item.date.toLocaleDateString('ar-MA')}
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            <span className={`flex items-center gap-1.5 text-xs font-bold ${meta.color}`}>
-                                                                <Icon size={14} /> {meta.text}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-sm text-gray-700 font-medium">
-                                                            {item.description}
-                                                        </td>
-                                                        <td className="px-4 py-3 font-bold text-red-600">
-                                                            {item.debit > 0 ? item.debit.toLocaleString() : '-'}
-                                                        </td>
-                                                        <td className="px-4 py-3 font-bold text-emerald-600">
-                                                            {item.credit > 0 ? item.credit.toLocaleString() : '-'}
-                                                        </td>
-                                                        <td className="px-4 py-3 font-black text-slate-800 bg-gray-50 border-r border-gray-100">
-                                                            {item.balance.toLocaleString()}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })
-                                        )}
-                                    </tbody>
-                                </table>
+                            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-right whitespace-nowrap min-w-[700px]">
+                                        <thead className="bg-gray-50 text-gray-500 text-xs uppercase sticky top-0 z-10 font-bold border-b border-gray-200">
+                                            <tr>
+                                                <th className="px-4 py-4 w-24">التاريخ</th>
+                                                <th className="px-4 py-4 w-32">نوع العملية</th>
+                                                <th className="px-4 py-4">الوصف</th>
+                                                <th className="px-4 py-4 w-28 text-red-600">عليه (مدين)</th>
+                                                <th className="px-4 py-4 w-28 text-emerald-600">له (دائن)</th>
+                                                <th className="px-4 py-4 w-28 bg-gray-100">الباقي</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {ledgerItems.length === 0 ? (
+                                                <tr><td colSpan={6} className="p-8 text-center text-gray-400">لا توجد حركات مسجلة لهذا العميل</td></tr>
+                                            ) : (
+                                                ledgerItems.map(item => {
+                                                    const meta = getTypeLabel(item.type);
+                                                    const Icon = meta.icon;
+                                                    return (
+                                                        <tr key={item.id} className={`hover:bg-gray-50 transition ${getRowStyle(item.type)}`}>
+                                                            <td className="px-4 py-3 text-sm text-gray-600 font-mono">
+                                                                {item.date.toLocaleDateString('ar-MA')}
+                                                            </td>
+                                                            <td className="px-4 py-3">
+                                                                <span className={`flex items-center gap-1.5 text-xs font-bold ${meta.color}`}>
+                                                                    <Icon size={14} /> {meta.text}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-4 py-3 text-sm text-gray-700 font-medium">
+                                                                {item.description}
+                                                            </td>
+                                                            <td className="px-4 py-3 font-bold text-red-600">
+                                                                {item.debit > 0 ? item.debit.toLocaleString() : '-'}
+                                                            </td>
+                                                            <td className="px-4 py-3 font-bold text-emerald-600">
+                                                                {item.credit > 0 ? item.credit.toLocaleString() : '-'}
+                                                            </td>
+                                                            <td className="px-4 py-3 font-black text-slate-800 bg-gray-50 border-r border-gray-100">
+                                                                {item.balance.toLocaleString()}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
