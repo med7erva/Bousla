@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { User, Phone, Search, UserPlus, AlertCircle, FileText, Clock, X, ShoppingBag, ArrowDownLeft, ArrowUpRight, MoreVertical, Edit2, Trash2, Printer } from 'lucide-react';
+import { User, Phone, Search, UserPlus, AlertCircle, FileText, Clock, X, ShoppingBag, ArrowDownLeft, ArrowUpRight, MoreVertical, Edit2, Trash2, Printer, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getClients, addClient, getInvoices, getTransactions, updateClient, deleteClient } from '../services/db';
 import { getClientInsights } from '../services/geminiService';
@@ -25,6 +25,9 @@ const Clients: React.FC = () => {
     const [clients, setClients] = useState<Client[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [aiInsight, setAiInsight] = useState('');
+
+    // Loading State for Actions
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Add Client Modal State
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -70,7 +73,9 @@ const Clients: React.FC = () => {
 
     const handleAddClient = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user) return;
+        if (!user || isSubmitting) return;
+        
+        setIsSubmitting(true);
         try {
             await addClient({ userId: user.id, ...newClient });
             setIsAddModalOpen(false);
@@ -79,12 +84,16 @@ const Clients: React.FC = () => {
         } catch (err) {
             console.error("Failed to add client", err);
             alert("فشل إضافة العميل. يرجى المحاولة مرة أخرى.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     const handleUpdateClient = async (e: React.FormEvent) => {
         e.preventDefault();
-        if(!editingClient) return;
+        if(!editingClient || isSubmitting) return;
+        
+        setIsSubmitting(true);
         try {
             await updateClient(editingClient);
             setIsEditModalOpen(false);
@@ -93,6 +102,8 @@ const Clients: React.FC = () => {
         } catch (err) {
             console.error("Failed to update client", err);
             alert("فشل تحديث بيانات العميل.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -189,6 +200,9 @@ const Clients: React.FC = () => {
             });
 
             // 5. Initial Balance from explicit Opening Balance field
+            // Correction: If current debt is 0 but calculated history shows otherwise, we trust history + opening balance logic
+            // However, to keep it simple and match "Ledger" logic:
+            
             let currentBalance = client.openingBalance || 0;
             const processedItems: LedgerItem[] = [];
 
@@ -214,6 +228,17 @@ const Clients: React.FC = () => {
                     balance: currentBalance
                 });
             });
+
+            // Self-Healing: Update Client Debt if mismatch found
+            // Only update if difference is significant to avoid floating point jitter, and ensure we have data
+            if (Math.abs(currentBalance - client.debt) > 0.1) {
+                console.log(`Auto-correcting client balance from ${client.debt} to ${currentBalance}`);
+                // Don't await this to keep UI snappy, just fire and forget (or use optimistic UI)
+                updateClient({ ...client, debt: currentBalance }).then(() => {
+                    // Update local state to reflect change immediately in UI without full reload
+                    setClients(prev => prev.map(c => c.id === client.id ? { ...c, debt: currentBalance } : c));
+                });
+            }
 
             // 6. Final Assembly & Reverse for Display (Newest First)
             // If opening row exists, it should be at the bottom of the display list (which means first in chrono list)
@@ -408,7 +433,13 @@ const Clients: React.FC = () => {
                                 <p className="text-xs text-gray-500 mt-1">الرصيد الافتتاحي يتم إضافته تلقائياً إلى مجموع الديون</p>
                             </div>
 
-                            <button type="submit" className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold">حفظ</button>
+                            <button 
+                                type="submit" 
+                                disabled={isSubmitting}
+                                className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : 'حفظ'}
+                            </button>
                             <button type="button" onClick={() => setIsAddModalOpen(false)} className="w-full text-gray-500 py-2">إلغاء</button>
                         </form>
                     </div>
@@ -446,7 +477,13 @@ const Clients: React.FC = () => {
                                     onChange={e => setEditingClient({...editingClient, debt: Number(e.target.value)})} 
                                 />
                             </div>
-                            <button type="submit" className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold">حفظ التعديلات</button>
+                            <button 
+                                type="submit" 
+                                disabled={isSubmitting}
+                                className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : 'حفظ التعديلات'}
+                            </button>
                             <button type="button" onClick={() => setIsEditModalOpen(false)} className="w-full text-gray-500 py-2">إلغاء</button>
                         </form>
                     </div>
@@ -467,7 +504,7 @@ const Clients: React.FC = () => {
                                 <p className="text-sm mt-1 flex items-center gap-2">
                                     {balanceDisplay.text}: 
                                     <span className={`text-lg font-extrabold px-2 py-0.5 rounded-lg ${balanceDisplay.color} ${balanceDisplay.bg}`}>
-                                        {Math.abs(calculatedFinalBalance).toLocaleString()} {CURRENCY}
+                                        {calculatedFinalBalance.toLocaleString()} {CURRENCY}
                                     </span>
                                 </p>
                             </div>
