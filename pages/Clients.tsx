@@ -78,12 +78,16 @@ const Clients: React.FC = () => {
         setIsSubmitting(true);
         try {
             await addClient({ userId: user.id, ...newClient });
+            
+            // Wait for reload to complete to ensure user sees the new client
+            await loadClients();
+            
             setIsAddModalOpen(false);
             setNewClient({ name: '', phone: '', debt: 0, openingBalance: 0, notes: '' });
-            loadClients();
-        } catch (err) {
+        } catch (err: any) {
             console.error("Failed to add client", err);
-            alert("فشل إضافة العميل. يرجى المحاولة مرة أخرى.");
+            // More descriptive error message
+            alert(`فشل إضافة العميل. ${err.message || 'يرجى التأكد من أن رقم الهاتف غير مكرر.'}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -96,9 +100,9 @@ const Clients: React.FC = () => {
         setIsSubmitting(true);
         try {
             await updateClient(editingClient);
+            await loadClients();
             setIsEditModalOpen(false);
             setEditingClient(null);
-            loadClients();
         } catch (err) {
             console.error("Failed to update client", err);
             alert("فشل تحديث بيانات العميل.");
@@ -200,8 +204,6 @@ const Clients: React.FC = () => {
             });
 
             // 5. Initial Balance from explicit Opening Balance field
-            // Correction: If current debt is 0 but calculated history shows otherwise, we trust history + opening balance logic
-            // However, to keep it simple and match "Ledger" logic:
             
             let currentBalance = client.openingBalance || 0;
             const processedItems: LedgerItem[] = [];
