@@ -261,6 +261,14 @@ const Clients: React.FC = () => {
         ? ledgerItems[0].balance 
         : (selectedClient?.openingBalance || 0);
 
+    const getBalanceLabel = (bal: number) => {
+        if (bal > 0) return { text: "رصيد مستحق (عليه)", color: "text-red-600", bg: "bg-red-50" };
+        if (bal < 0) return { text: "رصيد فائض (له)", color: "text-emerald-600", bg: "bg-emerald-50" };
+        return { text: "خالص", color: "text-gray-500", bg: "bg-gray-100" };
+    };
+
+    const balanceDisplay = getBalanceLabel(calculatedFinalBalance);
+
     return (
         <div className="space-y-6" onClick={() => setActiveMenuId(null)}>
             <div className="flex justify-between items-center">
@@ -456,8 +464,11 @@ const Clients: React.FC = () => {
                                     <ShoppingBag className="text-emerald-600" />
                                     كشف حساب: {selectedClient.name}
                                 </h2>
-                                <p className="text-sm text-gray-500 mt-1">
-                                    الرصيد النهائي (المطلوب): <span className={`${calculatedFinalBalance > 0 ? 'text-red-600' : 'text-emerald-600'} font-bold`}>{calculatedFinalBalance.toLocaleString()} {CURRENCY}</span>
+                                <p className="text-sm mt-1 flex items-center gap-2">
+                                    {balanceDisplay.text}: 
+                                    <span className={`text-lg font-extrabold px-2 py-0.5 rounded-lg ${balanceDisplay.color} ${balanceDisplay.bg}`}>
+                                        {Math.abs(calculatedFinalBalance).toLocaleString()} {CURRENCY}
+                                    </span>
                                 </p>
                             </div>
                             <div className="flex gap-2">
@@ -511,7 +522,7 @@ const Clients: React.FC = () => {
                                                             <td className="px-4 py-3 font-bold text-emerald-600">
                                                                 {item.credit > 0 ? item.credit.toLocaleString() : '-'}
                                                             </td>
-                                                            <td className="px-4 py-3 font-black text-slate-800 bg-gray-50 border-r border-gray-100">
+                                                            <td className={`px-4 py-3 font-black border-r border-gray-100 ${item.balance > 0 ? 'text-red-700 bg-red-50/30' : (item.balance < 0 ? 'text-emerald-700 bg-emerald-50/30' : 'text-gray-500 bg-gray-50')}`}>
                                                                 {item.balance.toLocaleString()}
                                                             </td>
                                                         </tr>
