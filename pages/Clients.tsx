@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Phone, Search, UserPlus, AlertCircle, FileText, Clock, X, ShoppingBag, ArrowDownLeft, ArrowUpRight, Banknote, MoreVertical, Edit2, Trash2, Save } from 'lucide-react';
+import { User, Phone, Search, UserPlus, AlertCircle, FileText, Clock, X, ShoppingBag, ArrowDownLeft, ArrowUpRight, Banknote, MoreVertical, Edit2, Trash2, Save, Printer } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getClients, addClient, getInvoices, getTransactions, updateClient, deleteClient } from '../services/db';
 import { getClientInsights } from '../services/geminiService';
@@ -9,10 +9,16 @@ import { Client, Invoice, FinancialTransaction } from '../types';
 import { CURRENCY } from '../constants';
 import AIInsightAlert from '../components/AIInsightAlert';
 
-// Union type for the history list
-type HistoryItem = 
-  | (Invoice & { type: 'invoice' })
-  | (FinancialTransaction & { type: 'transaction' });
+// Ledger Item Interface for the unified history view
+interface LedgerItem {
+    id: string;
+    date: Date;
+    type: 'invoice_sale' | 'invoice_payment' | 'receipt' | 'payment' | 'opening_balance'; // receipt = قبض, payment = صرف
+    description: string;
+    debit: number; // عليه (Sales / Loans given to him)
+    credit: number; // له (Payments from him / Refunds)
+    balance: number; // Running balance
+}
 
 const Clients: React.FC = () => {
     const { user } = useAuth();
@@ -33,7 +39,7 @@ const Clients: React.FC = () => {
     // History Modal State
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-    const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
+    const [ledgerItems, setLedgerItems] = useState<LedgerItem[]>([]);
 
     // Dropdown State
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -99,25 +105,113 @@ const Clients: React.FC = () => {
         if (!user) return;
         setSelectedClient(client);
         
-        // 1. Fetch Invoices
-        const allInvoices = await getInvoices(user.id);
+        // 1. Fetch Raw Data
+        const [allInvoices, allTransactions] = await Promise.all([
+            getInvoices(user.id),
+            getTransactions(user.id)
+        ]);
+
+        // 2. Filter for this client
         const clientInvoices = allInvoices.filter(inv => 
             inv.customerName.trim().toLowerCase() === client.name.trim().toLowerCase()
-        ).map(inv => ({ ...inv, type: 'invoice' as const }));
-
-        // 2. Fetch Transactions (Receipts/Payments)
-        const allTransactions = await getTransactions(user.id);
-        const clientTransactions = allTransactions.filter(tx => 
-            tx.entityType === 'Client' && tx.entityId === client.id
-        ).map(tx => ({ ...tx, type: 'transaction' as const }));
-
-        // 3. Merge and Sort by Date Descending
-        const combined = [...clientInvoices, ...clientTransactions].sort(
-            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         );
         
-        // Use double casting to satisfy TypeScript compiler
-        setHistoryItems(combined as unknown as HistoryItem[]);
+        const clientTransactions = allTransactions.filter(tx => 
+            tx.entityType === 'Client' && tx.entityId === client.id
+        );
+
+        // 3. Transform to Ledger Items (Unsorted)
+        let rawItems: Omit<LedgerItem, 'balance'>[] = [];
+
+        // Invoices: Split into Sale (Debit) and Payment (Credit)
+        clientInvoices.forEach(inv => {
+            // A. The Sale (Debit)
+            rawItems.push({
+                id: `inv-sale-${inv.id}`,
+                date: new Date(inv.date),
+                type: 'invoice_sale',
+                description: `فاتورة رقم ${inv.id.slice(-6)} (${inv.items.length} منتجات)`,
+                debit: inv.total,
+                credit: 0
+            });
+
+            // B. The Payment (Credit) - Only if paid > 0
+            if (inv.paidAmount > 0) {
+                rawItems.push({
+                    id: `inv-pay-${inv.id}`,
+                    date: new Date(inv.date),
+                    type: 'invoice_payment',
+                    description: `دفعة عن فاتورة ${inv.id.slice(-6)}`,
+                    debit: 0,
+                    credit: inv.paidAmount
+                });
+            }
+        });
+
+        // Transactions (Financial Receipts/Payments)
+        clientTransactions.forEach(tx => {
+            if (tx.type === 'in') {
+                // Receipt (قبض) = Credit for Client (He paid us)
+                rawItems.push({
+                    id: tx.id,
+                    date: new Date(tx.date),
+                    type: 'receipt',
+                    description: tx.description || 'سند قبض',
+                    debit: 0,
+                    credit: tx.amount
+                });
+            } else {
+                // Payment (صرف) = Debit for Client (We gave him money/loan)
+                rawItems.push({
+                    id: tx.id,
+                    date: new Date(tx.date),
+                    type: 'payment',
+                    description: tx.description || 'سند صرف (سلفة)',
+                    debit: tx.amount,
+                    credit: 0
+                });
+            }
+        });
+
+        // 4. Sort Chronologically (Oldest to Newest) for calculation
+        rawItems.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+        // 5. Calculate Opening Balance
+        // Logic: Current Debt = Opening Balance + Total Debits - Total Credits
+        // Therefore: Opening Balance = Current Debt - Total Debits + Total Credits
+        const totalDebits = rawItems.reduce((sum, item) => sum + item.debit, 0);
+        const totalCredits = rawItems.reduce((sum, item) => sum + item.credit, 0);
+        const currentDebt = client.debt;
+        
+        const openingBalance = currentDebt - totalDebits + totalCredits;
+
+        // 6. Build Final Ledger with Running Balance
+        let runningBalance = openingBalance;
+        const finalLedger: LedgerItem[] = [];
+
+        // Add Opening Balance Row if exists (and not zero)
+        if (Math.abs(openingBalance) > 0) {
+            finalLedger.push({
+                id: 'opening-bal',
+                date: rawItems.length > 0 ? new Date(rawItems[0].date.getTime() - 1000) : new Date(), // Just before first item
+                type: 'opening_balance',
+                description: 'رصيد افتتاحي (سابق)',
+                debit: openingBalance > 0 ? openingBalance : 0,
+                credit: openingBalance < 0 ? Math.abs(openingBalance) : 0,
+                balance: openingBalance
+            });
+        }
+
+        rawItems.forEach(item => {
+            runningBalance = runningBalance + item.debit - item.credit;
+            finalLedger.push({
+                ...item,
+                balance: runningBalance
+            });
+        });
+
+        // 7. Sort Reverse Chronological (Newest First) for Display
+        setLedgerItems(finalLedger.reverse());
         setIsHistoryModalOpen(true);
         setActiveMenuId(null);
     };
@@ -127,6 +221,28 @@ const Clients: React.FC = () => {
     );
 
     const activeClient = clients.find(c => c.id === activeMenuId);
+
+    const getRowStyle = (type: string) => {
+        switch (type) {
+            case 'invoice_sale': return 'bg-white';
+            case 'invoice_payment': return 'bg-emerald-50/30';
+            case 'receipt': return 'bg-emerald-50/60';
+            case 'payment': return 'bg-red-50/50';
+            case 'opening_balance': return 'bg-amber-50';
+            default: return 'bg-white';
+        }
+    };
+
+    const getTypeLabel = (type: string) => {
+        switch (type) {
+            case 'invoice_sale': return { text: 'فاتورة بيع', icon: ShoppingBag, color: 'text-blue-600' };
+            case 'invoice_payment': return { text: 'سداد فاتورة', icon: Banknote, color: 'text-emerald-600' };
+            case 'receipt': return { text: 'سند قبض', icon: ArrowDownLeft, color: 'text-emerald-700' };
+            case 'payment': return { text: 'سند صرف', icon: ArrowUpRight, color: 'text-red-600' };
+            case 'opening_balance': return { text: 'رصيد سابق', icon: Clock, color: 'text-amber-600' };
+            default: return { text: type, icon: FileText, color: 'text-gray-600' };
+        }
+    };
 
     return (
         <div className="space-y-6" onClick={() => setActiveMenuId(null)}>
@@ -256,7 +372,7 @@ const Clients: React.FC = () => {
                                 value={newClient.name} onChange={e => setNewClient({...newClient, name: e.target.value})} />
                             <input required type="text" placeholder="رقم الهاتف" className="w-full p-2 border rounded-lg"
                                 value={newClient.phone} onChange={e => setNewClient({...newClient, phone: e.target.value})} />
-                            <input type="number" placeholder="ديون سابقة (اختياري)" className="w-full p-2 border rounded-lg"
+                            <input type="number" placeholder="ديون سابقة (افتتاحي)" className="w-full p-2 border rounded-lg"
                                 value={newClient.debt || ''} 
                                 onChange={e => setNewClient({...newClient, debt: Number(e.target.value)})} 
                             />
@@ -283,7 +399,6 @@ const Clients: React.FC = () => {
                                 <input required type="text" className="w-full p-2 border rounded-lg"
                                     value={editingClient.phone} onChange={e => setEditingClient({...editingClient, phone: e.target.value})} />
                             </div>
-                            {/* Debt editing is restricted to keep financial integrity usually, but allowed here for corrections */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">رصيد الدين (تصحيح)</label>
                                 <input type="number" className="w-full p-2 border rounded-lg"
@@ -291,7 +406,7 @@ const Clients: React.FC = () => {
                                     onChange={e => setEditingClient({...editingClient, debt: Number(e.target.value)})} 
                                 />
                             </div>
-                            <button type="submit" className="w-full bg-slate-800 text-white py-3 rounded-lg font-bold">حفظ التعديلات</button>
+                            <button type="submit" className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold">حفظ التعديلات</button>
                             <button type="button" onClick={() => setIsEditModalOpen(false)} className="w-full text-gray-500 py-2">إلغاء</button>
                         </form>
                     </div>
@@ -301,7 +416,7 @@ const Clients: React.FC = () => {
             {/* History Modal (Statement of Account) */}
             {isHistoryModalOpen && selectedClient && (
                 <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-3xl w-full max-w-3xl h-[80vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
+                    <div className="bg-white rounded-3xl w-full max-w-4xl h-[85vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
                         {/* Header */}
                         <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-3xl">
                             <div>
@@ -310,95 +425,69 @@ const Clients: React.FC = () => {
                                     كشف حساب: {selectedClient.name}
                                 </h2>
                                 <p className="text-sm text-gray-500 mt-1">
-                                    الرصيد الحالي (دين): <span className={`${selectedClient.debt > 0 ? 'text-red-600' : 'text-emerald-600'} font-bold`}>{selectedClient.debt} {CURRENCY}</span>
+                                    الرصيد النهائي (المطلوب): <span className={`${selectedClient.debt > 0 ? 'text-red-600' : 'text-emerald-600'} font-bold`}>{selectedClient.debt} {CURRENCY}</span>
                                 </p>
                             </div>
-                            <button onClick={() => setIsHistoryModalOpen(false)} className="p-2 hover:bg-gray-200 rounded-full transition">
-                                <X size={24} className="text-gray-500" />
-                            </button>
+                            <div className="flex gap-2">
+                                <button onClick={() => window.print()} className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 hidden md:block">
+                                    <Printer size={20} />
+                                </button>
+                                <button onClick={() => setIsHistoryModalOpen(false)} className="p-2 hover:bg-gray-200 rounded-full transition">
+                                    <X size={24} className="text-gray-500" />
+                                </button>
+                            </div>
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 overflow-y-auto p-6">
-                            <table className="w-full text-right">
-                                <thead className="bg-white text-gray-500 text-xs uppercase sticky top-0 z-10">
-                                    <tr>
-                                        <th className="px-4 py-3 bg-gray-50 rounded-r-lg">التاريخ</th>
-                                        <th className="px-4 py-3 bg-gray-50">النوع</th>
-                                        <th className="px-4 py-3 bg-gray-50">البيان / المنتجات</th>
-                                        <th className="px-4 py-3 bg-gray-50">عليه (مبيعات/سلف)</th>
-                                        <th className="px-4 py-3 bg-gray-50 rounded-l-lg">له (دفعات)</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {historyItems.length === 0 ? (
-                                        <tr><td colSpan={5} className="p-8 text-center text-gray-400">لا توجد حركات مسجلة لهذا العميل</td></tr>
-                                    ) : (
-                                        historyItems.map(item => {
-                                            const isInvoice = item.type === 'invoice';
-                                            
-                                            // Determine Amount placement
-                                            let debit = 0; // عليه (Sales / Loans given)
-                                            let credit = 0; // له (Payments made)
-
-                                            if (isInvoice) {
-                                                // Double cast to safe types to avoid build error
-                                                const inv = item as unknown as Invoice;
-                                                debit = inv.total;
-                                                credit = inv.paidAmount; // Immediate payment
-                                            } else {
-                                                const tx = item as unknown as FinancialTransaction;
-                                                if (tx.type === 'in') {
-                                                    // Receipt (قبض) = Client paying us = Credit
-                                                    credit = tx.amount;
-                                                } else {
-                                                    // Payment (صرف) = We paying client (Refund/Loan) = Debit
-                                                    debit = tx.amount;
-                                                }
-                                            }
-
-                                            return (
-                                                <tr key={item.id} className="hover:bg-gray-50 transition">
-                                                    <td className="px-4 py-3 text-sm text-gray-600 font-mono">
-                                                        {new Date(item.date).toLocaleDateString('ar-MA')}
-                                                    </td>
-                                                    <td className="px-4 py-3">
-                                                        {isInvoice ? (
-                                                            <span className="flex items-center gap-1 text-xs font-bold bg-blue-50 text-blue-700 px-2 py-1 rounded w-fit">
-                                                                <FileText size={12} /> فاتورة
+                        <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
+                            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                                <table className="w-full text-right">
+                                    <thead className="bg-gray-50 text-gray-500 text-xs uppercase sticky top-0 z-10 font-bold border-b border-gray-200">
+                                        <tr>
+                                            <th className="px-4 py-4 w-24">التاريخ</th>
+                                            <th className="px-4 py-4 w-32">نوع العملية</th>
+                                            <th className="px-4 py-4">الوصف</th>
+                                            <th className="px-4 py-4 w-28 text-red-600">عليه (مدين)</th>
+                                            <th className="px-4 py-4 w-28 text-emerald-600">له (دائن)</th>
+                                            <th className="px-4 py-4 w-28 bg-gray-100">الباقي</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {ledgerItems.length === 0 ? (
+                                            <tr><td colSpan={6} className="p-8 text-center text-gray-400">لا توجد حركات مسجلة لهذا العميل</td></tr>
+                                        ) : (
+                                            ledgerItems.map(item => {
+                                                const meta = getTypeLabel(item.type);
+                                                const Icon = meta.icon;
+                                                return (
+                                                    <tr key={item.id} className={`hover:bg-gray-50 transition ${getRowStyle(item.type)}`}>
+                                                        <td className="px-4 py-3 text-sm text-gray-600 font-mono">
+                                                            {item.date.toLocaleDateString('ar-MA')}
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <span className={`flex items-center gap-1.5 text-xs font-bold ${meta.color}`}>
+                                                                <Icon size={14} /> {meta.text}
                                                             </span>
-                                                        ) : (
-                                                            (item as unknown as FinancialTransaction).type === 'in' ? 
-                                                            <span className="flex items-center gap-1 text-xs font-bold bg-emerald-50 text-emerald-700 px-2 py-1 rounded w-fit">
-                                                                <ArrowDownLeft size={12} /> سند قبض
-                                                            </span> :
-                                                            <span className="flex items-center gap-1 text-xs font-bold bg-red-50 text-red-700 px-2 py-1 rounded w-fit">
-                                                                <ArrowUpRight size={12} /> سند صرف
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-sm text-gray-700">
-                                                        {isInvoice ? (
-                                                            <span className="truncate block max-w-[200px]">
-                                                                {(item as unknown as Invoice).items.map(i => i.productName).join(', ')}
-                                                            </span>
-                                                        ) : (
-                                                            (item as unknown as FinancialTransaction).description
-                                                        )}
-                                                        <div className="text-xs text-gray-400 font-mono mt-0.5">{item.id.slice(-8)}</div>
-                                                    </td>
-                                                    <td className="px-4 py-3 font-bold text-gray-800">
-                                                        {debit > 0 ? `${debit}` : '-'}
-                                                    </td>
-                                                    <td className="px-4 py-3 font-bold text-emerald-600">
-                                                        {credit > 0 ? `${credit}` : '-'}
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
-                                    )}
-                                </tbody>
-                            </table>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm text-gray-700 font-medium">
+                                                            {item.description}
+                                                        </td>
+                                                        <td className="px-4 py-3 font-bold text-red-600">
+                                                            {item.debit > 0 ? item.debit.toLocaleString() : '-'}
+                                                        </td>
+                                                        <td className="px-4 py-3 font-bold text-emerald-600">
+                                                            {item.credit > 0 ? item.credit.toLocaleString() : '-'}
+                                                        </td>
+                                                        <td className="px-4 py-3 font-black text-slate-800 bg-gray-50 border-r border-gray-100">
+                                                            {item.balance.toLocaleString()}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
