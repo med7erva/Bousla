@@ -1,11 +1,11 @@
 
 
-import React, { useState, useEffect, useRef } from 'react';
-import { User, Phone, Search, UserPlus, AlertCircle, FileText, Clock, X, ShoppingBag, ArrowDownLeft, ArrowUpRight, Banknote, MoreVertical, Edit2, Trash2, Save, Printer } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Phone, Search, UserPlus, AlertCircle, FileText, Clock, X, ShoppingBag, ArrowDownLeft, ArrowUpRight, MoreVertical, Edit2, Trash2, Printer } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getClients, addClient, getInvoices, getTransactions, updateClient, deleteClient } from '../services/db';
 import { getClientInsights } from '../services/geminiService';
-import { Client, Invoice, FinancialTransaction } from '../types';
+import { Client } from '../types';
 import { CURRENCY } from '../constants';
 import AIInsightAlert from '../components/AIInsightAlert';
 
@@ -47,12 +47,16 @@ const Clients: React.FC = () => {
 
     const loadClients = async () => {
         if (!user) return;
-        const data = await getClients(user.id);
-        setClients(data);
-        
-        if (data.length > 0 && !aiInsight) {
-            const insight = await getClientInsights(data);
-            setAiInsight(insight);
+        try {
+            const data = await getClients(user.id);
+            setClients(data);
+            
+            if (data.length > 0 && !aiInsight) {
+                const insight = await getClientInsights(data);
+                setAiInsight(insight);
+            }
+        } catch (err) {
+            console.error("Failed to load clients", err);
         }
     };
 
@@ -67,19 +71,29 @@ const Clients: React.FC = () => {
     const handleAddClient = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) return;
-        await addClient({ userId: user.id, ...newClient });
-        setIsAddModalOpen(false);
-        setNewClient({ name: '', phone: '', debt: 0, openingBalance: 0, notes: '' });
-        loadClients();
+        try {
+            await addClient({ userId: user.id, ...newClient });
+            setIsAddModalOpen(false);
+            setNewClient({ name: '', phone: '', debt: 0, openingBalance: 0, notes: '' });
+            loadClients();
+        } catch (err) {
+            console.error("Failed to add client", err);
+            alert("فشل إضافة العميل. يرجى المحاولة مرة أخرى.");
+        }
     };
 
     const handleUpdateClient = async (e: React.FormEvent) => {
         e.preventDefault();
         if(!editingClient) return;
-        await updateClient(editingClient);
-        setIsEditModalOpen(false);
-        setEditingClient(null);
-        loadClients();
+        try {
+            await updateClient(editingClient);
+            setIsEditModalOpen(false);
+            setEditingClient(null);
+            loadClients();
+        } catch (err) {
+            console.error("Failed to update client", err);
+            alert("فشل تحديث بيانات العميل.");
+        }
     };
 
     const handleDeleteClient = async (id: string) => {
@@ -105,107 +119,117 @@ const Clients: React.FC = () => {
         if (!user) return;
         setSelectedClient(client);
         
-        // 1. Fetch Raw Data
-        const [allInvoices, allTransactions] = await Promise.all([
-            getInvoices(user.id),
-            getTransactions(user.id)
-        ]);
+        try {
+            // 1. Fetch Raw Data
+            const [allInvoices, allTransactions] = await Promise.all([
+                getInvoices(user.id),
+                getTransactions(user.id)
+            ]);
 
-        // 2. Filter for this client
-        const clientInvoices = allInvoices.filter(inv => 
-            inv.customerName.trim().toLowerCase() === client.name.trim().toLowerCase()
-        );
-        
-        const clientTransactions = allTransactions.filter(tx => 
-            tx.entityType === 'Client' && tx.entityId === client.id
-        );
-
-        // 3. Transform to Unsorted Ledger Items
-        let rawItems: Omit<LedgerItem, 'balance'>[] = [];
-
-        // Invoices
-        clientInvoices.forEach(inv => {
-            const description = inv.items.map(i => 
-                i.quantity > 1 ? `${i.productName} (${i.quantity})` : i.productName
-            ).join('، ');
+            // 2. Filter for this client
+            const clientInvoices = allInvoices.filter(inv => 
+                inv.customerName && inv.customerName.trim().toLowerCase() === client.name.trim().toLowerCase()
+            );
             
-            rawItems.push({
-                id: `inv-${inv.id}`,
-                date: new Date(inv.date),
-                type: 'invoice',
-                description: description || 'فاتورة بيع',
-                debit: inv.total,      // عليه (Total Bill)
-                credit: inv.paidAmount // له (Paid Now)
+            const clientTransactions = allTransactions.filter(tx => 
+                tx.entityType === 'Client' && tx.entityId === client.id
+            );
+
+            // 3. Transform to Unsorted Ledger Items
+            let rawItems: Omit<LedgerItem, 'balance'>[] = [];
+
+            // Invoices
+            clientInvoices.forEach(inv => {
+                const items = inv.items || [];
+                const description = items.map(i => 
+                    i.quantity > 1 ? `${i.productName} (${i.quantity})` : i.productName
+                ).join('، ');
+                
+                rawItems.push({
+                    id: `inv-${inv.id}`,
+                    date: new Date(inv.date || new Date()),
+                    type: 'invoice',
+                    description: description || 'فاتورة بيع',
+                    debit: inv.total || 0,      // عليه (Total Bill)
+                    credit: inv.paidAmount || 0 // له (Paid Now)
+                });
             });
-        });
 
-        // Transactions
-        clientTransactions.forEach(tx => {
-            if (tx.type === 'in') {
-                // Receipt (قبض) = Credit for Client
-                rawItems.push({
-                    id: tx.id,
-                    date: new Date(tx.date),
-                    type: 'receipt',
-                    description: tx.description || 'سند قبض',
-                    debit: 0,
-                    credit: tx.amount
+            // Transactions
+            clientTransactions.forEach(tx => {
+                if (tx.type === 'in') {
+                    // Receipt (قبض) = Credit for Client
+                    rawItems.push({
+                        id: tx.id,
+                        date: new Date(tx.date || new Date()),
+                        type: 'receipt',
+                        description: tx.description || 'سند قبض',
+                        debit: 0,
+                        credit: tx.amount || 0
+                    });
+                } else {
+                    // Payment (صرف) = Debit for Client (Loan)
+                    rawItems.push({
+                        id: tx.id,
+                        date: new Date(tx.date || new Date()),
+                        type: 'payment',
+                        description: tx.description || 'سند صرف (سلفة)',
+                        debit: tx.amount || 0,
+                        credit: 0
+                    });
+                }
+            });
+
+            // 4. Sort Chronologically (Oldest to Newest) for correct running balance calc
+            // IMPORTANT: Forward Calculation starts here
+            rawItems.sort((a, b) => {
+                const timeA = a.date instanceof Date && !isNaN(a.date.getTime()) ? a.date.getTime() : 0;
+                const timeB = b.date instanceof Date && !isNaN(b.date.getTime()) ? b.date.getTime() : 0;
+                return timeA - timeB;
+            });
+
+            // 5. Initial Balance from explicit Opening Balance field
+            let currentBalance = client.openingBalance || 0;
+            const processedItems: LedgerItem[] = [];
+
+            // Add Opening Balance Row if it exists (non-zero)
+            const openingRow: LedgerItem | null = (client.openingBalance && client.openingBalance !== 0) ? {
+                id: 'opening-bal',
+                // Set date to slightly before the first item or now if empty
+                date: rawItems.length > 0 ? new Date(rawItems[0].date.getTime() - 60000) : new Date(), 
+                type: 'opening_balance',
+                description: 'رصيد افتتاحي / سابق',
+                debit: client.openingBalance > 0 ? client.openingBalance : 0,
+                credit: client.openingBalance < 0 ? Math.abs(client.openingBalance) : 0,
+                balance: client.openingBalance
+            } : null;
+
+            // Process items chronologically
+            rawItems.forEach(item => {
+                // Debit increases debt, Credit decreases debt
+                currentBalance = currentBalance + item.debit - item.credit;
+                
+                processedItems.push({
+                    ...item,
+                    balance: currentBalance
                 });
-            } else {
-                // Payment (صرف) = Debit for Client (Loan)
-                rawItems.push({
-                    id: tx.id,
-                    date: new Date(tx.date),
-                    type: 'payment',
-                    description: tx.description || 'سند صرف (سلفة)',
-                    debit: tx.amount,
-                    credit: 0
-                });
-            }
-        });
+            });
 
-        // 4. Sort Chronologically (Oldest to Newest) for correct running balance calc
-        // IMPORTANT: Forward Calculation starts here
-        rawItems.sort((a, b) => a.date.getTime() - b.date.getTime());
-
-        // 5. Initial Balance from explicit Opening Balance field
-        let currentBalance = client.openingBalance || 0;
-        const processedItems: LedgerItem[] = [];
-
-        // Add Opening Balance Row if it exists (non-zero)
-        const openingRow: LedgerItem | null = (client.openingBalance && client.openingBalance !== 0) ? {
-            id: 'opening-bal',
-            // Set date to slightly before the first item or now if empty
-            date: rawItems.length > 0 ? new Date(rawItems[0].date.getTime() - 60000) : new Date(), 
-            type: 'opening_balance',
-            description: 'رصيد افتتاحي / سابق',
-            debit: client.openingBalance > 0 ? client.openingBalance : 0,
-            credit: client.openingBalance < 0 ? Math.abs(client.openingBalance) : 0,
-            balance: client.openingBalance
-        } : null;
-
-        // Process items chronologically
-        rawItems.forEach(item => {
-            // Debit increases debt, Credit decreases debt
-            currentBalance = currentBalance + item.debit - item.credit;
+            // 6. Final Assembly & Reverse for Display (Newest First)
+            // If opening row exists, it should be at the bottom of the display list (which means first in chrono list)
+            const finalLedger = openingRow ? [openingRow, ...processedItems] : [...processedItems];
             
-            processedItems.push({
-                ...item,
-                balance: currentBalance
-            });
-        });
-
-        // 6. Final Assembly & Reverse for Display (Newest First)
-        // If opening row exists, it should be at the bottom of the display list (which means first in chrono list)
-        const finalLedger = openingRow ? [openingRow, ...processedItems] : [...processedItems];
-        
-        setLedgerItems(finalLedger.reverse());
-        setIsHistoryModalOpen(true);
-        setActiveMenuId(null);
+            setLedgerItems(finalLedger.reverse());
+            setIsHistoryModalOpen(true);
+            setActiveMenuId(null);
+        } catch (err) {
+            console.error("Failed to generate history", err);
+            alert("حدث خطأ أثناء إعداد كشف الحساب.");
+        }
     };
 
     const filteredClients = clients.filter(c => 
-        c.name.includes(searchTerm) || c.phone.includes(searchTerm)
+        (c.name && c.name.includes(searchTerm)) || (c.phone && c.phone.includes(searchTerm))
     );
 
     const activeClient = clients.find(c => c.id === activeMenuId);

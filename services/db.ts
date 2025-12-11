@@ -155,8 +155,8 @@ export const updateUserProfile = async (userId: string, data: { name?: string, s
 export const getPaymentMethods = async (userId: string): Promise<PaymentMethod[]> => {
     const { data, error } = await supabase.from('payment_methods').select('*');
     if (error) throw error;
-    return data.map((d: any) => ({
-        id: d.id, userId: d.user_id, name: d.name, type: d.type, provider: d.provider, balance: d.balance, isDefault: d.is_default
+    return (data || []).map((d: any) => ({
+        id: d.id, userId: d.user_id, name: d.name, type: d.type, provider: d.provider, balance: d.balance || 0, isDefault: d.is_default
     }));
 };
 
@@ -179,15 +179,15 @@ export const ensurePaymentMethodsExist = async (userId: string) => {
 export const getProducts = async (userId: string): Promise<Product[]> => {
     const { data, error } = await supabase.from('products').select('*');
     if (error) throw error;
-    return data.map((d: any) => ({
-        id: d.id, userId: d.user_id, name: d.name, category: d.category, price: d.price, cost: d.cost, stock: d.stock, barcode: d.barcode
+    return (data || []).map((d: any) => ({
+        id: d.id, userId: d.user_id, name: d.name, category: d.category, price: d.price || 0, cost: d.cost || 0, stock: d.stock || 0, barcode: d.barcode
     }));
 };
 
 export const getProductCategories = async (userId: string): Promise<ProductCategory[]> => {
     const { data, error } = await supabase.from('product_categories').select('*');
     if (error) throw error;
-    return data.map((d: any) => ({ id: d.id, userId: d.user_id, name: d.name }));
+    return (data || []).map((d: any) => ({ id: d.id, userId: d.user_id, name: d.name }));
 };
 
 export const addProductCategory = async (userId: string, name: string) => {
@@ -275,16 +275,18 @@ export const manufactureProduct = async (sourceId: string, targetId: string, qty
 export const getInvoices = async (userId: string): Promise<Invoice[]> => {
     const { data, error } = await supabase.from('invoices').select('*').order('date', { ascending: false });
     if (error) throw error;
-    return data.map((d: any) => ({
+    
+    // Robust mapping with default values to prevent crashes
+    return (data || []).map((d: any) => ({
         id: d.id,
         userId: d.user_id,
-        customerName: d.customer_name,
-        date: d.date,
-        total: d.total,
-        paidAmount: d.paid_amount,
-        remainingAmount: d.remaining_amount,
+        customerName: d.customer_name || 'عميل غير معروف',
+        date: d.date || new Date().toISOString(),
+        total: d.total || 0,
+        paidAmount: d.paid_amount || 0,
+        remainingAmount: d.remaining_amount || 0,
         status: d.status,
-        items: d.items, 
+        items: Array.isArray(d.items) ? d.items : [], // CRITICAL: Ensure items is always an array
         paymentMethodId: d.payment_method_id
     }));
 };
@@ -348,8 +350,9 @@ export const deleteInvoice = async (id: string) => {
     if(error || !inv) throw new Error("Invoice not found");
 
     // 2. Restock Products
-    for(const item of inv.items) {
-        if(!item.productId.startsWith('custom-')) {
+    const items = Array.isArray(inv.items) ? inv.items : [];
+    for(const item of items) {
+        if(item.productId && !item.productId.startsWith('custom-')) {
              const { data: prod } = await supabase.from('products').select('stock').eq('id', item.productId).single();
              if(prod) {
                  await supabase.from('products').update({ stock: prod.stock + item.quantity }).eq('id', item.productId);
@@ -409,10 +412,12 @@ export const getSalesAnalytics = async (userId: string) => {
 
     // Fill with actual data
     invoices.forEach(inv => {
-        const invDate = inv.date.split('T')[0];
-        // Only count if it falls within our last 7 days window
-        if (salesMap[invDate] !== undefined) {
-            salesMap[invDate] += inv.total;
+        if (inv.date) {
+            const invDate = inv.date.split('T')[0];
+            // Only count if it falls within our last 7 days window
+            if (salesMap[invDate] !== undefined) {
+                salesMap[invDate] += inv.total;
+            }
         }
     });
 
@@ -429,8 +434,15 @@ export const getSalesAnalytics = async (userId: string) => {
 export const getClients = async (userId: string): Promise<Client[]> => {
     const { data, error } = await supabase.from('clients').select('*');
     if (error) throw error;
-    return data.map((d: any) => ({
-        id: d.id, userId: d.user_id, name: d.name, phone: d.phone, debt: d.debt, lastPurchaseDate: d.last_purchase_date, notes: d.notes, openingBalance: d.opening_balance
+    return (data || []).map((d: any) => ({
+        id: d.id, 
+        userId: d.user_id, 
+        name: d.name, 
+        phone: d.phone, 
+        debt: Number(d.debt) || 0, 
+        lastPurchaseDate: d.last_purchase_date, 
+        notes: d.notes, 
+        openingBalance: Number(d.opening_balance) || 0
     }));
 };
 
@@ -457,7 +469,7 @@ export const updateClient = async (client: Client) => {
     let newDebt = client.debt;
     
     if (oldClient && client.openingBalance !== undefined) {
-        const diff = (client.openingBalance || 0) - (oldClient.opening_balance || 0);
+        const diff = (client.openingBalance || 0) - (Number(oldClient.opening_balance) || 0);
         if (diff !== 0) {
             newDebt = Number(oldClient.debt) + diff;
         }
@@ -480,8 +492,8 @@ export const deleteClient = async (id: string) => {
 export const getSuppliers = async (userId: string): Promise<Supplier[]> => {
     const { data, error } = await supabase.from('suppliers').select('*');
     if (error) throw error;
-    return data.map((d: any) => ({
-        id: d.id, userId: d.user_id, name: d.name, phone: d.phone, debt: d.debt, productsSummary: d.products_summary
+    return (data || []).map((d: any) => ({
+        id: d.id, userId: d.user_id, name: d.name, phone: d.phone, debt: d.debt || 0, productsSummary: d.products_summary
     }));
 };
 
@@ -514,8 +526,17 @@ export const deleteSupplier = async (id: string) => {
 export const getPurchases = async (userId: string): Promise<Purchase[]> => {
     const { data, error } = await supabase.from('purchases').select('*').order('date', { ascending: false });
     if (error) throw error;
-    return data.map((d: any) => ({
-        id: d.id, userId: d.user_id, supplierId: d.supplier_id, supplierName: d.supplier_name, date: d.date, totalCost: d.total_cost, paidAmount: d.paid_amount, items: d.items, status: d.status, paymentMethodId: d.payment_method_id
+    return (data || []).map((d: any) => ({
+        id: d.id, 
+        userId: d.user_id, 
+        supplierId: d.supplier_id, 
+        supplierName: d.supplier_name, 
+        date: d.date || new Date().toISOString(), 
+        totalCost: d.total_cost || 0, 
+        paidAmount: d.paid_amount || 0, 
+        items: Array.isArray(d.items) ? d.items : [], 
+        status: d.status, 
+        paymentMethodId: d.payment_method_id
     }));
 };
 
@@ -575,7 +596,8 @@ export const deletePurchase = async (id: string) => {
 
     // 2. CHECK STOCK INTEGRITY
     // We cannot delete a purchase if the items have already been sold (i.e. if current stock < purchased quantity)
-    for (const item of purchase.items) {
+    const items = Array.isArray(purchase.items) ? purchase.items : [];
+    for (const item of items) {
         const { data: prod } = await supabase.from('products').select('stock, name').eq('id', item.productId).single();
         
         if (!prod) continue; // Product might have been deleted manually, skip check
@@ -586,7 +608,7 @@ export const deletePurchase = async (id: string) => {
     }
 
     // 3. Revert Stock (Deduct purchased items)
-    for (const item of purchase.items) {
+    for (const item of items) {
         const { data: prod } = await supabase.from('products').select('stock').eq('id', item.productId).single();
         if (prod) {
             await supabase.from('products').update({ stock: prod.stock - item.quantity }).eq('id', item.productId);
@@ -625,15 +647,15 @@ export const getExpenses = async (userId: string): Promise<Expense[]> => {
     if (catError) throw catError;
     
     // Map manually
-    return expenses.map((d: any) => ({
+    return (expenses || []).map((d: any) => ({
         id: d.id, 
         userId: d.user_id, 
         title: d.title, 
-        amount: d.amount, 
+        amount: d.amount || 0, 
         categoryId: d.category_id, 
-        categoryName: categories.find((c: any) => c.id === d.category_id)?.name || 'غير مصنف', 
+        categoryName: categories?.find((c: any) => c.id === d.category_id)?.name || 'غير مصنف', 
         employeeId: d.employee_id, 
-        date: d.date, 
+        date: d.date || new Date().toISOString(), 
         paymentMethodId: d.payment_method_id
     }));
 };
@@ -641,7 +663,7 @@ export const getExpenses = async (userId: string): Promise<Expense[]> => {
 export const getExpenseCategories = async (userId: string): Promise<ExpenseCategory[]> => {
     const { data, error } = await supabase.from('expense_categories').select('*');
     if (error) throw error;
-    return data.map((d: any) => ({ id: d.id, userId: d.user_id, name: d.name, isDefault: d.is_default }));
+    return (data || []).map((d: any) => ({ id: d.id, userId: d.user_id, name: d.name, isDefault: d.is_default }));
 };
 
 export const addExpenseCategory = async (userId: string, name: string) => {
@@ -699,8 +721,8 @@ export const deleteExpense = async (id: string) => {
 export const getEmployees = async (userId: string): Promise<Employee[]> => {
     const { data, error } = await supabase.from('employees').select('*');
     if (error) throw error;
-    return data.map((d: any) => ({
-        id: d.id, userId: d.user_id, name: d.name, role: d.role, phone: d.phone, salary: d.salary, joinDate: d.join_date, loanBalance: d.loan_balance
+    return (data || []).map((d: any) => ({
+        id: d.id, userId: d.user_id, name: d.name, role: d.role, phone: d.phone, salary: d.salary || 0, joinDate: d.join_date, loanBalance: d.loan_balance || 0
     }));
 };
 
@@ -719,8 +741,8 @@ export const getTransactions = async (userId: string): Promise<FinancialTransact
     
     if (error) throw error;
     
-    return data.map((d: any) => ({
-        id: d.id, userId: d.user_id, type: d.type, amount: d.amount, date: d.date, 
+    return (data || []).map((d: any) => ({
+        id: d.id, userId: d.user_id, type: d.type, amount: d.amount || 0, date: d.date || new Date().toISOString(), 
         paymentMethodId: d.payment_method_id, paymentMethodName: d.payment_methods?.name,
         entityType: d.entity_type, entityId: d.entity_id, entityName: d.entity_name, description: d.description
     }));
@@ -912,27 +934,27 @@ export const getReportData = async (userId: string, startDate?: string, endDate?
     ]);
 
     const products = (prodRes.data || []).map((d: any) => ({
-         id: d.id, userId: d.user_id, name: d.name, category: d.category, price: d.price, cost: d.cost, stock: d.stock, barcode: d.barcode
+         id: d.id, userId: d.user_id, name: d.name, category: d.category, price: d.price || 0, cost: d.cost || 0, stock: d.stock || 0, barcode: d.barcode
     }));
 
     const invoices = (invRes.data || []).map((d: any) => ({
-        id: d.id, userId: d.user_id, customerName: d.customer_name, date: d.date, total: d.total, paidAmount: d.paid_amount, items: d.items
+        id: d.id, userId: d.user_id, customerName: d.customer_name, date: d.date, total: d.total || 0, paidAmount: d.paid_amount || 0, items: Array.isArray(d.items) ? d.items : []
     }));
 
     const categories = catsRes.data || [];
     const expenses = (expRes.data || []).map((d: any) => ({
-        id: d.id, userId: d.user_id, title: d.title, amount: d.amount, 
+        id: d.id, userId: d.user_id, title: d.title, amount: d.amount || 0, 
         categoryId: d.category_id,
         categoryName: categories.find((c: any) => c.id === d.category_id)?.name || 'غير مصنف', 
         date: d.date
     }));
 
     const purchases = (purRes.data || []).map((d: any) => ({
-        id: d.id, userId: d.user_id, date: d.date, totalCost: d.total_cost, paidAmount: d.paid_amount
+        id: d.id, userId: d.user_id, date: d.date, totalCost: d.total_cost || 0, paidAmount: d.paid_amount || 0
     }));
 
     const transactions = (txRes.data || []).map((d: any) => ({
-        id: d.id, type: d.type, amount: d.amount, date: d.date, entityType: d.entity_type, description: d.description
+        id: d.id, type: d.type, amount: d.amount || 0, date: d.date, entityType: d.entity_type, description: d.description
     }));
 
     return { invoices, expenses, products, purchases, transactions };
