@@ -120,27 +120,30 @@ const Clients: React.FC = () => {
             tx.entityType === 'Client' && tx.entityId === client.id
         );
 
-        // 3. Transform to Ledger Items (Unsorted)
+        // 3. Transform to Unsorted Ledger Items
         let rawItems: Omit<LedgerItem, 'balance'>[] = [];
 
-        // Invoices: Single Row Logic (Debit = Total, Credit = Paid)
+        // Invoices
         clientInvoices.forEach(inv => {
-            const productNames = inv.items.map(i => i.productName).join('، ');
+            // Add quantity to description
+            const description = inv.items.map(i => 
+                i.quantity > 1 ? `${i.productName} (${i.quantity})` : i.productName
+            ).join('، ');
             
             rawItems.push({
                 id: `inv-${inv.id}`,
                 date: new Date(inv.date),
                 type: 'invoice_sale',
-                description: productNames || 'فاتورة بيع',
-                debit: inv.total,      // عليه (قيمة الفاتورة كاملة)
-                credit: inv.paidAmount // له (المبلغ المدفوع فوراً)
+                description: description || 'فاتورة بيع',
+                debit: inv.total,      // عليه (Total Bill)
+                credit: inv.paidAmount // له (Paid Now)
             });
         });
 
-        // Transactions (Financial Receipts/Payments)
+        // Transactions
         clientTransactions.forEach(tx => {
             if (tx.type === 'in') {
-                // Receipt (قبض) = Credit for Client (He paid us)
+                // Receipt (قبض) = Credit for Client
                 rawItems.push({
                     id: tx.id,
                     date: new Date(tx.date),
@@ -150,7 +153,7 @@ const Clients: React.FC = () => {
                     credit: tx.amount
                 });
             } else {
-                // Payment (صرف) = Debit for Client (We gave him money/loan)
+                // Payment (صرف) = Debit for Client
                 rawItems.push({
                     id: tx.id,
                     date: new Date(tx.date),
@@ -162,44 +165,48 @@ const Clients: React.FC = () => {
             }
         });
 
-        // 4. Sort Chronologically (Oldest to Newest) for calculation
+        // 4. Sort Chronologically (Oldest to Newest) for correct running balance calc
         rawItems.sort((a, b) => a.date.getTime() - b.date.getTime());
 
         // 5. Calculate Opening Balance
-        // Logic: Current Debt = Opening Balance + Total Debits - Total Credits
-        // Therefore: Opening Balance = Current Debt - Total Debits + Total Credits
+        // Logic: The "Opening Balance" is the difference between the Current Actual Debt (DB)
+        // and the Net Sum of all recorded history.
+        // Opening = CurrentDebt - (SumDebits - SumCredits)
         const totalDebits = rawItems.reduce((sum, item) => sum + item.debit, 0);
         const totalCredits = rawItems.reduce((sum, item) => sum + item.credit, 0);
-        const currentDebt = client.debt;
+        const netHistoryChange = totalDebits - totalCredits;
         
-        const openingBalance = currentDebt - totalDebits + totalCredits;
+        const openingBalance = client.debt - netHistoryChange;
 
         // 6. Build Final Ledger with Running Balance
-        let runningBalance = openingBalance;
-        const finalLedger: LedgerItem[] = [];
+        let currentBalance = openingBalance;
+        const processedItems: LedgerItem[] = [];
 
-        // Add Opening Balance Row if exists (and not zero)
-        if (Math.abs(openingBalance) > 0) {
-            finalLedger.push({
-                id: 'opening-bal',
-                date: rawItems.length > 0 ? new Date(rawItems[0].date.getTime() - 1000) : new Date(), // Just before first item
-                type: 'opening_balance',
-                description: 'رصيد افتتاحي (سابق)',
-                debit: openingBalance > 0 ? openingBalance : 0,
-                credit: openingBalance < 0 ? Math.abs(openingBalance) : 0,
-                balance: openingBalance
-            });
-        }
+        // Add Opening Balance Row if it exists (non-zero)
+        // We push it to a separate array or handle it first
+        const openingRow: LedgerItem | null = Math.abs(openingBalance) > 0 ? {
+            id: 'opening-bal',
+            date: rawItems.length > 0 ? new Date(rawItems[0].date.getTime() - 60000) : new Date(), // 1 min before first item
+            type: 'opening_balance',
+            description: 'رصيد افتتاحي / سابق',
+            debit: openingBalance > 0 ? openingBalance : 0,
+            credit: openingBalance < 0 ? Math.abs(openingBalance) : 0,
+            balance: openingBalance
+        } : null;
 
+        // Process items chronologically
         rawItems.forEach(item => {
-            runningBalance = runningBalance + item.debit - item.credit;
-            finalLedger.push({
+            currentBalance = currentBalance + item.debit - item.credit;
+            processedItems.push({
                 ...item,
-                balance: runningBalance
+                balance: currentBalance
             });
         });
 
-        // 7. Sort Reverse Chronological (Newest First) for Display
+        // 7. Final Assembly & Reverse for Display (Newest First)
+        // If opening row exists, it should be at the bottom of the display list (which means first in chrono list)
+        const finalLedger = openingRow ? [openingRow, ...processedItems] : [...processedItems];
+        
         setLedgerItems(finalLedger.reverse());
         setIsHistoryModalOpen(true);
         setActiveMenuId(null);
@@ -437,7 +444,7 @@ const Clients: React.FC = () => {
                                                 <th className="px-4 py-4">الوصف (المنتجات)</th>
                                                 <th className="px-4 py-4 w-28 text-red-600">عليه (مبلغ الفاتورة)</th>
                                                 <th className="px-4 py-4 w-28 text-emerald-600">له (المدفوع)</th>
-                                                <th className="px-4 py-4 w-28 bg-gray-100">الباقي</th>
+                                                <th className="px-4 py-4 w-28 bg-gray-100">الباقي (تراكمي)</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
