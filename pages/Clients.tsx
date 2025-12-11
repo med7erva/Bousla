@@ -87,7 +87,7 @@ const Clients: React.FC = () => {
         } catch (err: any) {
             console.error("Failed to add client", err);
             // More descriptive error message
-            alert(`فشل إضافة العميل. ${err.message || 'يرجى التأكد من أن رقم الهاتف غير مكرر.'}`);
+            alert(`فشل إضافة العميل. ${err.message || 'يرجى المحاولة مرة أخرى.'}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -203,22 +203,9 @@ const Clients: React.FC = () => {
                 return timeA - timeB;
             });
 
-            // 5. Initial Balance from explicit Opening Balance field
-            
-            let currentBalance = client.openingBalance || 0;
+            // 5. Calculate running balance
+            let currentBalance = 0; // Starts at 0, Opening Balance is now an invoice item!
             const processedItems: LedgerItem[] = [];
-
-            // Add Opening Balance Row if it exists (non-zero)
-            const openingRow: LedgerItem | null = (client.openingBalance && client.openingBalance !== 0) ? {
-                id: 'opening-bal',
-                // Set date to slightly before the first item or now if empty
-                date: rawItems.length > 0 ? new Date(rawItems[0].date.getTime() - 60000) : new Date(), 
-                type: 'opening_balance',
-                description: 'رصيد افتتاحي / سابق',
-                debit: client.openingBalance > 0 ? client.openingBalance : 0,
-                credit: client.openingBalance < 0 ? Math.abs(client.openingBalance) : 0,
-                balance: client.openingBalance
-            } : null;
 
             // Process items chronologically
             rawItems.forEach(item => {
@@ -235,18 +222,13 @@ const Clients: React.FC = () => {
             // Only update if difference is significant to avoid floating point jitter, and ensure we have data
             if (Math.abs(currentBalance - client.debt) > 0.1) {
                 console.log(`Auto-correcting client balance from ${client.debt} to ${currentBalance}`);
-                // Don't await this to keep UI snappy, just fire and forget (or use optimistic UI)
                 updateClient({ ...client, debt: currentBalance }).then(() => {
-                    // Update local state to reflect change immediately in UI without full reload
                     setClients(prev => prev.map(c => c.id === client.id ? { ...c, debt: currentBalance } : c));
                 });
             }
 
             // 6. Final Assembly & Reverse for Display (Newest First)
-            // If opening row exists, it should be at the bottom of the display list (which means first in chrono list)
-            const finalLedger = openingRow ? [openingRow, ...processedItems] : [...processedItems];
-            
-            setLedgerItems(finalLedger.reverse());
+            setLedgerItems(processedItems.reverse());
             setIsHistoryModalOpen(true);
             setActiveMenuId(null);
         } catch (err) {
@@ -273,7 +255,7 @@ const Clients: React.FC = () => {
 
     const getTypeLabel = (type: string) => {
         switch (type) {
-            case 'invoice': return { text: 'فاتورة بيع', icon: ShoppingBag, color: 'text-blue-600' };
+            case 'invoice': return { text: 'فاتورة / عملية', icon: ShoppingBag, color: 'text-blue-600' };
             case 'receipt': return { text: 'سند قبض', icon: ArrowDownLeft, color: 'text-emerald-700' };
             case 'payment': return { text: 'سند صرف', icon: ArrowUpRight, color: 'text-red-600' };
             case 'opening_balance': return { text: 'رصيد سابق', icon: Clock, color: 'text-amber-700 font-bold' };
@@ -283,10 +265,7 @@ const Clients: React.FC = () => {
 
     // Calculate final balance for display in Modal Header
     // Since ledgerItems is reversed (Index 0 is the newest), we take index 0 balance.
-    // If empty, we take opening balance or 0.
-    const calculatedFinalBalance = ledgerItems.length > 0 
-        ? ledgerItems[0].balance 
-        : (selectedClient?.openingBalance || 0);
+    const calculatedFinalBalance = ledgerItems.length > 0 ? ledgerItems[0].balance : 0;
 
     const getBalanceLabel = (bal: number) => {
         if (bal > 0) return { text: "رصيد مستحق (عليه)", color: "text-red-600", bg: "bg-red-50" };
@@ -464,14 +443,7 @@ const Clients: React.FC = () => {
                                 <input required type="text" className="w-full p-2 border rounded-lg"
                                     value={editingClient.phone} onChange={e => setEditingClient({...editingClient, phone: e.target.value})} />
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">الرصيد الافتتاحي</label>
-                                <input type="number" className="w-full p-2 border rounded-lg bg-gray-50"
-                                    value={editingClient.openingBalance === 0 ? '' : editingClient.openingBalance} 
-                                    onChange={e => setEditingClient({...editingClient, openingBalance: Number(e.target.value)})} 
-                                />
-                                <p className="text-xs text-gray-500 mt-1">تعديل الرصيد الافتتاحي سيؤثر على الرصيد الكلي</p>
-                            </div>
+                            
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">رصيد الدين الحالي (للتصحيح اليدوي فقط)</label>
                                 <input type="number" className="w-full p-2 border rounded-lg border-dashed"

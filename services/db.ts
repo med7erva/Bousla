@@ -309,7 +309,7 @@ export const createInvoice = async (userId: string, items: SaleItem[], total: nu
     if (error) throw error;
 
     for (const item of items) {
-        if (!item.productId.startsWith('custom-')) {
+        if (!item.productId.startsWith('custom-') && !item.productId.startsWith('opening-bal')) {
             const { data: prod } = await supabase.from('products').select('stock').eq('id', item.productId).single();
             if (prod) {
                 await supabase.from('products').update({ stock: prod.stock - item.quantity }).eq('id', item.productId);
@@ -328,7 +328,7 @@ export const createInvoice = async (userId: string, items: SaleItem[], total: nu
     } else if (netChange !== 0) {
         // Create new client if there is a balance change (debt or credit)
         await supabase.from('clients').insert({
-            user_id: userId, name: finalCustomerName, phone: '', debt: netChange, last_purchase_date: date, opening_balance: 0
+            user_id: userId, name: finalCustomerName, phone: '', debt: netChange, last_purchase_date: date
         });
     }
 
@@ -350,7 +350,7 @@ export const deleteInvoice = async (id: string) => {
     // 2. Restock Products
     const items = Array.isArray(inv.items) ? inv.items : [];
     for(const item of items) {
-        if(item.productId && !item.productId.startsWith('custom-')) {
+        if(item.productId && !item.productId.startsWith('custom-') && !item.productId.startsWith('opening-bal')) {
              const { data: prod } = await supabase.from('products').select('stock').eq('id', item.productId).single();
              if(prod) {
                  await supabase.from('products').update({ stock: prod.stock + item.quantity }).eq('id', item.productId);
@@ -437,38 +437,73 @@ export const getClients = async (userId: string): Promise<Client[]> => {
         debt: Number(d.debt) || 0, 
         lastPurchaseDate: d.last_purchase_date, 
         notes: d.notes, 
+        // We use Number() to safely handle missing column (returns NaN -> 0)
         openingBalance: Number(d.opening_balance) || 0
     }));
 };
 
 export const addClient = async (client: Omit<Client, 'id'>) => {
-    const initialDebt = (client.debt || 0) + (client.openingBalance || 0);
+    // FIX: Do not rely on 'opening_balance' column if it doesn't exist.
+    // Instead, if there is an opening balance, create it as a "System Invoice" or just add to debt.
+    // But to ensure history is accurate, we create an Invoice.
     
-    // ADDED ERROR CHECKING HERE
-    const { error } = await supabase.from('clients').insert({
-        user_id: client.userId, name: client.name, phone: client.phone, debt: initialDebt, notes: client.notes, opening_balance: client.openingBalance || 0
-    });
+    const totalDebt = (client.debt || 0) + (client.openingBalance || 0);
+    
+    // 1. Insert Client (without opening_balance column)
+    const { data: newClient, error } = await supabase.from('clients').insert({
+        user_id: client.userId, 
+        name: client.name, 
+        phone: client.phone, 
+        debt: 0, // We will update debt via invoice logic to ensure sync
+        notes: client.notes
+    }).select().single();
     
     if (error) {
         console.error("Supabase Error:", error);
         throw error;
     }
+
+    // 2. If Opening Balance provided, create a special Invoice
+    if (totalDebt !== 0) {
+        const openingItem = {
+            productId: 'opening-bal',
+            productName: 'رصيد افتتاحي (سابق)',
+            quantity: 1,
+            priceAtSale: totalDebt
+        };
+        
+        const date = new Date().toISOString();
+        
+        // Directly insert Invoice to link it to the client we just created
+        const { error: invError } = await supabase.from('invoices').insert({
+            user_id: client.userId,
+            customer_name: client.name,
+            date: date,
+            total: totalDebt,
+            paid_amount: 0,
+            remaining_amount: totalDebt,
+            status: 'Pending',
+            items: [openingItem]
+        });
+        
+        if(invError) console.error("Failed to create opening balance invoice", invError);
+
+        // Update the client debt to reflect this
+        await supabase.from('clients').update({ 
+            debt: totalDebt,
+            last_purchase_date: date
+        }).eq('id', newClient.id);
+    }
 };
 
 export const updateClient = async (client: Client) => {
-    const { data: oldClient } = await supabase.from('clients').select('opening_balance, debt').eq('id', client.id).single();
-    
-    let newDebt = client.debt;
-    
-    if (oldClient && client.openingBalance !== undefined) {
-        const diff = (client.openingBalance || 0) - (Number(oldClient.opening_balance) || 0);
-        if (diff !== 0) {
-            newDebt = Number(oldClient.debt) + diff;
-        }
-    }
-
+    // Simplified update to avoid 'opening_balance' column issues
+    // We trust the UI passed the correct debt if manually edited, otherwise debt is managed by transactions
     const { error } = await supabase.from('clients').update({
-        name: client.name, phone: client.phone, debt: newDebt, notes: client.notes, opening_balance: client.openingBalance
+        name: client.name, 
+        phone: client.phone, 
+        debt: client.debt, 
+        notes: client.notes
     }).eq('id', client.id);
     
     if (error) throw error;
