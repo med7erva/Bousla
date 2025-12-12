@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  ComposedChart,
+  LineChart,
   Line,
+  BarChart,
   Bar, 
   XAxis, 
   YAxis, 
@@ -14,6 +15,7 @@ import {
   PieChart,
   Pie,
   Cell,
+  AreaChart,
   Area
 } from 'recharts';
 import { 
@@ -23,11 +25,14 @@ import {
     TrendingDown, 
     DollarSign, 
     Package, 
-    AlertOctagon, 
+    AlertTriangle, 
     Loader2,
     Wallet,
-    ShoppingBag,
-    Percent
+    ArrowUpRight,
+    ArrowDownLeft,
+    Activity,
+    AlertOctagon,
+    Layers
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getReportData, getPaymentMethods } from '../services/db';
@@ -36,17 +41,7 @@ import { Invoice, Expense, Product, PaymentMethod } from '../types';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 
-const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6366f1'];
-const PAYMENT_COLORS = ['#334155', '#059669', '#d97706', '#2563eb', '#7c3aed']; // Dark, Green, Amber, Blue, Violet
-
-interface OutflowItem {
-    id: string;
-    date: string;
-    type: string;
-    category: string;
-    description: string;
-    amount: number;
-}
+const EXPENSE_COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#06b6d4', '#6366f1', '#8b5cf6', '#ec4899'];
 
 const Reports: React.FC = () => {
     const { user } = useAuth();
@@ -56,135 +51,123 @@ const Reports: React.FC = () => {
     });
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
-    const [data, setData] = useState<{
-        kpis: any,
-        financialChart: any[],
-        paymentMethodsChart: any[],
-        topProducts: any[],
-        pnlData: any,
-        outflowsList: OutflowItem[]
+    
+    // Data State
+    const [salesTrend, setSalesTrend] = useState<any[]>([]);
+    const [productStats, setProductStats] = useState<{
+        topSelling: any[],
+        slowMoving: any[],
+        lowStock: any[]
+    }>({ topSelling: [], slowMoving: [], lowStock: [] });
+    
+    const [expenseStats, setExpenseStats] = useState<{
+        total: number,
+        breakdown: any[]
+    }>({ total: 0, breakdown: [] });
+
+    const [cashFlow, setCashFlow] = useState<{
+        inflow: { sales: number, receipts: number, total: number },
+        outflow: { expenses: number, purchases: number, payments: number, total: number },
+        net: number
     }>({
-        kpis: {}, financialChart: [], paymentMethodsChart: [], topProducts: [], pnlData: {}, outflowsList: []
+        inflow: { sales: 0, receipts: 0, total: 0 },
+        outflow: { expenses: 0, purchases: 0, payments: 0, total: 0 },
+        net: 0
     });
 
     const loadData = async () => {
         if (!user) return;
         setLoading(true);
         
-        // Fetch Report Data & Payment Methods to map names
-        const [report, allPaymentMethods] = await Promise.all([
-            getReportData(user.id, dateRange.start, dateRange.end),
-            getPaymentMethods(user.id)
-        ]);
-        
-        // --- 1. KPIs Calculation ---
-        const totalSales = report.invoices.reduce((sum, i) => sum + i.total, 0);
-        const totalExpenses = report.expenses.reduce((sum, e) => sum + e.amount, 0);
-        const invoiceCount = report.invoices.length;
-        const averageBasket = invoiceCount > 0 ? totalSales / invoiceCount : 0;
-        
-        // COGS Calculation (Approximate based on current cost)
-        let totalCOGS = 0;
-        report.invoices.forEach(inv => {
-            inv.items.forEach(item => {
-                const prod = report.products.find(p => p.id === item.productId);
-                if (prod) totalCOGS += (prod.cost * item.quantity);
+        try {
+            const report = await getReportData(user.id, dateRange.start, dateRange.end);
+            
+            // --- 1. Sales Trend (Line Chart) ---
+            const dailyMap: Record<string, number> = {};
+            let curr = new Date(dateRange.start);
+            const end = new Date(dateRange.end);
+            // Initialize dates
+            while(curr <= end) {
+                const d = curr.toISOString().split('T')[0];
+                dailyMap[d] = 0;
+                curr.setDate(curr.getDate() + 1);
+            }
+            // Fill data
+            report.invoices.forEach(inv => {
+                const d = inv.date.split('T')[0];
+                if(dailyMap[d] !== undefined) dailyMap[d] += inv.total;
             });
-        });
+            const trendData = Object.keys(dailyMap).map(date => ({
+                date: new Date(date).toLocaleDateString('ar-MA', {day: '2-digit', month: '2-digit'}),
+                fullDate: date,
+                المبيعات: dailyMap[date]
+            }));
+            setSalesTrend(trendData);
 
-        const grossProfit = totalSales - totalCOGS;
-        const netProfit = totalSales - totalExpenses - totalCOGS;
-        const profitMargin = totalSales > 0 ? ((netProfit / totalSales) * 100).toFixed(1) : 0;
-        const stockValue = report.products.reduce((sum, p) => sum + (p.stock * p.cost), 0);
+            // --- 2. Product Analysis ---
+            const prodPerformance: Record<string, {name: string, sold: number, stock: number}> = {};
+            
+            // Init with all products (for slow moving detection)
+            report.products.forEach(p => {
+                prodPerformance[p.id] = { name: p.name, sold: 0, stock: p.stock };
+            });
 
-        // --- 2. Financial Chart Data (Daily aggregation) ---
-        const dailyMap: Record<string, {sales: number, expenses: number, profit: number}> = {};
-        let curr = new Date(dateRange.start);
-        const end = new Date(dateRange.end);
-        while(curr <= end) {
-            const d = curr.toISOString().split('T')[0];
-            dailyMap[d] = { sales: 0, expenses: 0, profit: 0 };
-            curr.setDate(curr.getDate() + 1);
+            // Calculate Sales
+            report.invoices.forEach(inv => {
+                inv.items.forEach(item => {
+                    if (prodPerformance[item.productId]) {
+                        prodPerformance[item.productId].sold += item.quantity;
+                    }
+                });
+            });
+
+            const allProds = Object.values(prodPerformance);
+            
+            // Top 5
+            const topSelling = [...allProds].sort((a,b) => b.sold - a.sold).filter(p => p.sold > 0).slice(0, 5);
+            
+            // Slow Moving (Least sold but > 0, or 0 sold if desired. Here showing lowest non-zero first, then zeros)
+            // Strategy: Sort by sold ascending.
+            const slowMoving = [...allProds].sort((a,b) => a.sold - b.sold).slice(0, 5);
+
+            // Low Stock
+            const lowStock = report.products.filter(p => p.stock <= 5).map(p => ({
+                name: p.name, stock: p.stock, sold: prodPerformance[p.id]?.sold || 0
+            })).sort((a,b) => a.stock - b.stock).slice(0, 5);
+
+            setProductStats({ topSelling, slowMoving, lowStock });
+
+            // --- 3. Expenses Analysis ---
+            const expTotal = report.expenses.reduce((sum, e) => sum + e.amount, 0);
+            const expMap: Record<string, number> = {};
+            report.expenses.forEach(e => {
+                const cat = e.categoryName || 'غير مصنف';
+                expMap[cat] = (expMap[cat] || 0) + e.amount;
+            });
+            const expBreakdown = Object.keys(expMap).map(name => ({ name, value: expMap[name] })).sort((a,b) => b.value - a.value);
+            setExpenseStats({ total: expTotal, breakdown: expBreakdown });
+
+            // --- 4. Financial Performance (Cash Flow) ---
+            // Inflow
+            const salesIn = report.invoices.reduce((sum, i) => sum + i.paidAmount, 0); // Actual cash received
+            const txIn = report.transactions.filter(t => t.type === 'in').reduce((sum, t) => sum + t.amount, 0);
+            
+            // Outflow
+            const purchasesOut = report.purchases.reduce((sum, p) => sum + p.paidAmount, 0);
+            const expensesOut = expTotal;
+            const txOut = report.transactions.filter(t => t.type === 'out').reduce((sum, t) => sum + t.amount, 0);
+
+            setCashFlow({
+                inflow: { sales: salesIn, receipts: txIn, total: salesIn + txIn },
+                outflow: { expenses: expensesOut, purchases: purchasesOut, payments: txOut, total: expensesOut + purchasesOut + txOut },
+                net: (salesIn + txIn) - (expensesOut + purchasesOut + txOut)
+            });
+
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
         }
-
-        report.invoices.forEach(inv => {
-            const d = inv.date.split('T')[0];
-            if(dailyMap[d]) dailyMap[d].sales += inv.total;
-        });
-
-        report.expenses.forEach(exp => {
-            const d = exp.date.split('T')[0];
-            if(dailyMap[d]) dailyMap[d].expenses += exp.amount;
-        });
-
-        // Calculate Profit per day (Sales - Expenses - Est. COGS per day would be better, but simplified here)
-        Object.keys(dailyMap).forEach(k => {
-            // Simplified daily profit for chart: Sales - Expenses (COGS is hard to distribute daily without item detail loop)
-            dailyMap[k].profit = dailyMap[k].sales - dailyMap[k].expenses; 
-        });
-
-        const financialChart = Object.keys(dailyMap).map(date => ({
-            name: new Date(date).toLocaleDateString('ar-MA', {day: '2-digit', month: '2-digit'}),
-            مبيعات: dailyMap[date].sales,
-            مصاريف: dailyMap[date].expenses,
-            ربح: dailyMap[date].profit
-        }));
-
-        // --- 3. Sales by Payment Method ---
-        const paymentMap: Record<string, number> = {};
-        report.invoices.forEach(inv => {
-            // Find method name
-            const pmName = allPaymentMethods.find(pm => pm.id === inv.paymentMethodId)?.name || 'غير محدد';
-            // Only count paid amount for cash flow accuracy
-            paymentMap[pmName] = (paymentMap[pmName] || 0) + (inv.paidAmount || 0);
-        });
-        
-        // Add "Credit/Debt" category
-        const totalCredit = report.invoices.reduce((sum, inv) => sum + inv.remainingAmount, 0);
-        if (totalCredit > 0) {
-            paymentMap['آجل (دين)'] = totalCredit;
-        }
-
-        const paymentMethodsChart = Object.keys(paymentMap).map(name => ({ name, value: paymentMap[name] }));
-
-        // --- 4. Top Products (By Revenue) ---
-        const prodSales: Record<string, {name: string, qty: number, total: number, profit: number}> = {};
-        report.invoices.forEach(inv => {
-            inv.items.forEach(item => {
-                if(!prodSales[item.productId]) {
-                    const prod = report.products.find(p => p.id === item.productId);
-                    const cost = prod ? prod.cost : 0;
-                    prodSales[item.productId] = { name: item.productName, qty: 0, total: 0, profit: 0 };
-                }
-                const prod = report.products.find(p => p.id === item.productId);
-                const cost = prod ? prod.cost : 0;
-                
-                prodSales[item.productId].qty += item.quantity;
-                prodSales[item.productId].total += (item.quantity * item.priceAtSale);
-                prodSales[item.productId].profit += (item.quantity * (item.priceAtSale - cost));
-            });
-        });
-        const topProducts = Object.values(prodSales).sort((a,b) => b.total - a.total).slice(0, 5);
-
-        // --- 5. Outflows List ---
-        const allOutflows: OutflowItem[] = [];
-        report.expenses.forEach(exp => {
-            allOutflows.push({
-                id: exp.id, date: exp.date, type: 'مصروف', category: exp.categoryName || 'عام', description: exp.title, amount: exp.amount
-            });
-        });
-        // Sort table by date desc
-        allOutflows.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-        setData({
-            kpis: { totalSales, totalExpenses, netProfit, profitMargin, stockValue, totalCOGS, grossProfit, averageBasket },
-            financialChart,
-            paymentMethodsChart,
-            topProducts,
-            pnlData: { totalSales, totalCOGS, grossProfit, totalExpenses, netProfit },
-            outflowsList: allOutflows
-        });
-        setLoading(false);
     };
 
     useEffect(() => {
@@ -196,7 +179,7 @@ const Reports: React.FC = () => {
         const element = document.getElementById('report-container');
         const opt = {
             margin: [0.3, 0.3],
-            filename: `تقرير_بوصلة_${new Date().toISOString().split('T')[0]}.pdf`,
+            filename: `تقرير_بوصلة_${dateRange.end}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
             jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
@@ -209,15 +192,15 @@ const Reports: React.FC = () => {
         }, 500);
     };
 
-    if (loading) return <div className="min-h-[60vh] flex flex-col items-center justify-center text-gray-500 gap-4"><Loader2 className="animate-spin text-emerald-600" size={40} /><span className="text-lg font-medium">جاري إعداد التقارير المالية...</span></div>;
+    if (loading) return <div className="min-h-[60vh] flex flex-col items-center justify-center text-gray-500 gap-4"><Loader2 className="animate-spin text-emerald-600" size={40} /><span className="text-lg font-medium">جاري تحليل البيانات...</span></div>;
 
     return (
         <div className="space-y-8 pb-10">
             {/* Header & Controls */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">التقارير والتحليلات</h1>
-                    <p className="text-gray-500 text-sm">نظرة شاملة على أداء المتجر المالي</p>
+                    <h1 className="text-2xl font-bold text-gray-800">التقارير الشاملة</h1>
+                    <p className="text-gray-500 text-sm">تحليل الأداء، المخزون، والتدفق المالي</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                     <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-xl border border-gray-200 shadow-sm flex-1 md:flex-none">
@@ -242,261 +225,265 @@ const Reports: React.FC = () => {
                         className="flex items-center justify-center gap-2 bg-slate-800 text-white px-5 py-2.5 rounded-xl hover:bg-slate-900 transition shadow-md font-bold text-sm disabled:opacity-70 min-w-[120px]"
                     >
                         {exporting ? <Loader2 className="animate-spin" size={18} /> : <FileDown size={18} />}
-                        PDF
+                        تصدير
                     </button>
                 </div>
             </div>
 
-            {/* PRINTABLE CONTENT AREA */}
             <div id="report-container" className="space-y-8">
                 
-                {/* PDF Header */}
+                {/* PDF Header (Visible only in print) */}
                 <div className="hidden pdf-header flex-col items-center mb-8 border-b-2 border-gray-100 pb-6 text-center">
-                    <h1 className="text-3xl font-black text-gray-800 mb-2">{user?.storeName || 'تقرير المتجر'}</h1>
-                    <p className="text-gray-500 text-sm">تقرير مالي للفترة من <span className="font-bold text-gray-800">{dateRange.start}</span> إلى <span className="font-bold text-gray-800">{dateRange.end}</span></p>
+                    <h1 className="text-3xl font-black text-gray-800 mb-2">{user?.storeName}</h1>
+                    <p className="text-gray-500 text-sm">تقرير الفترة: {dateRange.start} إلى {dateRange.end}</p>
                 </div>
 
-                {/* KPI Cards Row */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {/* Net Profit */}
-                    <div className="bg-gradient-to-br from-white to-emerald-50/50 p-6 rounded-2xl shadow-sm border border-emerald-100 relative overflow-hidden group">
-                        <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500"></div>
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">صافي الربح</p>
-                                <h3 className={`text-2xl font-black tracking-tight ${data.kpis.netProfit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
-                                    {data.kpis.netProfit?.toLocaleString()} <span className="text-sm font-medium opacity-70">{CURRENCY}</span>
-                                </h3>
-                            </div>
-                            <div className="p-2 bg-white rounded-lg shadow-sm text-emerald-600">
-                                <DollarSign size={20} />
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs font-medium">
-                            <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                <Percent size={10} />
-                                {data.kpis.profitMargin}% هامش
-                            </span>
+                {/* 1. Sales Trend Chart */}
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="font-bold text-gray-800 flex items-center gap-2 text-lg">
+                            <TrendingUp size={20} className="text-emerald-600" />
+                            حركة المبيعات
+                        </h3>
+                        <div className="text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-lg">
+                            إجمالي: <span className="font-bold text-gray-900">{salesTrend.reduce((a,b) => a + b.المبيعات, 0).toLocaleString()} {CURRENCY}</span>
                         </div>
                     </div>
-
-                    {/* Total Sales */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 group hover:border-blue-200 transition">
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">المبيعات</p>
-                                <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-                                    {data.kpis.totalSales?.toLocaleString()} <span className="text-sm font-medium text-gray-400">{CURRENCY}</span>
-                                </h3>
-                            </div>
-                            <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-                                <TrendingUp size={20} />
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <ShoppingBag size={12} />
-                            <span>متوسط السلة: </span>
-                            <span className="font-bold text-gray-800">{Math.round(data.kpis.averageBasket).toLocaleString()} {CURRENCY}</span>
-                        </div>
-                    </div>
-
-                    {/* Expenses */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 group hover:border-red-200 transition">
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">المصاريف</p>
-                                <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-                                    {data.kpis.totalExpenses?.toLocaleString()} <span className="text-sm font-medium text-gray-400">{CURRENCY}</span>
-                                </h3>
-                            </div>
-                            <div className="p-2 bg-red-50 rounded-lg text-red-600">
-                                <TrendingDown size={20} />
-                            </div>
-                        </div>
-                        <p className="text-xs text-gray-400">تشمل التشغيل والرواتب</p>
-                    </div>
-
-                    {/* Stock Value */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 group hover:border-purple-200 transition">
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">قيمة المخزون</p>
-                                <h3 className="text-2xl font-black text-gray-800 tracking-tight">
-                                    {data.kpis.stockValue?.toLocaleString()} <span className="text-sm font-medium text-gray-400">{CURRENCY}</span>
-                                </h3>
-                            </div>
-                            <div className="p-2 bg-purple-50 rounded-lg text-purple-600">
-                                <Package size={20} />
-                            </div>
-                        </div>
-                        <p className="text-xs text-gray-400">محسوبة بسعر التكلفة</p>
+                    <div className="h-80 w-full" dir="ltr">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={salesTrend} margin={{top: 10, right: 10, left: 0, bottom: 0}}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                <XAxis 
+                                    dataKey="date" 
+                                    fontSize={11} 
+                                    tickLine={false} 
+                                    axisLine={false} 
+                                    dy={10} 
+                                    tick={{fill: '#64748b'}}
+                                />
+                                <YAxis 
+                                    fontSize={11} 
+                                    tickLine={false} 
+                                    axisLine={false} 
+                                    dx={-10}
+                                    tick={{fill: '#64748b'}}
+                                />
+                                <Tooltip 
+                                    contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}}
+                                    cursor={{stroke: '#e2e8f0', strokeWidth: 1}}
+                                />
+                                <Line 
+                                    type="monotone" 
+                                    dataKey="المبيعات" 
+                                    stroke="#10b981" 
+                                    strokeWidth={3} 
+                                    dot={false} 
+                                    activeDot={{r: 6, fill: '#059669', strokeWidth: 0}} 
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
 
-                {/* Main Charts Section */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Financial Trends Chart */}
-                    <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                        <h3 className="font-bold text-gray-800 mb-6 flex items-center gap-2">
+                {/* 2. Products Insights Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Top Selling */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                        <div className="p-4 border-b border-gray-100 bg-emerald-50/50 flex items-center gap-2">
                             <TrendingUp size={18} className="text-emerald-600" />
-                            الأداء المالي (المبيعات vs الأرباح)
-                        </h3>
-                        <div className="h-80 w-full" dir="ltr">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <ComposedChart data={data.financialChart} margin={{top: 10, right: 10, left: 0, bottom: 0}}>
-                                    <defs>
-                                        <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="name" fontSize={11} tickLine={false} axisLine={false} dy={10} />
-                                    <YAxis fontSize={11} tickLine={false} axisLine={false} />
-                                    <Tooltip 
-                                        contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'}}
-                                    />
-                                    <Legend wrapperStyle={{paddingTop: '20px'}} />
-                                    <Bar dataKey="مبيعات" fill="#10b981" radius={[4, 4, 0, 0]} barSize={20} fillOpacity={0.8} />
-                                    <Bar dataKey="مصاريف" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={20} fillOpacity={0.8} />
-                                    <Line type="monotone" dataKey="ربح" stroke="#6366f1" strokeWidth={3} dot={{r: 4, fill: '#6366f1'}} />
-                                </ComposedChart>
-                            </ResponsiveContainer>
+                            <h3 className="font-bold text-gray-800">الأكثر مبيعاً</h3>
                         </div>
-                    </div>
-
-                    {/* Payment Methods Chart */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
-                        <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <Wallet size={18} className="text-blue-600" />
-                            توزيع المبيعات (طرق الدفع)
-                        </h3>
-                        <div className="flex-1 w-full min-h-[250px] relative" dir="ltr">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={data.paymentMethodsChart}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={60}
-                                        outerRadius={90}
-                                        paddingAngle={5}
-                                        dataKey="value"
-                                    >
-                                        {data.paymentMethodsChart.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={PAYMENT_COLORS[index % PAYMENT_COLORS.length]} />
+                        <div className="p-2 flex-1">
+                            {productStats.topSelling.length === 0 ? <p className="text-center text-gray-400 p-4 text-sm">لا توجد بيانات</p> : (
+                                <table className="w-full text-right text-sm">
+                                    <tbody>
+                                        {productStats.topSelling.map((p, i) => (
+                                            <tr key={i} className="border-b border-gray-50 last:border-0">
+                                                <td className="p-3 font-medium text-gray-700">{p.name}</td>
+                                                <td className="p-3 text-emerald-600 font-bold text-left">{p.sold} <span className="text-[10px] text-gray-400 font-normal">مباع</span></td>
+                                            </tr>
                                         ))}
-                                    </Pie>
-                                    <Tooltip />
-                                    <Legend layout="horizontal" verticalAlign="bottom" align="center" />
-                                </PieChart>
-                            </ResponsiveContainer>
-                            {/* Center Text */}
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none mb-8">
-                                <div className="text-center">
-                                    <span className="block text-xs text-gray-400">إجمالي المقبوضات</span>
-                                    <span className="block text-lg font-bold text-gray-800">
-                                        {data.paymentMethodsChart.reduce((a,b) => a + b.value, 0).toLocaleString()}
-                                    </span>
-                                </div>
-                            </div>
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Slow Moving */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                        <div className="p-4 border-b border-gray-100 bg-orange-50/50 flex items-center gap-2">
+                            <Activity size={18} className="text-orange-600" />
+                            <h3 className="font-bold text-gray-800">الأقل حركة</h3>
+                        </div>
+                        <div className="p-2 flex-1">
+                            {productStats.slowMoving.length === 0 ? <p className="text-center text-gray-400 p-4 text-sm">لا توجد بيانات</p> : (
+                                <table className="w-full text-right text-sm">
+                                    <tbody>
+                                        {productStats.slowMoving.map((p, i) => (
+                                            <tr key={i} className="border-b border-gray-50 last:border-0">
+                                                <td className="p-3 font-medium text-gray-700">{p.name}</td>
+                                                <td className="p-3 text-orange-600 font-bold text-left">{p.sold} <span className="text-[10px] text-gray-400 font-normal">مباع</span></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Low Stock */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                        <div className="p-4 border-b border-gray-100 bg-red-50/50 flex items-center gap-2">
+                            <AlertTriangle size={18} className="text-red-600" />
+                            <h3 className="font-bold text-gray-800">على وشك النفاد</h3>
+                        </div>
+                        <div className="p-2 flex-1">
+                            {productStats.lowStock.length === 0 ? <p className="text-center text-gray-400 p-4 text-sm">المخزون جيد</p> : (
+                                <table className="w-full text-right text-sm">
+                                    <tbody>
+                                        {productStats.lowStock.map((p, i) => (
+                                            <tr key={i} className="border-b border-gray-50 last:border-0">
+                                                <td className="p-3 font-medium text-gray-700">{p.name}</td>
+                                                <td className="p-3 text-red-600 font-bold text-left">{p.stock} <span className="text-[10px] text-gray-400 font-normal">باقي</span></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
                         </div>
                     </div>
                 </div>
 
-                {/* Detailed Tables Section */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 break-inside-avoid">
+                {/* 3. Expenses Report */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Expenses Chart */}
+                    <div className="md:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+                        <div className="flex justify-between items-start mb-2">
+                            <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                                <TrendingDown size={20} className="text-red-600" />
+                                توزيع المصاريف
+                            </h3>
+                        </div>
+                        <div className="flex-1 flex flex-col md:flex-row items-center gap-6">
+                            <div className="h-64 w-full md:w-1/2 relative" dir="ltr">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={expenseStats.breakdown}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={80}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                        >
+                                            {expenseStats.breakdown.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={EXPENSE_COLORS[index % EXPENSE_COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="text-center">
+                                        <span className="block text-xs text-gray-400">الإجمالي</span>
+                                        <span className="block text-lg font-bold text-slate-800">{expenseStats.total.toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex-1 w-full space-y-3">
+                                {expenseStats.breakdown.slice(0, 5).map((item, index) => (
+                                    <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded-lg">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 rounded-full" style={{backgroundColor: EXPENSE_COLORS[index % EXPENSE_COLORS.length]}}></div>
+                                            <span className="text-sm text-gray-700 font-medium">{item.name}</span>
+                                        </div>
+                                        <span className="text-sm font-bold text-gray-900">{item.value.toLocaleString()} {CURRENCY}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Expense Summary Card */}
+                    <div className="bg-red-50 p-6 rounded-2xl border border-red-100 flex flex-col justify-center items-center text-center">
+                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-red-600 mb-4 shadow-sm">
+                            <TrendingDown size={32} />
+                        </div>
+                        <h3 className="text-red-800 font-bold mb-1">إجمالي المصاريف</h3>
+                        <p className="text-sm text-red-600/80 mb-4">خلال الفترة المحددة</p>
+                        <p className="text-3xl font-black text-red-700">{expenseStats.total.toLocaleString()} <span className="text-lg font-medium opacity-70">{CURRENCY}</span></p>
+                    </div>
+                </div>
+
+                {/* 4. Financial Performance (Cash Flow) */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="p-6 border-b border-gray-100 bg-slate-50 flex items-center gap-2">
+                        <DollarSign size={20} className="text-slate-700" />
+                        <h3 className="font-bold text-slate-800 text-lg">الأداء المالي (حركة السيولة)</h3>
+                    </div>
                     
-                    {/* Top Products Table */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                        <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-                            <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                                <Package size={18} className="text-purple-600" />
-                                المنتجات الأكثر مبيعاً
-                            </h3>
-                        </div>
-                        <div className="flex-1 p-0">
-                            <table className="w-full text-right">
-                                <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-semibold">
-                                    <tr>
-                                        <th className="px-5 py-3">المنتج</th>
-                                        <th className="px-5 py-3">العدد</th>
-                                        <th className="px-5 py-3">العائد</th>
-                                        <th className="px-5 py-3">هامش تقريبي</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {data.topProducts.map((p, i) => (
-                                        <tr key={i} className="hover:bg-gray-50 transition">
-                                            <td className="px-5 py-3">
-                                                <div className="font-bold text-gray-800 text-sm">{p.name}</div>
-                                                {/* Simple progress bar visual */}
-                                                <div className="w-full h-1 bg-gray-100 rounded-full mt-1.5 overflow-hidden">
-                                                    <div 
-                                                        className="h-full bg-emerald-500 rounded-full" 
-                                                        style={{ width: `${Math.min(100, (p.total / (data.topProducts[0]?.total || 1)) * 100)}%` }}
-                                                    ></div>
-                                                </div>
-                                            </td>
-                                            <td className="px-5 py-3 text-sm font-medium">{p.qty}</td>
-                                            <td className="px-5 py-3 font-bold text-gray-800 text-sm">{p.total.toLocaleString()}</td>
-                                            <td className="px-5 py-3">
-                                                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">
-                                                    {p.profit.toLocaleString()}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {data.topProducts.length === 0 && (
-                                        <tr><td colSpan={4} className="p-6 text-center text-gray-400">لا توجد بيانات كافية</td></tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    {/* Professional P&L Statement */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                        <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-                            <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                                <FileDown size={18} className="text-slate-600" />
-                                ملخص الدخل (P&L)
-                            </h3>
-                        </div>
-                        <div className="p-6 space-y-4 text-sm">
-                            <div className="flex justify-between items-center text-gray-800 border-b border-gray-100 pb-3">
-                                <span className="font-bold text-lg">إجمالي المبيعات (Revenue)</span>
-                                <span className="font-bold text-lg">{data.pnlData.totalSales?.toLocaleString()} {CURRENCY}</span>
-                            </div>
-                            
-                            <div className="flex justify-between items-center text-red-500 pl-4 border-l-2 border-red-100">
-                                <span>- تكلفة البضاعة المباعة (COGS)</span>
-                                <span className="font-medium">({data.pnlData.totalCOGS?.toLocaleString()})</span>
-                            </div>
-                            
-                            <div className="flex justify-between items-center text-gray-900 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                                <span className="font-bold">إجمالي الربح (Gross Profit)</span>
-                                <span className="font-bold">{data.pnlData.grossProfit?.toLocaleString()} {CURRENCY}</span>
-                            </div>
-
-                            <div className="space-y-2 pl-4 border-l-2 border-orange-100">
-                                <div className="flex justify-between items-center text-orange-600">
-                                    <span>- المصاريف التشغيلية</span>
-                                    <span className="font-medium">({data.pnlData.totalExpenses?.toLocaleString()})</span>
+                    <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x md:divide-x-reverse divide-gray-100">
+                        {/* Inflow */}
+                        <div className="p-6">
+                            <h4 className="text-emerald-700 font-bold mb-4 flex items-center gap-2">
+                                <ArrowDownLeft size={18} /> الأموال الداخلة
+                            </h4>
+                            <div className="space-y-3 text-sm">
+                                <div className="flex justify-between text-gray-600">
+                                    <span>مبيعات (نقدية)</span>
+                                    <span className="font-bold text-emerald-600">{cashFlow.inflow.sales.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between text-gray-600">
+                                    <span>سندات قبض</span>
+                                    <span className="font-bold text-emerald-600">{cashFlow.inflow.receipts.toLocaleString()}</span>
+                                </div>
+                                <div className="border-t border-dashed border-gray-200 pt-2 flex justify-between font-black text-base text-gray-800">
+                                    <span>الإجمالي</span>
+                                    <span>{cashFlow.inflow.total.toLocaleString()} {CURRENCY}</span>
                                 </div>
                             </div>
+                        </div>
 
-                            <div className="border-t-2 border-dashed border-gray-200 pt-4 mt-2">
-                                <div className="flex justify-between items-center">
-                                    <span className="font-black text-xl text-slate-800">صافي الربح (Net Profit)</span>
-                                    <span className={`font-black text-xl px-3 py-1 rounded-lg ${data.pnlData.netProfit >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                                        {data.pnlData.netProfit?.toLocaleString()} {CURRENCY}
-                                    </span>
+                        {/* Outflow */}
+                        <div className="p-6">
+                            <h4 className="text-red-700 font-bold mb-4 flex items-center gap-2">
+                                <ArrowUpRight size={18} /> الأموال الخارجة
+                            </h4>
+                            <div className="space-y-3 text-sm">
+                                <div className="flex justify-between text-gray-600">
+                                    <span>مصروفات</span>
+                                    <span className="font-bold text-red-600">{cashFlow.outflow.expenses.toLocaleString()}</span>
                                 </div>
+                                <div className="flex justify-between text-gray-600">
+                                    <span>مشتريات (مدفوعة)</span>
+                                    <span className="font-bold text-red-600">{cashFlow.outflow.purchases.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between text-gray-600">
+                                    <span>سندات صرف</span>
+                                    <span className="font-bold text-red-600">{cashFlow.outflow.payments.toLocaleString()}</span>
+                                </div>
+                                <div className="border-t border-dashed border-gray-200 pt-2 flex justify-between font-black text-base text-gray-800">
+                                    <span>الإجمالي</span>
+                                    <span>{cashFlow.outflow.total.toLocaleString()} {CURRENCY}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Net */}
+                        <div className="p-6 flex flex-col justify-center items-center text-center bg-gray-50/50">
+                            <h4 className="text-gray-500 font-bold text-sm uppercase tracking-wider mb-2">صافي التدفق النقدي</h4>
+                            <div className={`text-4xl font-black mb-2 ${cashFlow.net >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                {cashFlow.net > 0 ? '+' : ''}{cashFlow.net.toLocaleString()}
+                            </div>
+                            <span className="text-sm font-medium text-gray-400">{CURRENCY}</span>
+                            <div className={`mt-4 text-xs font-bold px-3 py-1 rounded-full ${cashFlow.net >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                                {cashFlow.net >= 0 ? 'فائض سيولة' : 'عجز سيولة'}
                             </div>
                         </div>
                     </div>
                 </div>
+
             </div>
             
             <style>{`
