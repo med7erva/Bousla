@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { 
   LineChart,
@@ -11,7 +10,8 @@ import {
   ResponsiveContainer, 
   PieChart,
   Pie,
-  Cell
+  Cell,
+  Legend
 } from 'recharts';
 import { 
     Calendar, 
@@ -31,8 +31,6 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { getReportData } from '../services/db';
 import { CURRENCY } from '../constants';
-// @ts-ignore
-import html2pdf from 'html2pdf.js';
 
 const EXPENSE_COLORS = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#06b6d4', '#6366f1', '#8b5cf6', '#ec4899'];
 
@@ -45,7 +43,7 @@ const Reports: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
     
-    // Data State
+    // Data State with safe defaults
     const [kpis, setKpis] = useState({
         totalSales: 0,
         totalExpenses: 0,
@@ -85,18 +83,19 @@ const Reports: React.FC = () => {
             const report = await getReportData(user.id, dateRange.start, dateRange.end);
             
             // --- 1. Basic KPIs & P&L Calculation ---
-            const totalSales = report.invoices.reduce((sum, i) => sum + i.total, 0);
-            const totalExpenses = report.expenses.reduce((sum, e) => sum + e.amount, 0);
+            const totalSales = report.invoices.reduce((sum, i) => sum + (i.total || 0), 0);
+            const totalExpenses = report.expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
             
             // Calculate COGS (Cost of Goods Sold)
             let totalCOGS = 0;
             report.invoices.forEach(inv => {
-                inv.items.forEach(item => {
-                    const prod = report.products.find(p => p.id === item.productId);
-                    // Fallback to item cost if stored, or current product cost
-                    const cost = prod ? prod.cost : 0; 
-                    totalCOGS += (cost * item.quantity);
-                });
+                if(inv.items && Array.isArray(inv.items)) {
+                    inv.items.forEach(item => {
+                        const prod = report.products.find(p => p.id === item.productId);
+                        const cost = prod ? prod.cost : 0; 
+                        totalCOGS += (cost * item.quantity);
+                    });
+                }
             });
 
             const grossProfit = totalSales - totalCOGS;
@@ -118,19 +117,27 @@ const Reports: React.FC = () => {
             const dailyMap: Record<string, number> = {};
             let curr = new Date(dateRange.start);
             const end = new Date(dateRange.end);
-            while(curr <= end) {
+            
+            // Limit loop to prevent infinite loop if dates are invalid
+            let safetyCounter = 0;
+            while(curr <= end && safetyCounter < 366) {
                 const d = curr.toISOString().split('T')[0];
                 dailyMap[d] = 0;
                 curr.setDate(curr.getDate() + 1);
+                safetyCounter++;
             }
+
             report.invoices.forEach(inv => {
-                const d = inv.date.split('T')[0];
-                if(dailyMap[d] !== undefined) dailyMap[d] += inv.total;
+                if(inv.date) {
+                    const d = inv.date.split('T')[0];
+                    if(dailyMap[d] !== undefined) dailyMap[d] += (inv.total || 0);
+                }
             });
+
             const trendData = Object.keys(dailyMap).map(date => ({
                 date: new Date(date).toLocaleDateString('ar-MA', {day: '2-digit', month: '2-digit'}),
                 fullDate: date,
-                المبيعات: dailyMap[date]
+                sales: dailyMap[date] // English key for safety
             }));
             setSalesTrend(trendData);
 
@@ -140,11 +147,13 @@ const Reports: React.FC = () => {
                 prodPerformance[p.id] = { name: p.name, sold: 0, stock: p.stock };
             });
             report.invoices.forEach(inv => {
-                inv.items.forEach(item => {
-                    if (prodPerformance[item.productId]) {
-                        prodPerformance[item.productId].sold += item.quantity;
-                    }
-                });
+                if(inv.items) {
+                    inv.items.forEach(item => {
+                        if (prodPerformance[item.productId]) {
+                            prodPerformance[item.productId].sold += item.quantity;
+                        }
+                    });
+                }
             });
             const allProds = Object.values(prodPerformance);
             const topSelling = [...allProds].sort((a,b) => b.sold - a.sold).filter(p => p.sold > 0).slice(0, 5);
@@ -165,11 +174,11 @@ const Reports: React.FC = () => {
             setExpenseStats({ breakdown: expBreakdown });
 
             // --- 5. Cash Flow Analysis ---
-            const salesIn = report.invoices.reduce((sum, i) => sum + i.paidAmount, 0); 
-            const txIn = report.transactions.filter(t => t.type === 'in').reduce((sum, t) => sum + t.amount, 0);
-            const purchasesOut = report.purchases.reduce((sum, p) => sum + p.paidAmount, 0);
+            const salesIn = report.invoices.reduce((sum, i) => sum + (i.paidAmount || 0), 0); 
+            const txIn = report.transactions.filter(t => t.type === 'in').reduce((sum, t) => sum + (t.amount || 0), 0);
+            const purchasesOut = report.purchases.reduce((sum, p) => sum + (p.paidAmount || 0), 0);
             const expensesOut = totalExpenses;
-            const txOut = report.transactions.filter(t => t.type === 'out').reduce((sum, t) => sum + t.amount, 0);
+            const txOut = report.transactions.filter(t => t.type === 'out').reduce((sum, t) => sum + (t.amount || 0), 0);
 
             setCashFlow({
                 inflow: { sales: salesIn, receipts: txIn, total: salesIn + txIn },
@@ -178,7 +187,7 @@ const Reports: React.FC = () => {
             });
 
         } catch (err) {
-            console.error(err);
+            console.error("Report Data Load Error:", err);
         } finally {
             setLoading(false);
         }
@@ -188,22 +197,30 @@ const Reports: React.FC = () => {
         loadData();
     }, [user, dateRange]);
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
         setExporting(true);
-        const element = document.getElementById('report-container');
-        const opt = {
-            margin: [0.3, 0.3],
-            filename: `تقرير_بوصلة_${dateRange.end}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
-            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-        };
+        try {
+            // Dynamic import to prevent initial load crash if module missing
+            // @ts-ignore
+            const html2pdfModule = await import('html2pdf.js');
+            const html2pdf = html2pdfModule.default || html2pdfModule;
 
-        setTimeout(() => {
-            html2pdf().set(opt).from(element).save().then(() => {
-                setExporting(false);
-            });
-        }, 500);
+            const element = document.getElementById('report-container');
+            const opt = {
+                margin: [0.3, 0.3],
+                filename: `تقرير_بوصلة_${dateRange.end}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            await html2pdf().set(opt).from(element).save();
+        } catch (e) {
+            console.error("PDF Export failed", e);
+            alert("حدث خطأ أثناء التصدير. تأكد من الاتصال بالإنترنت.");
+        } finally {
+            setExporting(false);
+        }
     };
 
     if (loading) return <div className="min-h-[60vh] flex flex-col items-center justify-center text-gray-500 gap-4"><Loader2 className="animate-spin text-emerald-600" size={40} /><span className="text-lg font-medium">جاري إعداد التقارير...</span></div>;
@@ -252,7 +269,7 @@ const Reports: React.FC = () => {
                     <p className="text-gray-500 text-sm">تقرير الفترة: {dateRange.start} إلى {dateRange.end}</p>
                 </div>
 
-                {/* --- 1. KEY PERFORMANCE INDICATORS (Restored) --- */}
+                {/* --- 1. KEY PERFORMANCE INDICATORS --- */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     {/* Net Profit */}
                     <div className="bg-gradient-to-br from-white to-emerald-50/50 p-6 rounded-2xl shadow-sm border border-emerald-100 relative overflow-hidden group">
@@ -325,7 +342,7 @@ const Reports: React.FC = () => {
                     </div>
                 </div>
 
-                {/* --- 2. Sales Chart (Updated Line Chart) --- */}
+                {/* --- 2. Sales Chart --- */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="font-bold text-gray-800 flex items-center gap-2 text-lg">
@@ -358,7 +375,8 @@ const Reports: React.FC = () => {
                                 />
                                 <Line 
                                     type="monotone" 
-                                    dataKey="المبيعات" 
+                                    dataKey="sales" 
+                                    name="المبيعات"
                                     stroke="#10b981" 
                                     strokeWidth={3} 
                                     dot={false} 
@@ -369,7 +387,7 @@ const Reports: React.FC = () => {
                     </div>
                 </div>
 
-                {/* --- 3. Product Insights (Updated) --- */}
+                {/* --- 3. Product Insights --- */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Top Selling */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
@@ -438,7 +456,7 @@ const Reports: React.FC = () => {
                     </div>
                 </div>
 
-                {/* --- 4. Expenses Chart (Updated) --- */}
+                {/* --- 4. Expenses Chart --- */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="md:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
                         <div className="flex justify-between items-start mb-2">
@@ -498,10 +516,10 @@ const Reports: React.FC = () => {
                     </div>
                 </div>
 
-                {/* --- 5. Financial Performance Grid (Updated Layout) --- */}
+                {/* --- 5. Financial Performance Grid --- */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     
-                    {/* Cash Flow (Liquidity) */}
+                    {/* Cash Flow */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="p-5 border-b border-gray-100 bg-slate-50 flex items-center gap-2">
                             <DollarSign size={20} className="text-slate-700" />
@@ -538,7 +556,7 @@ const Reports: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* P&L Statement (Restored) */}
+                    {/* P&L Statement */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
                         <div className="p-5 border-b border-gray-100 bg-emerald-50/30">
                             <h3 className="font-bold text-gray-800 flex items-center gap-2">
