@@ -4,19 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { 
   LineChart,
   Line,
-  BarChart,
-  Bar, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  Legend, 
   ResponsiveContainer, 
   PieChart,
   Pie,
-  Cell,
-  AreaChart,
-  Area
+  Cell
 } from 'recharts';
 import { 
     Calendar, 
@@ -27,17 +22,15 @@ import {
     Package, 
     AlertTriangle, 
     Loader2,
-    Wallet,
     ArrowUpRight,
     ArrowDownLeft,
     Activity,
-    AlertOctagon,
-    Layers
+    Percent,
+    FileText
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getReportData, getPaymentMethods } from '../services/db';
+import { getReportData } from '../services/db';
 import { CURRENCY } from '../constants';
-import { Invoice, Expense, Product, PaymentMethod } from '../types';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 
@@ -53,6 +46,16 @@ const Reports: React.FC = () => {
     const [exporting, setExporting] = useState(false);
     
     // Data State
+    const [kpis, setKpis] = useState({
+        totalSales: 0,
+        totalExpenses: 0,
+        netProfit: 0,
+        profitMargin: 0,
+        stockValue: 0,
+        grossProfit: 0,
+        totalCOGS: 0
+    });
+
     const [salesTrend, setSalesTrend] = useState<any[]>([]);
     const [productStats, setProductStats] = useState<{
         topSelling: any[],
@@ -61,9 +64,8 @@ const Reports: React.FC = () => {
     }>({ topSelling: [], slowMoving: [], lowStock: [] });
     
     const [expenseStats, setExpenseStats] = useState<{
-        total: number,
         breakdown: any[]
-    }>({ total: 0, breakdown: [] });
+    }>({ breakdown: [] });
 
     const [cashFlow, setCashFlow] = useState<{
         inflow: { sales: number, receipts: number, total: number },
@@ -82,17 +84,45 @@ const Reports: React.FC = () => {
         try {
             const report = await getReportData(user.id, dateRange.start, dateRange.end);
             
-            // --- 1. Sales Trend (Line Chart) ---
+            // --- 1. Basic KPIs & P&L Calculation ---
+            const totalSales = report.invoices.reduce((sum, i) => sum + i.total, 0);
+            const totalExpenses = report.expenses.reduce((sum, e) => sum + e.amount, 0);
+            
+            // Calculate COGS (Cost of Goods Sold)
+            let totalCOGS = 0;
+            report.invoices.forEach(inv => {
+                inv.items.forEach(item => {
+                    const prod = report.products.find(p => p.id === item.productId);
+                    // Fallback to item cost if stored, or current product cost
+                    const cost = prod ? prod.cost : 0; 
+                    totalCOGS += (cost * item.quantity);
+                });
+            });
+
+            const grossProfit = totalSales - totalCOGS;
+            const netProfit = grossProfit - totalExpenses;
+            const profitMargin = totalSales > 0 ? ((netProfit / totalSales) * 100).toFixed(1) : 0;
+            const stockValue = report.products.reduce((sum, p) => sum + (p.stock * p.cost), 0);
+
+            setKpis({
+                totalSales,
+                totalExpenses,
+                netProfit,
+                profitMargin: Number(profitMargin),
+                stockValue,
+                grossProfit,
+                totalCOGS
+            });
+
+            // --- 2. Sales Trend (Line Chart) ---
             const dailyMap: Record<string, number> = {};
             let curr = new Date(dateRange.start);
             const end = new Date(dateRange.end);
-            // Initialize dates
             while(curr <= end) {
                 const d = curr.toISOString().split('T')[0];
                 dailyMap[d] = 0;
                 curr.setDate(curr.getDate() + 1);
             }
-            // Fill data
             report.invoices.forEach(inv => {
                 const d = inv.date.split('T')[0];
                 if(dailyMap[d] !== undefined) dailyMap[d] += inv.total;
@@ -104,15 +134,11 @@ const Reports: React.FC = () => {
             }));
             setSalesTrend(trendData);
 
-            // --- 2. Product Analysis ---
+            // --- 3. Product Analysis ---
             const prodPerformance: Record<string, {name: string, sold: number, stock: number}> = {};
-            
-            // Init with all products (for slow moving detection)
             report.products.forEach(p => {
                 prodPerformance[p.id] = { name: p.name, sold: 0, stock: p.stock };
             });
-
-            // Calculate Sales
             report.invoices.forEach(inv => {
                 inv.items.forEach(item => {
                     if (prodPerformance[item.productId]) {
@@ -120,41 +146,29 @@ const Reports: React.FC = () => {
                     }
                 });
             });
-
             const allProds = Object.values(prodPerformance);
-            
-            // Top 5
             const topSelling = [...allProds].sort((a,b) => b.sold - a.sold).filter(p => p.sold > 0).slice(0, 5);
-            
-            // Slow Moving (Least sold but > 0, or 0 sold if desired. Here showing lowest non-zero first, then zeros)
-            // Strategy: Sort by sold ascending.
             const slowMoving = [...allProds].sort((a,b) => a.sold - b.sold).slice(0, 5);
-
-            // Low Stock
             const lowStock = report.products.filter(p => p.stock <= 5).map(p => ({
                 name: p.name, stock: p.stock, sold: prodPerformance[p.id]?.sold || 0
             })).sort((a,b) => a.stock - b.stock).slice(0, 5);
 
             setProductStats({ topSelling, slowMoving, lowStock });
 
-            // --- 3. Expenses Analysis ---
-            const expTotal = report.expenses.reduce((sum, e) => sum + e.amount, 0);
+            // --- 4. Expenses Analysis ---
             const expMap: Record<string, number> = {};
             report.expenses.forEach(e => {
                 const cat = e.categoryName || 'غير مصنف';
                 expMap[cat] = (expMap[cat] || 0) + e.amount;
             });
             const expBreakdown = Object.keys(expMap).map(name => ({ name, value: expMap[name] })).sort((a,b) => b.value - a.value);
-            setExpenseStats({ total: expTotal, breakdown: expBreakdown });
+            setExpenseStats({ breakdown: expBreakdown });
 
-            // --- 4. Financial Performance (Cash Flow) ---
-            // Inflow
-            const salesIn = report.invoices.reduce((sum, i) => sum + i.paidAmount, 0); // Actual cash received
+            // --- 5. Cash Flow Analysis ---
+            const salesIn = report.invoices.reduce((sum, i) => sum + i.paidAmount, 0); 
             const txIn = report.transactions.filter(t => t.type === 'in').reduce((sum, t) => sum + t.amount, 0);
-            
-            // Outflow
             const purchasesOut = report.purchases.reduce((sum, p) => sum + p.paidAmount, 0);
-            const expensesOut = expTotal;
+            const expensesOut = totalExpenses;
             const txOut = report.transactions.filter(t => t.type === 'out').reduce((sum, t) => sum + t.amount, 0);
 
             setCashFlow({
@@ -192,15 +206,15 @@ const Reports: React.FC = () => {
         }, 500);
     };
 
-    if (loading) return <div className="min-h-[60vh] flex flex-col items-center justify-center text-gray-500 gap-4"><Loader2 className="animate-spin text-emerald-600" size={40} /><span className="text-lg font-medium">جاري تحليل البيانات...</span></div>;
+    if (loading) return <div className="min-h-[60vh] flex flex-col items-center justify-center text-gray-500 gap-4"><Loader2 className="animate-spin text-emerald-600" size={40} /><span className="text-lg font-medium">جاري إعداد التقارير...</span></div>;
 
     return (
         <div className="space-y-8 pb-10">
             {/* Header & Controls */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">التقارير الشاملة</h1>
-                    <p className="text-gray-500 text-sm">تحليل الأداء، المخزون، والتدفق المالي</p>
+                    <h1 className="text-2xl font-bold text-gray-800">التقارير المالية</h1>
+                    <p className="text-gray-500 text-sm">نظرة شاملة على أداء المتجر، الأرباح، والمخزون</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                     <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-xl border border-gray-200 shadow-sm flex-1 md:flex-none">
@@ -232,22 +246,92 @@ const Reports: React.FC = () => {
 
             <div id="report-container" className="space-y-8">
                 
-                {/* PDF Header (Visible only in print) */}
+                {/* PDF Header */}
                 <div className="hidden pdf-header flex-col items-center mb-8 border-b-2 border-gray-100 pb-6 text-center">
                     <h1 className="text-3xl font-black text-gray-800 mb-2">{user?.storeName}</h1>
                     <p className="text-gray-500 text-sm">تقرير الفترة: {dateRange.start} إلى {dateRange.end}</p>
                 </div>
 
-                {/* 1. Sales Trend Chart */}
+                {/* --- 1. KEY PERFORMANCE INDICATORS (Restored) --- */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    {/* Net Profit */}
+                    <div className="bg-gradient-to-br from-white to-emerald-50/50 p-6 rounded-2xl shadow-sm border border-emerald-100 relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500"></div>
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">صافي الربح</p>
+                                <h3 className={`text-2xl font-black tracking-tight ${kpis.netProfit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                                    {kpis.netProfit.toLocaleString()} <span className="text-sm font-medium opacity-70">{CURRENCY}</span>
+                                </h3>
+                            </div>
+                            <div className="p-2 bg-white rounded-lg shadow-sm text-emerald-600">
+                                <DollarSign size={20} />
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs font-medium">
+                            <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <Percent size={10} />
+                                {kpis.profitMargin}% هامش
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Total Sales */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 group hover:border-blue-200 transition">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">إجمالي المبيعات</p>
+                                <h3 className="text-2xl font-black text-gray-800 tracking-tight">
+                                    {kpis.totalSales.toLocaleString()} <span className="text-sm font-medium text-gray-400">{CURRENCY}</span>
+                                </h3>
+                            </div>
+                            <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+                                <TrendingUp size={20} />
+                            </div>
+                        </div>
+                        <p className="text-xs text-gray-400">الإيرادات قبل خصم التكاليف</p>
+                    </div>
+
+                    {/* Expenses */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 group hover:border-red-200 transition">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">المصاريف</p>
+                                <h3 className="text-2xl font-black text-gray-800 tracking-tight">
+                                    {kpis.totalExpenses.toLocaleString()} <span className="text-sm font-medium text-gray-400">{CURRENCY}</span>
+                                </h3>
+                            </div>
+                            <div className="p-2 bg-red-50 rounded-lg text-red-600">
+                                <TrendingDown size={20} />
+                            </div>
+                        </div>
+                        <p className="text-xs text-gray-400">مصاريف تشغيلية ورواتب</p>
+                    </div>
+
+                    {/* Stock Value */}
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 group hover:border-purple-200 transition">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">قيمة المخزون</p>
+                                <h3 className="text-2xl font-black text-gray-800 tracking-tight">
+                                    {kpis.stockValue.toLocaleString()} <span className="text-sm font-medium text-gray-400">{CURRENCY}</span>
+                                </h3>
+                            </div>
+                            <div className="p-2 bg-purple-50 rounded-lg text-purple-600">
+                                <Package size={20} />
+                            </div>
+                        </div>
+                        <p className="text-xs text-gray-400">محسوبة بسعر التكلفة</p>
+                    </div>
+                </div>
+
+                {/* --- 2. Sales Chart (Updated Line Chart) --- */}
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="font-bold text-gray-800 flex items-center gap-2 text-lg">
                             <TrendingUp size={20} className="text-emerald-600" />
-                            حركة المبيعات
+                            اتجاه المبيعات (يومي)
                         </h3>
-                        <div className="text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-lg">
-                            إجمالي: <span className="font-bold text-gray-900">{salesTrend.reduce((a,b) => a + b.المبيعات, 0).toLocaleString()} {CURRENCY}</span>
-                        </div>
                     </div>
                     <div className="h-80 w-full" dir="ltr">
                         <ResponsiveContainer width="100%" height="100%">
@@ -285,7 +369,7 @@ const Reports: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 2. Products Insights Grid */}
+                {/* --- 3. Product Insights (Updated) --- */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Top Selling */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
@@ -354,9 +438,8 @@ const Reports: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 3. Expenses Report */}
+                {/* --- 4. Expenses Chart (Updated) --- */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Expenses Chart */}
                     <div className="md:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
                         <div className="flex justify-between items-start mb-2">
                             <h3 className="font-bold text-gray-800 flex items-center gap-2">
@@ -387,7 +470,7 @@ const Reports: React.FC = () => {
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                     <div className="text-center">
                                         <span className="block text-xs text-gray-400">الإجمالي</span>
-                                        <span className="block text-lg font-bold text-slate-800">{expenseStats.total.toLocaleString()}</span>
+                                        <span className="block text-lg font-bold text-slate-800">{kpis.totalExpenses.toLocaleString()}</span>
                                     </div>
                                 </div>
                             </div>
@@ -405,80 +488,94 @@ const Reports: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Expense Summary Card */}
                     <div className="bg-red-50 p-6 rounded-2xl border border-red-100 flex flex-col justify-center items-center text-center">
                         <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-red-600 mb-4 shadow-sm">
                             <TrendingDown size={32} />
                         </div>
                         <h3 className="text-red-800 font-bold mb-1">إجمالي المصاريف</h3>
                         <p className="text-sm text-red-600/80 mb-4">خلال الفترة المحددة</p>
-                        <p className="text-3xl font-black text-red-700">{expenseStats.total.toLocaleString()} <span className="text-lg font-medium opacity-70">{CURRENCY}</span></p>
+                        <p className="text-3xl font-black text-red-700">{kpis.totalExpenses.toLocaleString()} <span className="text-lg font-medium opacity-70">{CURRENCY}</span></p>
                     </div>
                 </div>
 
-                {/* 4. Financial Performance (Cash Flow) */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="p-6 border-b border-gray-100 bg-slate-50 flex items-center gap-2">
-                        <DollarSign size={20} className="text-slate-700" />
-                        <h3 className="font-bold text-slate-800 text-lg">الأداء المالي (حركة السيولة)</h3>
-                    </div>
+                {/* --- 5. Financial Performance Grid (Updated Layout) --- */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x md:divide-x-reverse divide-gray-100">
-                        {/* Inflow */}
-                        <div className="p-6">
-                            <h4 className="text-emerald-700 font-bold mb-4 flex items-center gap-2">
-                                <ArrowDownLeft size={18} /> الأموال الداخلة
-                            </h4>
-                            <div className="space-y-3 text-sm">
-                                <div className="flex justify-between text-gray-600">
-                                    <span>مبيعات (نقدية)</span>
-                                    <span className="font-bold text-emerald-600">{cashFlow.inflow.sales.toLocaleString()}</span>
+                    {/* Cash Flow (Liquidity) */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="p-5 border-b border-gray-100 bg-slate-50 flex items-center gap-2">
+                            <DollarSign size={20} className="text-slate-700" />
+                            <h3 className="font-bold text-slate-800">حركة السيولة (Cash Flow)</h3>
+                        </div>
+                        <div className="p-6 grid grid-cols-2 gap-6">
+                            <div>
+                                <h4 className="text-emerald-700 font-bold mb-3 text-sm flex items-center gap-1"><ArrowDownLeft size={14}/> وارد (Inflow)</h4>
+                                <div className="space-y-2 text-sm text-gray-600">
+                                    <div className="flex justify-between"><span>مبيعات</span> <span className="font-bold">{cashFlow.inflow.sales.toLocaleString()}</span></div>
+                                    <div className="flex justify-between"><span>قبض</span> <span className="font-bold">{cashFlow.inflow.receipts.toLocaleString()}</span></div>
+                                    <div className="border-t pt-2 mt-2 font-black text-emerald-600 flex justify-between">
+                                        <span>المجموع</span> <span>{cashFlow.inflow.total.toLocaleString()}</span>
+                                    </div>
                                 </div>
-                                <div className="flex justify-between text-gray-600">
-                                    <span>سندات قبض</span>
-                                    <span className="font-bold text-emerald-600">{cashFlow.inflow.receipts.toLocaleString()}</span>
+                            </div>
+                            <div>
+                                <h4 className="text-red-700 font-bold mb-3 text-sm flex items-center gap-1"><ArrowUpRight size={14}/> صادر (Outflow)</h4>
+                                <div className="space-y-2 text-sm text-gray-600">
+                                    <div className="flex justify-between"><span>مشتريات</span> <span className="font-bold">{cashFlow.outflow.purchases.toLocaleString()}</span></div>
+                                    <div className="flex justify-between"><span>مصاريف</span> <span className="font-bold">{cashFlow.outflow.expenses.toLocaleString()}</span></div>
+                                    <div className="flex justify-between"><span>صرف</span> <span className="font-bold">{cashFlow.outflow.payments.toLocaleString()}</span></div>
+                                    <div className="border-t pt-2 mt-2 font-black text-red-600 flex justify-between">
+                                        <span>المجموع</span> <span>{cashFlow.outflow.total.toLocaleString()}</span>
+                                    </div>
                                 </div>
-                                <div className="border-t border-dashed border-gray-200 pt-2 flex justify-between font-black text-base text-gray-800">
-                                    <span>الإجمالي</span>
-                                    <span>{cashFlow.inflow.total.toLocaleString()} {CURRENCY}</span>
+                            </div>
+                            <div className="col-span-2 mt-2 pt-4 border-t border-dashed text-center">
+                                <span className="text-gray-500 text-sm">صافي التدفق</span>
+                                <div className={`text-2xl font-black ${cashFlow.net >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                    {cashFlow.net > 0 ? '+' : ''}{cashFlow.net.toLocaleString()} {CURRENCY}
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Outflow */}
-                        <div className="p-6">
-                            <h4 className="text-red-700 font-bold mb-4 flex items-center gap-2">
-                                <ArrowUpRight size={18} /> الأموال الخارجة
-                            </h4>
-                            <div className="space-y-3 text-sm">
-                                <div className="flex justify-between text-gray-600">
-                                    <span>مصروفات</span>
-                                    <span className="font-bold text-red-600">{cashFlow.outflow.expenses.toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between text-gray-600">
-                                    <span>مشتريات (مدفوعة)</span>
-                                    <span className="font-bold text-red-600">{cashFlow.outflow.purchases.toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between text-gray-600">
-                                    <span>سندات صرف</span>
-                                    <span className="font-bold text-red-600">{cashFlow.outflow.payments.toLocaleString()}</span>
-                                </div>
-                                <div className="border-t border-dashed border-gray-200 pt-2 flex justify-between font-black text-base text-gray-800">
-                                    <span>الإجمالي</span>
-                                    <span>{cashFlow.outflow.total.toLocaleString()} {CURRENCY}</span>
-                                </div>
-                            </div>
+                    {/* P&L Statement (Restored) */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                        <div className="p-5 border-b border-gray-100 bg-emerald-50/30">
+                            <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                                <FileText size={18} className="text-emerald-700" />
+                                قائمة الدخل (P&L Summary)
+                            </h3>
                         </div>
-
-                        {/* Net */}
-                        <div className="p-6 flex flex-col justify-center items-center text-center bg-gray-50/50">
-                            <h4 className="text-gray-500 font-bold text-sm uppercase tracking-wider mb-2">صافي التدفق النقدي</h4>
-                            <div className={`text-4xl font-black mb-2 ${cashFlow.net >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                                {cashFlow.net > 0 ? '+' : ''}{cashFlow.net.toLocaleString()}
+                        <div className="p-6 space-y-4 text-sm flex-1">
+                            <div className="flex justify-between items-center text-gray-800 border-b border-gray-100 pb-3">
+                                <span className="font-bold text-lg">إجمالي المبيعات (Revenue)</span>
+                                <span className="font-bold text-lg">{kpis.totalSales.toLocaleString()} {CURRENCY}</span>
                             </div>
-                            <span className="text-sm font-medium text-gray-400">{CURRENCY}</span>
-                            <div className={`mt-4 text-xs font-bold px-3 py-1 rounded-full ${cashFlow.net >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                                {cashFlow.net >= 0 ? 'فائض سيولة' : 'عجز سيولة'}
+                            
+                            <div className="flex justify-between items-center text-red-500 pl-4 border-l-2 border-red-100">
+                                <span>- تكلفة البضاعة المباعة (COGS)</span>
+                                <span className="font-medium">({kpis.totalCOGS.toLocaleString()})</span>
+                            </div>
+                            
+                            <div className="flex justify-between items-center text-gray-900 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                <span className="font-bold">إجمالي الربح (Gross Profit)</span>
+                                <span className="font-bold">{kpis.grossProfit.toLocaleString()} {CURRENCY}</span>
+                            </div>
+
+                            <div className="space-y-2 pl-4 border-l-2 border-orange-100">
+                                <div className="flex justify-between items-center text-orange-600">
+                                    <span>- المصاريف التشغيلية</span>
+                                    <span className="font-medium">({kpis.totalExpenses.toLocaleString()})</span>
+                                </div>
+                            </div>
+
+                            <div className="border-t-2 border-dashed border-gray-200 pt-4 mt-auto">
+                                <div className="flex justify-between items-center">
+                                    <span className="font-black text-xl text-slate-800">صافي الربح (Net Profit)</span>
+                                    <span className={`font-black text-xl px-3 py-1 rounded-lg ${kpis.netProfit >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                                        {kpis.netProfit.toLocaleString()} {CURRENCY}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
