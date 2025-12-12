@@ -141,28 +141,24 @@ const Reports: React.FC = () => {
             }));
             setSalesTrend(trendData);
 
-            // --- 3. Product Analysis (Modified for Profitability) ---
-            const prodPerformance: Record<string, {name: string, sold: number, stock: number, profit: number}> = {};
+            // --- 3. Product Analysis (Modified for Revenue) ---
+            const prodPerformance: Record<string, {name: string, sold: number, stock: number, revenue: number}> = {};
             
             // Initialize
             report.products.forEach(p => {
-                prodPerformance[p.id] = { name: p.name, sold: 0, stock: p.stock, profit: 0 };
+                prodPerformance[p.id] = { name: p.name, sold: 0, stock: p.stock, revenue: 0 };
             });
 
-            // Calculate Sold Quantity AND Profit
+            // Calculate Sold Quantity AND Revenue
             report.invoices.forEach(inv => {
                 if(inv.items) {
                     inv.items.forEach(item => {
                         if (prodPerformance[item.productId]) {
                             prodPerformance[item.productId].sold += item.quantity;
                             
-                            // Calculate Profit for this item sale
-                            const originalProduct = report.products.find(p => p.id === item.productId);
-                            const costPrice = originalProduct ? originalProduct.cost : 0;
+                            // Calculate Revenue for this item sale
                             const revenue = item.quantity * item.priceAtSale;
-                            const cogs = item.quantity * costPrice;
-                            
-                            prodPerformance[item.productId].profit += (revenue - cogs);
+                            prodPerformance[item.productId].revenue += revenue;
                         }
                     });
                 }
@@ -170,8 +166,8 @@ const Reports: React.FC = () => {
 
             const allProds = Object.values(prodPerformance);
             
-            // Sort by PROFIT instead of Quantity
-            const topSelling = [...allProds].sort((a,b) => b.profit - a.profit).filter(p => p.profit > 0).slice(0, 5);
+            // Sort by REVENUE instead of Profit
+            const topSelling = [...allProds].sort((a,b) => b.revenue - a.revenue).filter(p => p.revenue > 0).slice(0, 5);
             
             // Slow moving (based on quantity sold)
             const slowMoving = [...allProds].sort((a,b) => a.sold - b.sold).slice(0, 5);
@@ -408,11 +404,11 @@ const Reports: React.FC = () => {
 
                 {/* --- 3. Product Insights --- */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Top Profitable (Changed from Top Selling Quantity) */}
+                    {/* Top Selling (Revenue) */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
                         <div className="p-4 border-b border-gray-100 bg-emerald-50/50 flex items-center gap-2">
                             <TrendingUp size={18} className="text-emerald-600" />
-                            <h3 className="font-bold text-gray-800">الأكثر ربحاً (العائد)</h3>
+                            <h3 className="font-bold text-gray-800">الأكثر مبيعاً (إيرادات)</h3>
                         </div>
                         <div className="p-2 flex-1">
                             {productStats.topSelling.length === 0 ? <p className="text-center text-gray-400 p-4 text-sm">لا توجد بيانات</p> : (
@@ -421,9 +417,9 @@ const Reports: React.FC = () => {
                                         {productStats.topSelling.map((p, i) => (
                                             <tr key={i} className="border-b border-gray-50 last:border-0 hover:bg-emerald-50/30 transition">
                                                 <td className="p-3 font-medium text-gray-700">{p.name}</td>
-                                                <td className="p-3 text-right">
-                                                    <div className="font-bold text-emerald-600">{p.profit.toLocaleString()} {CURRENCY}</div>
-                                                    <div className="text-[10px] text-gray-400">{p.sold} قطعة مباعة</div>
+                                                <td className="p-3 text-left">
+                                                    <div className="font-bold text-emerald-600">{p.revenue.toLocaleString()} {CURRENCY}</div>
+                                                    <div className="text-[10px] text-gray-400">{p.sold} قطعة</div>
                                                 </td>
                                             </tr>
                                         ))}
