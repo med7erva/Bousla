@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -17,8 +16,12 @@ import {
   X,
   LogOut,
   ChevronLeft,
-  Compass // Import Compass icon
+  Compass, // Import Compass icon
+  Landmark, 
+  Briefcase, 
+  IdCard 
 } from 'lucide-react';
+import NotificationCenter from './NotificationCenter';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -37,8 +40,6 @@ const NAV_ITEMS = [
   { label: 'التقارير', icon: FileText, path: '/reports' },
   { label: 'الإعدادات', icon: Settings, path: '/settings' },
 ];
-
-import { Landmark, Briefcase, IdCard } from 'lucide-react';
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -151,7 +152,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
+            {/* Integrated Notification Center */}
+            <NotificationCenter />
+
             <Link to="/profile" className="flex items-center gap-3 p-1.5 pr-3 rounded-full hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 transition-all duration-200 group">
               <div className="flex flex-col items-end hidden md:flex">
                 <span className="text-sm font-bold text-slate-700 group-hover:text-emerald-700 transition-colors">{user?.storeName || 'متجري'}</span>

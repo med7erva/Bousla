@@ -10,7 +10,7 @@ const MODEL_NAME = 'gemini-2.5-flash';
 // --- Caching Helpers ---
 const CACHE_DURATION = 1000 * 60 * 60; // 1 Hour
 
-const getCachedInsight = (key: string): string | string[] | null => {
+const getCachedInsight = (key: string): any => {
     try {
         const item = localStorage.getItem(`ai_cache_${key}`);
         if (!item) return null;
@@ -25,7 +25,7 @@ const getCachedInsight = (key: string): string | string[] | null => {
     }
 };
 
-const setCachedInsight = (key: string, data: string | string[]) => {
+const setCachedInsight = (key: string, data: any) => {
     try {
         localStorage.setItem(`ai_cache_${key}`, JSON.stringify({
             data,
@@ -62,6 +62,52 @@ ${dataContext}
 - لا تتجاوز 30 كلمة كحد أقصى.
 - لا تسأل المستخدم أسئلة، فقط قدّم أفضل تحليل ممكن بناءً على البيانات.
 `;
+
+// --- Notification Center Briefing (NEW) ---
+export const getNotificationBriefing = async (
+    sales: number, 
+    expenses: number, 
+    topProduct: string,
+    debt: number
+): Promise<{text: string, type: 'opportunity' | 'warning'}[]> => {
+    // Cache per day per stats snapshot
+    const today = new Date().toISOString().split('T')[0];
+    const cacheKey = `notif_brief_${today}_${sales}_${expenses}`;
+    
+    const cached = getCachedInsight(cacheKey);
+    if (cached && Array.isArray(cached)) return cached as {text: string, type: 'opportunity' | 'warning'}[];
+
+    try {
+        const prompt = `
+        أنت نظام إشعارات ذكي لمتجر.
+        البيانات: مبيعات اليوم=${sales}، المصاريف=${expenses}، المنتج الأفضل=${topProduct}، ديون العملاء=${debt}.
+        
+        المطلوب: جملتين قصيرتين جداً (كإشعار موبايل).
+        1. الجملة الأولى: فرصة أو نقطة إيجابية (مثلاً عن المنتج الأفضل أو هامش الربح).
+        2. الجملة الثانية: تحذير أو تنبيه (مثلاً عن الديون أو ارتفاع المصاريف).
+        
+        نسق الإجابة JSON فقط:
+        [
+          {"text": "...", "type": "opportunity"},
+          {"text": "...", "type": "warning"}
+        ]
+        `;
+
+        const response = await ai.models.generateContent({ 
+            model: MODEL_NAME, 
+            contents: prompt,
+            config: { responseMimeType: "application/json" }
+        });
+
+        const result = JSON.parse(response.text || "[]");
+        setCachedInsight(cacheKey, result);
+        return result;
+    } catch (e) {
+        return [
+            { text: "تحقق من المنتجات الأكثر مبيعاً لضمان توفرها.", type: "opportunity" }
+        ];
+    }
+};
 
 // --- Dashboard (Specific Prompt Mode) ---
 export interface DashboardContext {
