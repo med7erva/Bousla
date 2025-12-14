@@ -13,20 +13,21 @@ import Suppliers from './pages/Suppliers';
 import Employees from './pages/Employees'; 
 import Finance from './pages/Finance';
 import Reports from './pages/Reports'; 
-import Settings from './pages/Settings'; // Imported
+import Settings from './pages/Settings'; 
 import Landing from './pages/Landing';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { SettingsProvider } from './context/SettingsContext';
 import { UserCircle, Wrench } from 'lucide-react';
 
 const PlaceholderPage: React.FC<{ title: string; icon: any }> = ({ title, icon: Icon }) => (
-  <div className="flex flex-col items-center justify-center h-[60vh] text-center p-8 bg-white rounded-3xl border border-dashed border-gray-300">
-    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
-        <Icon size={40} className="text-gray-400" />
+  <div className="flex flex-col items-center justify-center h-[60vh] text-center p-8 bg-white dark:bg-slate-800 rounded-3xl border border-dashed border-gray-300 dark:border-slate-700">
+    <div className="w-20 h-20 bg-gray-50 dark:bg-slate-700 rounded-full flex items-center justify-center mb-6">
+        <Icon size={40} className="text-gray-400 dark:text-slate-400" />
     </div>
-    <h2 className="text-2xl font-bold text-gray-800 mb-2">{title}</h2>
-    <p className="text-gray-500 max-w-md">
+    <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">{title}</h2>
+    <p className="text-gray-500 dark:text-slate-400 max-w-md">
       جاري العمل على هذه الصفحة. ستكون متاحة قريباً.
     </p>
   </div>
@@ -81,11 +82,13 @@ const AppRoutes: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-        <Router>
-            <AppRoutes />
-        </Router>
-    </AuthProvider>
+    <SettingsProvider>
+      <AuthProvider>
+          <Router>
+              <AppRoutes />
+          </Router>
+      </AuthProvider>
+    </SettingsProvider>
   );
 };
 
