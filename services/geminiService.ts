@@ -63,33 +63,49 @@ ${dataContext}
 - لا تسأل المستخدم أسئلة، فقط قدّم أفضل تحليل ممكن بناءً على البيانات.
 `;
 
-// --- Notification Center Briefing (NEW) ---
+// --- Notification Center Briefing (UPDATED) ---
 export const getNotificationBriefing = async (
     sales: number, 
     expenses: number, 
     topProduct: string,
     debt: number
-): Promise<{text: string, type: 'opportunity' | 'warning'}[]> => {
-    // Cache per day per stats snapshot
+): Promise<{title: string, text: string, type: 'opportunity' | 'warning' | 'info'}[]> => {
+    
+    // Cache per day per stats snapshot (shorter cache for operational updates)
     const today = new Date().toISOString().split('T')[0];
-    const cacheKey = `notif_brief_${today}_${sales}_${expenses}`;
+    const hour = new Date().getHours();
+    const cacheKey = `notif_op_${today}_${hour}_${sales}_${expenses}`;
     
     const cached = getCachedInsight(cacheKey);
-    if (cached && Array.isArray(cached)) return cached as {text: string, type: 'opportunity' | 'warning'}[];
+    if (cached && Array.isArray(cached)) return cached;
 
     try {
         const prompt = `
-        أنت نظام إشعارات ذكي لمتجر.
-        البيانات: مبيعات اليوم=${sales}، المصاريف=${expenses}، المنتج الأفضل=${topProduct}، ديون العملاء=${debt}.
-        
-        المطلوب: جملتين قصيرتين جداً (كإشعار موبايل).
-        1. الجملة الأولى: فرصة أو نقطة إيجابية (مثلاً عن المنتج الأفضل أو هامش الربح).
-        2. الجملة الثانية: تحذير أو تنبيه (مثلاً عن الديون أو ارتفاع المصاريف).
-        
-        نسق الإجابة JSON فقط:
+        أنت نظام ذكاء اصطناعي مسؤول عن توليد إشعارات تشغيلية لتطبيق عربي اسمه "بوصلة"، وهو نظام محاسبة وإدارة مخزون مخصص لمحلات الملابس.
+
+        البيانات الحالية للمتجر (لليوم):
+        - مبيعات اليوم: ${sales} أوقية
+        - مصاريف اليوم: ${expenses} أوقية
+        - المنتج الأكثر حركة: ${topProduct}
+        - إجمالي ديون العملاء: ${debt} أوقية
+        - الوقت الحالي: الساعة ${hour}:00
+
+        المطلوب:
+        بناءً على البيانات أعلاه، اختر أنسب 2 إلى 3 إشعارات تشغيلية من الفئات التالية (لا تخترع بيانات غير موجودة):
+        1) إشعارات المبيعات (مثلاً: تنبيه بضعف المبيعات، أو تهنئة بتحقيق رقم جيد)
+        2) إشعارات المصاريف (مثلاً: تنبيه إذا كانت المصاريف مرتفعة مقارنة بالمبيعات)
+        3) إشعارات الوقت (بداية يوم / منتصف يوم / نهاية يوم)
+        4) إشعارات الديون (تذكير بالتحصيل)
+
+        شروط صارمة:
+        - الإشعارات قصيرة وواضحة جداً.
+        - باللهجة العربية الفصحى البسيطة.
+        - ممنوع التحليل العميق أو التوقعات المستقبلية. فقط واقع حالي.
+        - كل إشعار يحتوي: عنوان قصير، نص الإشعار.
+
+        صيغة الإجابة JSON فقط (array):
         [
-          {"text": "...", "type": "opportunity"},
-          {"text": "...", "type": "warning"}
+          {"title": "...", "text": "...", "type": "warning" | "opportunity" | "info"}
         ]
         `;
 
@@ -103,8 +119,9 @@ export const getNotificationBriefing = async (
         setCachedInsight(cacheKey, result);
         return result;
     } catch (e) {
+        // Fallback operational notifications
         return [
-            { text: "تحقق من المنتجات الأكثر مبيعاً لضمان توفرها.", type: "opportunity" }
+            { title: "ملخص النشاط", text: `مبيعاتك اليوم وصلت إلى ${sales} أوقية.`, type: "info" }
         ];
     }
 };
