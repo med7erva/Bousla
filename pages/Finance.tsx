@@ -191,8 +191,8 @@ const Finance: React.FC = () => {
           case 'Bankily': return 'bg-gradient-to-br from-teal-500 to-orange-400 text-white';
           case 'Masrvi': return 'bg-gradient-to-br from-green-600 to-emerald-400 text-white';
           case 'Sedad': return 'bg-gradient-to-br from-blue-600 to-cyan-500 text-white';
-          case 'Cash': return 'bg-gradient-to-br from-gray-800 to-gray-600 text-white';
-          default: return 'bg-white border border-gray-200 text-gray-800';
+          case 'Cash': return 'bg-gradient-to-br from-gray-800 to-gray-600 text-white dark:from-slate-700 dark:to-slate-600';
+          default: return 'bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-800 dark:text-white';
       }
   };
 
@@ -216,8 +216,8 @@ const Finance: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-            <h1 className="text-2xl font-bold text-gray-800">الحسابات المالية</h1>
-            <p className="text-gray-500 text-sm">إدارة الخزينة وحركة الأموال</p>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">الحسابات المالية</h1>
+            <p className="text-gray-500 dark:text-slate-400 text-sm">إدارة الخزينة وحركة الأموال</p>
         </div>
         <div className="flex gap-3">
              <button 
@@ -245,7 +245,7 @@ const Finance: React.FC = () => {
       </div>
 
       {/* Total Balance Card */}
-      <div className="bg-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+      <div className="bg-slate-900 dark:bg-slate-950 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 p-32 bg-emerald-500 opacity-10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
         <div className="relative z-10">
             <h3 className="text-slate-400 font-medium mb-2 flex items-center gap-2">
@@ -279,15 +279,15 @@ const Finance: React.FC = () => {
       </div>
 
       {/* Transaction History */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <h3 className="font-bold text-gray-800 mb-6 flex items-center gap-2">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+        <h3 className="font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
             <Landmark size={20} />
             سجل حركة الأموال (خارج المبيعات)
         </h3>
         
         <div className="overflow-x-auto">
             <table className="w-full text-right">
-                <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+                <thead className="bg-gray-50 dark:bg-slate-700 text-gray-500 dark:text-slate-400 text-xs uppercase">
                     <tr>
                         <th className="px-6 py-4">التاريخ</th>
                         <th className="px-6 py-4">النوع</th>
@@ -298,47 +298,47 @@ const Finance: React.FC = () => {
                         <th className="px-6 py-4">إجراءات</th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
                     {transactions.length === 0 ? (
                         <tr><td colSpan={7} className="p-8 text-center text-gray-400">لا توجد عمليات مسجلة</td></tr>
                     ) : (
                         transactions.map(tx => (
-                            <tr key={tx.id} className="hover:bg-gray-50 group">
-                                <td className="px-6 py-4 text-gray-500 text-sm">{tx.date.split('T')[0]}</td>
+                            <tr key={tx.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 group">
+                                <td className="px-6 py-4 text-gray-500 dark:text-slate-400 text-sm">{tx.date.split('T')[0]}</td>
                                 <td className="px-6 py-4">
                                     {tx.type === 'in' ? (
-                                        <span className="flex items-center gap-1 text-emerald-600 font-bold text-xs bg-emerald-50 px-2 py-1 rounded-full w-fit">
+                                        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold text-xs bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-full w-fit">
                                             <ArrowDownLeft size={14} /> قبض
                                         </span>
                                     ) : (
-                                        <span className="flex items-center gap-1 text-red-600 font-bold text-xs bg-red-50 px-2 py-1 rounded-full w-fit">
+                                        <span className="flex items-center gap-1 text-red-600 dark:text-red-400 font-bold text-xs bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded-full w-fit">
                                             <ArrowUpRight size={14} /> صرف
                                         </span>
                                     )}
                                 </td>
-                                <td className="px-6 py-4 text-gray-800 font-medium">
+                                <td className="px-6 py-4 text-gray-800 dark:text-white font-medium">
                                     <span className="text-xs text-gray-400 block mb-0.5">
                                         {tx.entityType === 'Client' ? 'عميل' : tx.entityType === 'Supplier' ? 'مورد' : tx.entityType === 'Employee' ? 'موظف' : 'آخر'}
                                     </span>
                                     {getEntityDisplayName(tx)}
                                 </td>
-                                <td className="px-6 py-4 text-gray-600 text-sm">{tx.description}</td>
-                                <td className="px-6 py-4 text-gray-600 text-sm">{tx.paymentMethodName}</td>
-                                <td className={`px-6 py-4 font-bold ${tx.type === 'in' ? 'text-emerald-600' : 'text-red-600'}`}>
+                                <td className="px-6 py-4 text-gray-600 dark:text-slate-300 text-sm">{tx.description}</td>
+                                <td className="px-6 py-4 text-gray-600 dark:text-slate-300 text-sm">{tx.paymentMethodName}</td>
+                                <td className={`px-6 py-4 font-bold ${tx.type === 'in' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                                     {tx.type === 'in' ? '+' : '-'}{tx.amount}
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button 
                                             onClick={() => openTxModal(tx.type, tx)}
-                                            className="p-1.5 bg-gray-100 hover:bg-blue-100 text-gray-500 hover:text-blue-600 rounded transition"
+                                            className="p-1.5 bg-gray-100 hover:bg-blue-100 dark:bg-slate-700 dark:hover:bg-blue-900/30 text-gray-500 dark:text-slate-400 hover:text-blue-600 rounded transition"
                                             title="تعديل"
                                         >
                                             <Edit2 size={16} />
                                         </button>
                                         <button 
                                             onClick={() => handleDeleteTransaction(tx.id)}
-                                            className="p-1.5 bg-gray-100 hover:bg-red-100 text-gray-500 hover:text-red-600 rounded transition"
+                                            className="p-1.5 bg-gray-100 hover:bg-red-100 dark:bg-slate-700 dark:hover:bg-red-900/30 text-gray-500 dark:text-slate-400 hover:text-red-600 rounded transition"
                                             title="حذف"
                                         >
                                             <Trash2 size={16} />
@@ -356,23 +356,23 @@ const Finance: React.FC = () => {
       {/* Transaction Modal */}
       {isTxModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl animate-in zoom-in-95 duration-200">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-6 shadow-xl animate-in zoom-in-95 duration-200">
                 <div className="flex justify-between items-center mb-6">
                     <div className="flex items-center gap-2">
-                        <div className={`p-2 rounded-lg ${txType === 'in' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                        <div className={`p-2 rounded-lg ${txType === 'in' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'}`}>
                             {txType === 'in' ? <ArrowDownLeft size={24} /> : <ArrowUpRight size={24} />}
                         </div>
-                        <h2 className="text-xl font-bold text-gray-800">
+                        <h2 className="text-xl font-bold text-gray-800 dark:text-white">
                             {editingTxId ? 'تعديل العملية' : (txType === 'in' ? 'سند قبض (إيداع)' : 'سند صرف (دفع)')}
                         </h2>
                     </div>
-                    <button onClick={() => setIsTxModalOpen(false)}><X size={24} className="text-gray-400 hover:text-gray-800" /></button>
+                    <button onClick={() => setIsTxModalOpen(false)}><X size={24} className="text-gray-400 hover:text-gray-800 dark:hover:text-white" /></button>
                 </div>
 
                 <form onSubmit={handleTransactionSubmit} className="space-y-4">
                     
                     {/* Entity Type Selector */}
-                    <div className="grid grid-cols-4 gap-2 bg-gray-50 p-1 rounded-xl">
+                    <div className="grid grid-cols-4 gap-2 bg-gray-50 dark:bg-slate-700 p-1 rounded-xl">
                         {['Client', 'Supplier', 'Employee', 'Other'].map((type) => (
                             <button
                                 key={type}
@@ -380,8 +380,8 @@ const Finance: React.FC = () => {
                                 onClick={() => setFormData({...formData, entityType: type as any, entityId: ''})}
                                 className={`text-xs font-bold py-2 rounded-lg transition ${
                                     formData.entityType === type 
-                                    ? 'bg-white shadow-sm text-gray-900 border border-gray-100' 
-                                    : 'text-gray-500 hover:bg-gray-200'
+                                    ? 'bg-white dark:bg-slate-600 shadow-sm text-gray-900 dark:text-white border border-gray-100 dark:border-slate-500' 
+                                    : 'text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600'
                                 }`}
                             >
                                 {type === 'Client' && 'عميل'}
@@ -395,12 +395,12 @@ const Finance: React.FC = () => {
                     {/* Specific Entity Select */}
                     {formData.entityType !== 'Other' && (
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                                 اختر {formData.entityType === 'Client' ? 'العميل' : formData.entityType === 'Supplier' ? 'المورد' : 'الموظف'}
                             </label>
                             <select 
                                 required
-                                className="w-full p-2.5 border rounded-lg bg-white"
+                                className="w-full p-2.5 border dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-white"
                                 value={formData.entityId}
                                 onChange={(e) => setFormData({...formData, entityId: e.target.value})}
                             >
@@ -415,7 +415,7 @@ const Finance: React.FC = () => {
                                     <option key={e.id} value={e.id}>{e.name}</option>
                                 ))}
                             </select>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                                 {txType === 'in' && formData.entityType === 'Client' && "سيتم خصم المبلغ من دين العميل."}
                                 {txType === 'out' && formData.entityType === 'Client' && "سيتم إضافة المبلغ كدين (سلفة) على العميل."}
                                 {txType === 'out' && formData.entityType === 'Supplier' && "سيتم خصم المبلغ من دين المورد."}
@@ -427,11 +427,11 @@ const Finance: React.FC = () => {
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">المبلغ</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">المبلغ</label>
                         <input 
                             required 
                             type="number" 
-                            className="w-full p-2.5 border rounded-lg font-bold text-lg"
+                            className="w-full p-2.5 border dark:border-slate-600 rounded-lg font-bold text-lg dark:bg-slate-700 dark:text-white"
                             value={formData.amount === 0 ? '' : formData.amount}
                             onChange={(e) => setFormData({...formData, amount: Number(e.target.value)})}
                         />
@@ -439,10 +439,10 @@ const Finance: React.FC = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">طريقة الدفع/القبض</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">طريقة الدفع/القبض</label>
                             <select 
                                 required
-                                className="w-full p-2.5 border rounded-lg bg-gray-50"
+                                className="w-full p-2.5 border dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 dark:text-white"
                                 value={formData.paymentMethodId}
                                 onChange={(e) => setFormData({...formData, paymentMethodId: e.target.value})}
                             >
@@ -452,11 +452,11 @@ const Finance: React.FC = () => {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">التاريخ</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">التاريخ</label>
                             <input 
                                 required 
                                 type="date" 
-                                className="w-full p-2.5 border rounded-lg bg-gray-50"
+                                className="w-full p-2.5 border dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 dark:text-white"
                                 value={formData.date}
                                 onChange={(e) => setFormData({...formData, date: e.target.value})}
                             />
@@ -464,10 +464,10 @@ const Finance: React.FC = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">بيان / ملاحظات</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">بيان / ملاحظات</label>
                         <input 
                             type="text" 
-                            className="w-full p-2.5 border rounded-lg"
+                            className="w-full p-2.5 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
                             placeholder="مثلاً: سداد دفعة، سلفة مستعجلة..."
                             value={formData.description}
                             onChange={(e) => setFormData({...formData, description: e.target.value})}
@@ -498,24 +498,24 @@ const Finance: React.FC = () => {
       {/* Transfer Modal */}
       {isTransferModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-             <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl animate-in zoom-in-95 duration-200">
+             <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-6 shadow-xl animate-in zoom-in-95 duration-200">
                 <div className="flex justify-between items-center mb-6">
                     <div className="flex items-center gap-2">
-                        <div className="p-2 rounded-lg bg-indigo-100 text-indigo-600">
+                        <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
                             <ArrowRightLeft size={24} />
                         </div>
-                        <h2 className="text-xl font-bold text-gray-800">تحويل بين الحسابات</h2>
+                        <h2 className="text-xl font-bold text-gray-800 dark:text-white">تحويل بين الحسابات</h2>
                     </div>
-                    <button onClick={() => setIsTransferModalOpen(false)}><X size={24} className="text-gray-400 hover:text-gray-800" /></button>
+                    <button onClick={() => setIsTransferModalOpen(false)}><X size={24} className="text-gray-400 hover:text-gray-800 dark:hover:text-white" /></button>
                 </div>
 
                 <form onSubmit={handleTransferSubmit} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">من حساب (المصدر)</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">من حساب (المصدر)</label>
                             <select 
                                 required
-                                className="w-full p-2.5 border rounded-lg bg-red-50"
+                                className="w-full p-2.5 border dark:border-slate-600 rounded-lg bg-red-50 dark:bg-red-900/10 dark:text-white"
                                 value={transferData.fromId}
                                 onChange={(e) => setTransferData({...transferData, fromId: e.target.value})}
                             >
@@ -526,10 +526,10 @@ const Finance: React.FC = () => {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">إلى حساب (المستلم)</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">إلى حساب (المستلم)</label>
                             <select 
                                 required
-                                className="w-full p-2.5 border rounded-lg bg-emerald-50"
+                                className="w-full p-2.5 border dark:border-slate-600 rounded-lg bg-emerald-50 dark:bg-emerald-900/10 dark:text-white"
                                 value={transferData.toId}
                                 onChange={(e) => setTransferData({...transferData, toId: e.target.value})}
                             >
@@ -542,32 +542,32 @@ const Finance: React.FC = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">المبلغ</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">المبلغ</label>
                         <input 
                             required 
                             type="number" 
-                            className="w-full p-2.5 border rounded-lg font-bold text-lg"
+                            className="w-full p-2.5 border dark:border-slate-600 rounded-lg font-bold text-lg dark:bg-slate-700 dark:text-white"
                             value={transferData.amount === 0 ? '' : transferData.amount}
                             onChange={(e) => setTransferData({...transferData, amount: Number(e.target.value)})}
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">التاريخ</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">التاريخ</label>
                         <input 
                             required 
                             type="date" 
-                            className="w-full p-2.5 border rounded-lg bg-gray-50"
+                            className="w-full p-2.5 border dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 dark:text-white"
                             value={transferData.date}
                             onChange={(e) => setTransferData({...transferData, date: e.target.value})}
                         />
                     </div>
 
                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">ملاحظات (اختياري)</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">ملاحظات (اختياري)</label>
                         <input 
                             type="text" 
-                            className="w-full p-2.5 border rounded-lg"
+                            className="w-full p-2.5 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
                             placeholder="سبب التحويل..."
                             value={transferData.description}
                             onChange={(e) => setTransferData({...transferData, description: e.target.value})}

@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, 
@@ -232,13 +231,13 @@ const Inventory: React.FC = () => {
     <div className="space-y-6 relative">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">إدارة المخزون</h1>
-          <p className="text-gray-500 text-sm">تتبع المنتجات، المواد الخام، وعمليات التصنيع</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">إدارة المخزون</h1>
+          <p className="text-gray-500 dark:text-slate-400 text-sm">تتبع المنتجات، المواد الخام، وعمليات التصنيع</p>
         </div>
         <div className="flex gap-2">
             <button 
                 onClick={() => setIsCatModalOpen(true)}
-                className="p-2.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
+                className="p-2.5 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600 transition"
                 title="إدارة الأقسام"
             >
                 <Settings size={20} />
@@ -269,13 +268,13 @@ const Inventory: React.FC = () => {
       />
 
       {/* Filters and Search */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
         <div className="relative">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
           <input 
             type="text" 
             placeholder="بحث باسم المنتج أو الباركود..." 
-            className="w-full pl-4 pr-10 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+            className="w-full pl-4 pr-10 py-2.5 rounded-lg border border-gray-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -283,50 +282,50 @@ const Inventory: React.FC = () => {
       </div>
 
       {/* Products Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden min-h-[300px]">
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden min-h-[300px]">
         <div className="overflow-x-auto">
           <table className="w-full text-right">
-            <thead className="bg-gray-50 border-b border-gray-100">
+            <thead className="bg-gray-50 dark:bg-slate-700 border-b border-gray-100 dark:border-slate-700">
               <tr>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">باركود</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">اسم المنتج</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">القسم</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">السعر</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">الكمية</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">الحالة</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">إجراءات</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">باركود</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">اسم المنتج</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">القسم</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">السعر</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">الكمية</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">الحالة</th>
+                <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">إجراءات</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
               {filteredProducts.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-4 font-mono text-xs text-gray-500">{product.barcode}</td>
-                  <td className="px-6 py-4 font-semibold text-gray-900">{product.name}</td>
+                <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition">
+                  <td className="px-6 py-4 font-mono text-xs text-gray-500 dark:text-slate-400">{product.barcode}</td>
+                  <td className="px-6 py-4 font-semibold text-gray-900 dark:text-white">{product.name}</td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                        ${product.category === 'RawMaterial' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>
+                        ${product.category === 'RawMaterial' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-300'}`}>
                       {getCategoryName(product.category)}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm">
-                        <p className="font-bold text-gray-900">{product.price} {CURRENCY}</p>
+                        <p className="font-bold text-gray-900 dark:text-white">{product.price} {CURRENCY}</p>
                         <p className="text-xs text-gray-400">ت: {product.cost}</p>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`font-medium ${product.stock < 10 ? 'text-red-600' : 'text-gray-900'}`}>
+                    <span className={`font-medium ${product.stock < 10 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
                         {product.stock}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     {product.stock < 10 ? (
-                        <div className="flex items-center gap-1 text-red-500 text-xs font-medium">
+                        <div className="flex items-center gap-1 text-red-500 dark:text-red-400 text-xs font-medium">
                             <AlertCircle size={14} />
                             <span>منخفض</span>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-1 text-emerald-500 text-xs font-medium">
+                        <div className="flex items-center gap-1 text-emerald-500 dark:text-emerald-400 text-xs font-medium">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                             <span>متوفر</span>
                         </div>
@@ -340,7 +339,7 @@ const Inventory: React.FC = () => {
                             setMenuPos({ top: rect.bottom, left: rect.left });
                             setActiveMenuId(activeMenuId === product.id ? null : product.id); 
                         }}
-                        className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition"
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full text-gray-500 dark:text-slate-400 transition"
                     >
                       <MoreVertical size={18} />
                     </button>
@@ -351,7 +350,7 @@ const Inventory: React.FC = () => {
           </table>
         </div>
         {filteredProducts.length === 0 && (
-            <div className="p-8 text-center text-gray-500">
+            <div className="p-8 text-center text-gray-500 dark:text-slate-400">
                 لا توجد منتجات مطابقة للبحث.
             </div>
         )}
@@ -361,18 +360,18 @@ const Inventory: React.FC = () => {
       {activeMenuId && activeProduct && (
         <div 
             ref={menuRef} 
-            className="fixed z-50 w-40 bg-white rounded-lg shadow-xl border border-gray-100 animate-in fade-in zoom-in-95 duration-200"
+            className="fixed z-50 w-40 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-100 dark:border-slate-700 animate-in fade-in zoom-in-95 duration-200"
             style={{ top: menuPos.top, left: menuPos.left }}
         >
             <button 
                 onClick={() => openEditModal(activeProduct)}
-                className="w-full text-right px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                className="w-full text-right px-4 py-3 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center gap-2"
             >
                 <Edit2 size={14} /> تعديل
             </button>
             <button 
                 onClick={() => handleDeleteProduct(activeProduct.id)}
-                className="w-full text-right px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-b-lg"
+                className="w-full text-right px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-2 rounded-b-lg"
             >
                 <Trash2 size={14} /> حذف
             </button>
@@ -382,40 +381,40 @@ const Inventory: React.FC = () => {
       {/* Add Product Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl animate-in fade-in zoom-in duration-200">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-6 shadow-xl animate-in fade-in zoom-in duration-200">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold text-gray-800">إضافة منتج جديد</h2>
-                    <button onClick={() => setIsAddModalOpen(false)} className="text-gray-500 hover:text-gray-800">
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">إضافة منتج جديد</h2>
+                    <button onClick={() => setIsAddModalOpen(false)} className="text-gray-500 hover:text-gray-800 dark:hover:text-white">
                         <X size={24} />
                     </button>
                 </div>
                 
                 <form onSubmit={handleAddProduct} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">اسم المنتج</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">اسم المنتج</label>
                         <input 
                             required
                             type="text" 
-                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                            className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
                             value={newProduct.name}
                             onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">الباركود (اختياري)</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">الباركود (اختياري)</label>
                             <input 
                                 type="text" 
                                 placeholder="تلقائي إذا ترك فارغاً"
-                                className="w-full p-2 border rounded-lg outline-none"
+                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
                                 value={newProduct.barcode}
                                 onChange={(e) => setNewProduct({...newProduct, barcode: e.target.value})}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">القسم</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">القسم</label>
                             <select 
-                                className="w-full p-2 border rounded-lg outline-none"
+                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
                                 value={newProduct.category}
                                 onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
                             >
@@ -427,28 +426,28 @@ const Inventory: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">السعر</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">السعر</label>
                             <input 
                                 required type="number" 
-                                className="w-full p-2 border rounded-lg outline-none"
+                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
                                 value={newProduct.price}
                                 onChange={(e) => setNewProduct({...newProduct, price: Number(e.target.value)})}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">التكلفة</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">التكلفة</label>
                             <input 
                                 required type="number" 
-                                className="w-full p-2 border rounded-lg outline-none"
+                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
                                 value={newProduct.cost}
                                 onChange={(e) => setNewProduct({...newProduct, cost: Number(e.target.value)})}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">الكمية</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">الكمية</label>
                             <input 
                                 required type="number" 
-                                className="w-full p-2 border rounded-lg outline-none"
+                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
                                 value={newProduct.stock}
                                 onChange={(e) => setNewProduct({...newProduct, stock: Number(e.target.value)})}
                             />
@@ -474,39 +473,39 @@ const Inventory: React.FC = () => {
       {/* Edit Product Modal */}
       {isEditModalOpen && editingProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl animate-in fade-in zoom-in duration-200">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-6 shadow-xl animate-in fade-in zoom-in duration-200">
                 <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold text-gray-800">تعديل المنتج</h2>
-                    <button onClick={() => setIsEditModalOpen(false)} className="text-gray-500 hover:text-gray-800">
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">تعديل المنتج</h2>
+                    <button onClick={() => setIsEditModalOpen(false)} className="text-gray-500 hover:text-gray-800 dark:hover:text-white">
                         <X size={24} />
                     </button>
                 </div>
                 
                 <form onSubmit={handleUpdateProduct} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">اسم المنتج</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">اسم المنتج</label>
                         <input 
                             required
                             type="text" 
-                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
+                            className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
                             value={editingProduct.name}
                             onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})}
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">الباركود</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">الباركود</label>
                             <input 
                                 type="text" 
-                                className="w-full p-2 border rounded-lg outline-none"
+                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
                                 value={editingProduct.barcode}
                                 onChange={(e) => setEditingProduct({...editingProduct, barcode: e.target.value})}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">القسم</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">القسم</label>
                             <select 
-                                className="w-full p-2 border rounded-lg outline-none"
+                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
                                 value={editingProduct.category}
                                 onChange={(e) => setEditingProduct({...editingProduct, category: e.target.value})}
                             >
@@ -518,28 +517,28 @@ const Inventory: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-3 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">السعر</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">السعر</label>
                             <input 
                                 required type="number" 
-                                className="w-full p-2 border rounded-lg outline-none"
+                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
                                 value={editingProduct.price}
                                 onChange={(e) => setEditingProduct({...editingProduct, price: Number(e.target.value)})}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">التكلفة</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">التكلفة</label>
                             <input 
                                 required type="number" 
-                                className="w-full p-2 border rounded-lg outline-none"
+                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
                                 value={editingProduct.cost}
                                 onChange={(e) => setEditingProduct({...editingProduct, cost: Number(e.target.value)})}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">الكمية</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">الكمية</label>
                             <input 
                                 required type="number" 
-                                className="w-full p-2 border rounded-lg outline-none"
+                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
                                 value={editingProduct.stock}
                                 onChange={(e) => setEditingProduct({...editingProduct, stock: Number(e.target.value)})}
                             />
@@ -548,7 +547,7 @@ const Inventory: React.FC = () => {
                     <button 
                         type="submit" 
                         disabled={isSubmitting}
-                        className="w-full bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900 transition mt-2 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
+                        className="w-full bg-slate-800 dark:bg-emerald-600 text-white py-3 rounded-lg font-bold hover:bg-slate-900 dark:hover:bg-emerald-700 transition mt-2 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
                     >
                          {isSubmitting ? (
                             <>
@@ -570,28 +569,28 @@ const Inventory: React.FC = () => {
       {/* Manufacturing Modal */}
       {isManuModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-xl animate-in fade-in zoom-in duration-200">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-xl animate-in fade-in zoom-in duration-200">
                 <div className="flex justify-between items-center mb-6">
                     <div className="flex items-center gap-2">
-                        <Scissors className="text-indigo-600" />
-                        <h2 className="text-xl font-bold text-gray-800">تصنيع / خياطة</h2>
+                        <Scissors className="text-indigo-600 dark:text-indigo-400" />
+                        <h2 className="text-xl font-bold text-gray-800 dark:text-white">تصنيع / خياطة</h2>
                     </div>
-                    <button onClick={() => setIsManuModalOpen(false)} className="text-gray-500 hover:text-gray-800">
+                    <button onClick={() => setIsManuModalOpen(false)} className="text-gray-500 hover:text-gray-800 dark:hover:text-white">
                         <X size={24} />
                     </button>
                 </div>
                 
-                <div className="bg-indigo-50 p-4 rounded-lg text-sm text-indigo-700 mb-6">
+                <div className="bg-indigo-50 dark:bg-indigo-900/30 p-4 rounded-lg text-sm text-indigo-700 dark:text-indigo-300 mb-6">
                     قم بتحويل المواد الخام إلى منتجات جاهزة. سيتم حساب التكلفة وإضافتها كدين على الخياط (المورد) إذا لزم الأمر.
                 </div>
                 
                 <form onSubmit={handleManufacture} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">المادة الخام (المصدر)</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">المادة الخام (المصدر)</label>
                             <select 
                                 required
-                                className="w-full p-2 border rounded-lg outline-none bg-gray-50"
+                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none bg-gray-50"
                                 value={manuData.sourceId}
                                 onChange={(e) => setManuData({...manuData, sourceId: e.target.value})}
                             >
@@ -604,10 +603,10 @@ const Inventory: React.FC = () => {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">المنتج النهائي</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">المنتج النهائي</label>
                             <select 
                                 required
-                                className="w-full p-2 border rounded-lg outline-none bg-gray-50"
+                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none bg-gray-50"
                                 value={manuData.targetId}
                                 onChange={(e) => setManuData({...manuData, targetId: e.target.value})}
                             >
@@ -623,30 +622,30 @@ const Inventory: React.FC = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">الكمية المراد إنتاجها</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">الكمية المراد إنتاجها</label>
                             <input 
                                 required type="number" min="1"
-                                className="w-full p-2 border rounded-lg outline-none"
+                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
                                 value={manuData.quantityToMake}
                                 onChange={(e) => setManuData({...manuData, quantityToMake: Number(e.target.value)})}
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">استهلاك الخام (للقطعة)</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">استهلاك الخام (للقطعة)</label>
                             <input 
                                 required type="number" min="0.1" step="0.1"
-                                className="w-full p-2 border rounded-lg outline-none"
+                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
                                 value={manuData.rawPerUnit}
                                 onChange={(e) => setManuData({...manuData, rawPerUnit: Number(e.target.value)})}
                             />
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 border-t pt-4 border-dashed border-gray-200">
+                    <div className="grid grid-cols-2 gap-4 border-t pt-4 border-dashed border-gray-200 dark:border-slate-700">
                         <div className="col-span-2">
-                             <label className="block text-sm font-medium text-gray-700 mb-1">الخياط / المورد (اختياري)</label>
+                             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">الخياط / المورد (اختياري)</label>
                              <select 
-                                className="w-full p-2 border rounded-lg outline-none bg-gray-50"
+                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none bg-gray-50"
                                 value={manuData.supplierId}
                                 onChange={(e) => setManuData({...manuData, supplierId: e.target.value})}
                             >
@@ -657,17 +656,17 @@ const Inventory: React.FC = () => {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">تكلفة الخياطة (للقطعة)</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">تكلفة الخياطة (للقطعة)</label>
                             <input 
                                 type="number" min="0"
-                                className="w-full p-2 border rounded-lg outline-none"
+                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
                                 value={manuData.laborCostPerUnit}
                                 onChange={(e) => setManuData({...manuData, laborCostPerUnit: Number(e.target.value)})}
                             />
                         </div>
                          <div className="flex flex-col justify-end">
-                             <div className="text-sm text-gray-500 mb-1">إجمالي أجرة الخياط</div>
-                             <div className="font-bold text-red-600 bg-red-50 p-2 rounded-lg text-center">
+                             <div className="text-sm text-gray-500 dark:text-slate-400 mb-1">إجمالي أجرة الخياط</div>
+                             <div className="font-bold text-red-600 bg-red-50 dark:bg-red-900/30 p-2 rounded-lg text-center">
                                  {manuData.laborCostPerUnit * manuData.quantityToMake} {CURRENCY}
                              </div>
                         </div>
@@ -693,10 +692,10 @@ const Inventory: React.FC = () => {
       {/* Categories Management Modal */}
       {isCatModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-xl animate-in fade-in zoom-in duration-200">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-sm p-6 shadow-xl animate-in fade-in zoom-in duration-200">
                   <div className="flex justify-between items-center mb-6">
-                      <h2 className="text-xl font-bold text-gray-800">إدارة الأقسام</h2>
-                      <button onClick={() => setIsCatModalOpen(false)} className="text-gray-500 hover:text-gray-800">
+                      <h2 className="text-xl font-bold text-gray-800 dark:text-white">إدارة الأقسام</h2>
+                      <button onClick={() => setIsCatModalOpen(false)} className="text-gray-500 hover:text-gray-800 dark:hover:text-white">
                           <X size={24} />
                       </button>
                   </div>
@@ -705,7 +704,7 @@ const Inventory: React.FC = () => {
                       <input 
                         type="text" 
                         placeholder="اسم القسم الجديد"
-                        className="flex-1 p-2 border rounded-lg"
+                        className="flex-1 p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
                         value={newCatName}
                         onChange={(e) => setNewCatName(e.target.value)}
                         required
@@ -715,8 +714,8 @@ const Inventory: React.FC = () => {
 
                   <div className="max-h-60 overflow-y-auto space-y-2">
                       {categories.map(cat => (
-                          <div key={cat.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                              <span className="font-medium text-gray-700">{cat.name}</span>
+                          <div key={cat.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
+                              <span className="font-medium text-gray-700 dark:text-slate-200">{cat.name}</span>
                               <button onClick={() => handleDeleteCategory(cat.id)} className="text-gray-400 hover:text-red-500">
                                   <Trash2 size={18} />
                               </button>
