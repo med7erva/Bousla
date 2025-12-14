@@ -53,7 +53,7 @@ const Dashboard: React.FC = () => {
       if (!user) return;
       
       await initDB();
-      const [products, analytics, expenses, invoices] = await Promise.all([
+      const [products, analytics, expenses, allInvoices] = await Promise.all([
           getProducts(user.id),
           getSalesAnalytics(user.id),
           getExpenses(user.id),
@@ -66,8 +66,11 @@ const Dashboard: React.FC = () => {
       const totalSales = analytics.totalSales;
       const netIncome = totalSales - totalExpenses; 
       
+      // Filter out opening balances from invoices for product & recent list stats
+      const validInvoices = allInvoices.filter(inv => !inv.items.some(i => i.productId === 'opening-bal'));
+
       const productSalesMap: Record<string, {name: string, qty: number, revenue: number}> = {};
-      invoices.forEach(inv => {
+      validInvoices.forEach(inv => {
           inv.items.forEach(item => {
               if (!productSalesMap[item.productId]) {
                   productSalesMap[item.productId] = { name: item.productName, qty: 0, revenue: 0 };
@@ -81,8 +84,8 @@ const Dashboard: React.FC = () => {
           .sort((a, b) => b.revenue - a.revenue)
           .slice(0, 5);
 
-      // Get recent 5 invoices
-      const recentInvoices = invoices.slice(0, 5);
+      // Get recent 5 invoices (excluding opening balances)
+      const recentInvoices = validInvoices.slice(0, 5);
 
       const salesTrend = analytics.chartData.length > 1 && 
         analytics.chartData[analytics.chartData.length - 1].sales > analytics.chartData[0].sales 
@@ -102,7 +105,7 @@ const Dashboard: React.FC = () => {
       });
 
       // AI Logic
-      if (invoices.length > 0) {
+      if (validInvoices.length > 0) {
           setLoadingAi(true);
           const context: DashboardContext = {
               totalSales,

@@ -64,7 +64,13 @@ const Sales: React.FC = () => {
       setProducts(prodData);
       setCategories(catData);
       setClients(cliData);
-      setInvoices(invData.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      
+      // Filter out Opening Balance invoices from Sales History
+      const salesInvoices = invData.filter(inv => 
+          !inv.items.some(item => item.productId === 'opening-bal')
+      );
+      
+      setInvoices(salesInvoices.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       
       if(pmData.length === 0) {
           await ensurePaymentMethodsExist(user.id);

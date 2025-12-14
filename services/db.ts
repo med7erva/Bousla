@@ -1,5 +1,6 @@
 
 
+
 import { supabase } from './supabase';
 import { Product, Invoice, SaleItem, User, Client, Expense, Purchase, Supplier, PurchaseItem, PaymentMethod, Employee, ExpenseCategory, FinancialTransaction, ProductCategory, AppSettings } from '../types';
 import { SEED_PRODUCTS, SEED_PAYMENT_METHODS } from '../constants';
@@ -391,7 +392,10 @@ export const updateInvoice = async (invoice: Invoice) => {
 };
 
 export const getSalesAnalytics = async (userId: string) => {
-    const invoices = await getInvoices(userId);
+    const allInvoices = await getInvoices(userId);
+    // Filter out opening balances from analytics
+    const invoices = allInvoices.filter(inv => !inv.items.some(i => i.productId === 'opening-bal'));
+
     const totalSales = invoices.reduce((sum, inv) => sum + inv.total, 0);
     const totalInvoices = invoices.length;
     
@@ -908,9 +912,12 @@ export const getReportData = async (userId: string, startDate?: string, endDate?
          id: d.id, userId: d.user_id, name: d.name, category: d.category, price: d.price || 0, cost: d.cost || 0, stock: d.stock || 0, barcode: d.barcode
     }));
 
-    const invoices = (invRes.data || []).map((d: any) => ({
+    const allInvoices = (invRes.data || []).map((d: any) => ({
         id: d.id, userId: d.user_id, customerName: d.customer_name, date: d.date, total: d.total || 0, paidAmount: d.paid_amount || 0, items: Array.isArray(d.items) ? d.items : []
     }));
+
+    // Filter out opening balances from Report Data so Total Sales is correct
+    const invoices = allInvoices.filter((inv: any) => !inv.items.some((i: any) => i.productId === 'opening-bal'));
 
     const categories = catsRes.data || [];
     const expenses = (expRes.data || []).map((d: any) => ({
