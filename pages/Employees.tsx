@@ -1,7 +1,6 @@
 
-
 import React, { useState, useEffect } from 'react';
-import { UserPlus, User, Phone, Briefcase, DollarSign, Calendar, Users, Wallet } from 'lucide-react';
+import { UserPlus, User, Phone, Briefcase, DollarSign, Calendar, Users, Wallet, X, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getEmployees, addEmployee, getExpenses } from '../services/db';
 import { Employee, Expense } from '../types';
@@ -12,6 +11,7 @@ const Employees: React.FC = () => {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [expenses, setExpenses] = useState<Expense[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     
     // New Employee Form State
     const [newEmp, setNewEmp] = useState({
@@ -38,16 +38,24 @@ const Employees: React.FC = () => {
 
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user) return;
+        if (!user || isSubmitting) return;
         
-        await addEmployee({
-            userId: user.id,
-            ...newEmp
-        });
-        
-        setIsModalOpen(false);
-        setNewEmp({ name: '', role: 'Sales', phone: '', salary: 0, joinDate: new Date().toISOString().split('T')[0] });
-        loadData();
+        setIsSubmitting(true);
+        try {
+            await addEmployee({
+                userId: user.id,
+                ...newEmp
+            });
+            
+            setIsModalOpen(false);
+            setNewEmp({ name: '', role: 'Sales', phone: '', salary: 0, joinDate: new Date().toISOString().split('T')[0] });
+            loadData();
+        } catch (error) {
+            console.error(error);
+            alert("حدث خطأ أثناء إضافة الموظف");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const totalSalaries = employees.reduce((sum, e) => sum + e.salary, 0);
@@ -64,10 +72,10 @@ const Employees: React.FC = () => {
 
     const getRoleColor = (role: string) => {
         switch(role) {
-            case 'Manager': return 'bg-purple-100 text-purple-700';
-            case 'Sales': return 'bg-emerald-100 text-emerald-700';
-            case 'Worker': return 'bg-orange-100 text-orange-700';
-            default: return 'bg-gray-100 text-gray-700';
+            case 'Manager': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
+            case 'Sales': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
+            case 'Worker': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
+            default: return 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-300';
         }
     };
 
@@ -81,8 +89,8 @@ const Employees: React.FC = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">طاقم العمل</h1>
-                    <p className="text-gray-500 text-sm">إدارة الموظفين والرواتب</p>
+                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white">طاقم العمل</h1>
+                    <p className="text-gray-500 dark:text-slate-400 text-sm">إدارة الموظفين والرواتب</p>
                 </div>
                 <button 
                     onClick={() => setIsModalOpen(true)}
@@ -94,14 +102,16 @@ const Employees: React.FC = () => {
             </div>
 
             {/* Summary Card */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-2xl p-6 text-white shadow-lg flex justify-between items-center">
-                <div>
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+                
+                <div className="relative z-10">
                     <h3 className="font-medium opacity-90 mb-1 flex items-center gap-2">
                         <Users size={20} /> إجمالي الموظفين
                     </h3>
                     <div className="text-3xl font-bold">{employees.length}</div>
                 </div>
-                <div className="text-left">
+                <div className="text-left relative z-10">
                     <h3 className="font-medium opacity-90 mb-1">مجموع الرواتب التعاقدية</h3>
                     <div className="text-3xl font-bold">{totalSalaries.toLocaleString()} {CURRENCY}</div>
                 </div>
@@ -110,14 +120,14 @@ const Employees: React.FC = () => {
             {/* Employees Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {employees.map(emp => (
-                    <div key={emp.id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <div key={emp.id} className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 hover:shadow-md transition group">
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 border border-gray-200">
+                                <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-500 dark:text-slate-300 border border-gray-200 dark:border-slate-600 group-hover:border-emerald-200 dark:group-hover:border-emerald-800 transition">
                                     <User size={24} />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-gray-900 text-lg">{emp.name}</h3>
+                                    <h3 className="font-bold text-gray-900 dark:text-white text-lg">{emp.name}</h3>
                                     <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getRoleColor(emp.role)}`}>
                                         {getRoleLabel(emp.role)}
                                     </span>
@@ -126,20 +136,20 @@ const Employees: React.FC = () => {
                         </div>
 
                         <div className="space-y-3 mt-4">
-                            <div className="flex items-center gap-3 text-gray-600 text-sm p-2 bg-gray-50 rounded-lg">
-                                <Phone size={16} className="text-gray-400" />
+                            <div className="flex items-center gap-3 text-gray-600 dark:text-slate-300 text-sm p-2 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
+                                <Phone size={16} className="text-gray-400 dark:text-slate-500" />
                                 <span dir="ltr">{emp.phone}</span>
                             </div>
-                             <div className="flex items-center gap-3 text-gray-600 text-sm p-2 bg-gray-50 rounded-lg">
-                                <DollarSign size={16} className="text-gray-400" />
-                                <span>الراتب: <span className="font-bold text-gray-800">{emp.salary} {CURRENCY}</span></span>
+                             <div className="flex items-center gap-3 text-gray-600 dark:text-slate-300 text-sm p-2 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
+                                <DollarSign size={16} className="text-gray-400 dark:text-slate-500" />
+                                <span>الراتب: <span className="font-bold text-gray-800 dark:text-white">{emp.salary} {CURRENCY}</span></span>
                             </div>
-                            <div className="flex items-center gap-3 text-gray-600 text-sm p-2 bg-gray-50 rounded-lg">
-                                <Wallet size={16} className="text-purple-500" />
-                                <span>تم استلام: <span className="font-bold text-purple-700">{getEmployeeTotalReceived(emp.id)} {CURRENCY}</span></span>
+                            <div className="flex items-center gap-3 text-gray-600 dark:text-slate-300 text-sm p-2 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
+                                <Wallet size={16} className="text-purple-500 dark:text-purple-400" />
+                                <span>تم استلام: <span className="font-bold text-purple-700 dark:text-purple-400">{getEmployeeTotalReceived(emp.id)} {CURRENCY}</span></span>
                             </div>
-                             <div className="flex items-center gap-3 text-gray-600 text-sm p-2 bg-gray-50 rounded-lg">
-                                <Calendar size={16} className="text-gray-400" />
+                             <div className="flex items-center gap-3 text-gray-600 dark:text-slate-300 text-sm p-2 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
+                                <Calendar size={16} className="text-gray-400 dark:text-slate-500" />
                                 <span>تاريخ التعيين: {emp.joinDate}</span>
                             </div>
                         </div>
@@ -147,7 +157,7 @@ const Employees: React.FC = () => {
                 ))}
 
                 {employees.length === 0 && (
-                     <div className="col-span-full py-12 text-center text-gray-400 bg-white rounded-2xl border border-dashed border-gray-200">
+                     <div className="col-span-full py-12 text-center text-gray-400 dark:text-slate-500 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-gray-200 dark:border-slate-700">
                         <Users size={48} className="mx-auto mb-3 opacity-20" />
                         <p>لا يوجد موظفين مسجلين حالياً</p>
                     </div>
@@ -156,20 +166,24 @@ const Employees: React.FC = () => {
 
             {/* Add Employee Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl animate-in zoom-in-95 duration-200">
-                        <h2 className="text-xl font-bold mb-6 text-gray-800">تسجيل موظف جديد</h2>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-6 shadow-xl animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-bold text-gray-800 dark:text-white">تسجيل موظف جديد</h2>
+                            <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-white"><X size={24} /></button>
+                        </div>
+                        
                         <form onSubmit={handleAdd} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">الاسم الكامل</label>
-                                <input required type="text" className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-slate-500 outline-none"
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">الاسم الكامل</label>
+                                <input required type="text" className="w-full p-2.5 border dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-slate-500 outline-none"
                                     value={newEmp.name} onChange={e => setNewEmp({...newEmp, name: e.target.value})} />
                             </div>
                             
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">الوظيفة</label>
-                                    <select className="w-full p-2.5 border rounded-lg bg-gray-50"
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">الوظيفة</label>
+                                    <select className="w-full p-2.5 border dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 dark:text-white outline-none"
                                         value={newEmp.role} onChange={e => setNewEmp({...newEmp, role: e.target.value as any})}>
                                         <option value="Sales">بائع</option>
                                         <option value="Manager">مدير</option>
@@ -178,28 +192,34 @@ const Employees: React.FC = () => {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">رقم الهاتف</label>
-                                    <input required type="text" className="w-full p-2.5 border rounded-lg"
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">رقم الهاتف</label>
+                                    <input required type="text" className="w-full p-2.5 border dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-white outline-none"
                                         value={newEmp.phone} onChange={e => setNewEmp({...newEmp, phone: e.target.value})} />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">الراتب الشهري</label>
-                                    <input required type="number" className="w-full p-2.5 border rounded-lg"
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">الراتب الشهري</label>
+                                    <input required type="number" className="w-full p-2.5 border dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-white outline-none"
                                         value={newEmp.salary || ''} onChange={e => setNewEmp({...newEmp, salary: Number(e.target.value)})} />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">تاريخ التعيين</label>
-                                    <input required type="date" className="w-full p-2.5 border rounded-lg"
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">تاريخ التعيين</label>
+                                    <input required type="date" className="w-full p-2.5 border dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-white outline-none"
                                         value={newEmp.joinDate} onChange={e => setNewEmp({...newEmp, joinDate: e.target.value})} />
                                 </div>
                             </div>
 
                             <div className="pt-4 flex gap-3">
-                                <button type="submit" className="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition">حفظ البيانات</button>
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition">إلغاء</button>
+                                <button 
+                                    type="submit" 
+                                    disabled={isSubmitting}
+                                    className="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : 'حفظ البيانات'}
+                                </button>
+                                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 py-3 rounded-xl font-bold hover:bg-gray-200 dark:hover:bg-slate-600 transition">إلغاء</button>
                             </div>
                         </form>
                     </div>

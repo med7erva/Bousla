@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Briefcase, Phone, Plus, AlertCircle, FileText, Search, X, Truck, ArrowUpRight, ArrowDownLeft, MoreVertical, Edit2, Trash2, Save, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -158,7 +157,7 @@ const Suppliers: React.FC = () => {
     return (
         <div className="space-y-6" onClick={() => setActiveMenuId(null)}>
             <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold text-gray-800">الموردين</h1>
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">الموردين</h1>
                 <button 
                     onClick={() => setIsModalOpen(true)}
                     className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-xl hover:bg-emerald-700 transition shadow-sm"
@@ -177,12 +176,12 @@ const Suppliers: React.FC = () => {
             />
 
             {/* Search */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 relative">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 relative">
                 <Search className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <input 
                     type="text" 
                     placeholder="بحث باسم المورد..." 
-                    className="w-full pl-4 pr-12 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full pl-4 pr-12 py-3 rounded-lg border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -191,7 +190,7 @@ const Suppliers: React.FC = () => {
             {/* Suppliers Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filtered.map(supplier => (
-                    <div key={supplier.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition relative group">
+                    <div key={supplier.id} className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 hover:shadow-md transition relative group">
                          <div className="absolute top-4 left-4 z-10">
                              <button 
                                 onClick={(e) => { 
@@ -201,7 +200,7 @@ const Suppliers: React.FC = () => {
                                     setMenuPos({ top: rect.bottom, left: rect.left });
                                     setActiveMenuId(activeMenuId === supplier.id ? null : supplier.id);
                                 }}
-                                className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100"
+                                className="text-gray-400 hover:text-gray-600 dark:hover:text-white p-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700"
                              >
                                  <MoreVertical size={20} />
                              </button>
@@ -209,12 +208,12 @@ const Suppliers: React.FC = () => {
 
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                                <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-300">
                                     <Briefcase size={24} />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-gray-900">{supplier.name}</h3>
-                                    <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                                    <h3 className="font-bold text-gray-900 dark:text-white">{supplier.name}</h3>
+                                    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400 mt-1">
                                         <Phone size={12} />
                                         <span dir="ltr">{supplier.phone}</span>
                                     </div>
@@ -223,18 +222,18 @@ const Suppliers: React.FC = () => {
                         </div>
 
                         <div className="space-y-3">
-                            <div className="text-sm text-gray-500 bg-gray-50 p-2 rounded-lg">
+                            <div className="text-sm text-gray-500 dark:text-slate-400 bg-gray-50 dark:bg-slate-700/50 p-2 rounded-lg">
                                 <span className="font-bold">يوفر:</span> {supplier.productsSummary || 'غير محدد'}
                             </div>
-                            <div className="flex justify-between items-center p-3 bg-red-50 rounded-xl border border-red-100">
-                                <span className="text-sm text-red-600 font-bold">مستحقات له (دين)</span>
-                                <span className="font-bold text-red-700">
+                            <div className="flex justify-between items-center p-3 bg-red-50 dark:bg-red-900/30 rounded-xl border border-red-100 dark:border-red-900/50">
+                                <span className="text-sm text-red-600 dark:text-red-400 font-bold">مستحقات له (دين)</span>
+                                <span className="font-bold text-red-700 dark:text-red-300">
                                     {supplier.debt} {CURRENCY}
                                 </span>
                             </div>
                             <button 
                                 onClick={() => handleViewHistory(supplier)}
-                                className="w-full py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition text-sm font-medium flex items-center justify-center gap-2"
+                                className="w-full py-2 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600 transition text-sm font-medium flex items-center justify-center gap-2"
                             >
                                 <FileText size={16} />
                                 كشف الحساب
@@ -249,18 +248,18 @@ const Suppliers: React.FC = () => {
                 <>
                     <div className="fixed inset-0 z-40" onClick={() => setActiveMenuId(null)}></div>
                     <div 
-                        className="fixed z-50 w-40 bg-white rounded-lg shadow-xl border border-gray-100 animate-in fade-in zoom-in-95 duration-200"
+                        className="fixed z-50 w-40 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-100 dark:border-slate-700 animate-in fade-in zoom-in-95 duration-200"
                         style={{ top: menuPos.top, left: menuPos.left }}
                     >
                         <button 
                             onClick={(e) => { e.stopPropagation(); openEditModal(activeSupplier); }}
-                            className="w-full text-right px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                            className="w-full text-right px-4 py-3 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center gap-2"
                         >
                             <Edit2 size={14} /> تعديل
                         </button>
                         <button 
                             onClick={(e) => { e.stopPropagation(); handleDeleteSupplier(activeSupplier.id); }}
-                            className="w-full text-right px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-b-lg"
+                            className="w-full text-right px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-2 rounded-b-lg"
                         >
                             <Trash2 size={14} /> حذف
                         </button>
@@ -271,28 +270,28 @@ const Suppliers: React.FC = () => {
             {/* Add Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl animate-in zoom-in-95 duration-200">
-                        <h2 className="text-xl font-bold mb-4">إضافة مورد جديد</h2>
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-6 shadow-xl animate-in zoom-in-95 duration-200">
+                        <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">إضافة مورد جديد</h2>
                         <form onSubmit={handleAdd} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">الاسم</label>
-                                <input required type="text" className="w-full p-2 border rounded-lg"
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">الاسم</label>
+                                <input required type="text" className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
                                     value={newSupplier.name} onChange={e => setNewSupplier({...newSupplier, name: e.target.value})} />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">رقم الهاتف</label>
-                                <input required type="text" className="w-full p-2 border rounded-lg"
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">رقم الهاتف</label>
+                                <input required type="text" className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
                                     value={newSupplier.phone} onChange={e => setNewSupplier({...newSupplier, phone: e.target.value})} />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">أصناف المنتجات (اختياري)</label>
-                                <input type="text" className="w-full p-2 border rounded-lg"
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">أصناف المنتجات (اختياري)</label>
+                                <input type="text" className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
                                     placeholder="أقمشة، خيوط، اكسسوارات"
                                     value={newSupplier.productsSummary} onChange={e => setNewSupplier({...newSupplier, productsSummary: e.target.value})} />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">رصيد افتتاحي (دين)</label>
-                                <input type="number" className="w-full p-2 border rounded-lg"
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">رصيد افتتاحي (دين)</label>
+                                <input type="number" className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
                                     value={newSupplier.debt === 0 ? '' : newSupplier.debt} 
                                     onChange={e => setNewSupplier({...newSupplier, debt: Number(e.target.value)})} 
                                 />
@@ -304,7 +303,7 @@ const Suppliers: React.FC = () => {
                             >
                                 {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : 'حفظ'}
                             </button>
-                            <button type="button" onClick={() => setIsModalOpen(false)} className="w-full text-gray-500 py-2">إلغاء</button>
+                            <button type="button" onClick={() => setIsModalOpen(false)} className="w-full text-gray-500 dark:text-slate-400 py-2 hover:text-gray-700 dark:hover:text-white">إلغاء</button>
                         </form>
                     </div>
                 </div>
@@ -313,27 +312,27 @@ const Suppliers: React.FC = () => {
             {/* Edit Modal */}
             {isEditModalOpen && editingSupplier && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl animate-in zoom-in-95 duration-200">
-                        <h2 className="text-xl font-bold mb-4">تعديل بيانات المورد</h2>
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-6 shadow-xl animate-in zoom-in-95 duration-200">
+                        <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">تعديل بيانات المورد</h2>
                         <form onSubmit={handleUpdateSupplier} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">الاسم</label>
-                                <input required type="text" className="w-full p-2 border rounded-lg"
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">الاسم</label>
+                                <input required type="text" className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
                                     value={editingSupplier.name} onChange={e => setEditingSupplier({...editingSupplier, name: e.target.value})} />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">رقم الهاتف</label>
-                                <input required type="text" className="w-full p-2 border rounded-lg"
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">رقم الهاتف</label>
+                                <input required type="text" className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
                                     value={editingSupplier.phone} onChange={e => setEditingSupplier({...editingSupplier, phone: e.target.value})} />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">أصناف المنتجات</label>
-                                <input type="text" className="w-full p-2 border rounded-lg"
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">أصناف المنتجات</label>
+                                <input type="text" className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
                                     value={editingSupplier.productsSummary} onChange={e => setEditingSupplier({...editingSupplier, productsSummary: e.target.value})} />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">رصيد الدين (تصحيح)</label>
-                                <input type="number" className="w-full p-2 border rounded-lg"
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">رصيد الدين (تصحيح)</label>
+                                <input type="number" className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
                                     value={editingSupplier.debt === 0 ? '' : editingSupplier.debt} 
                                     onChange={e => setEditingSupplier({...editingSupplier, debt: Number(e.target.value)})} 
                                 />
@@ -345,7 +344,7 @@ const Suppliers: React.FC = () => {
                             >
                                 {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : 'حفظ التعديلات'}
                             </button>
-                            <button type="button" onClick={() => setIsEditModalOpen(false)} className="w-full text-gray-500 py-2">إلغاء</button>
+                            <button type="button" onClick={() => setIsEditModalOpen(false)} className="w-full text-gray-500 dark:text-slate-400 py-2 hover:text-gray-700 dark:hover:text-white">إلغاء</button>
                         </form>
                     </div>
                 </div>
@@ -354,38 +353,38 @@ const Suppliers: React.FC = () => {
             {/* History Modal (Statement of Account) */}
             {isHistoryModalOpen && selectedSupplier && (
                 <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-3xl w-full max-w-3xl h-[80vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-3xl h-[80vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
                         {/* Header */}
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-3xl">
+                        <div className="p-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-700/50 rounded-t-3xl">
                             <div>
-                                <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                                    <Truck className="text-slate-600" />
+                                <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                                    <Truck className="text-slate-600 dark:text-slate-300" />
                                     كشف حساب: {selectedSupplier.name}
                                 </h2>
-                                <p className="text-sm text-gray-500 mt-1">
-                                    المبلغ المتبقي له (دين): <span className="text-red-600 font-bold">{selectedSupplier.debt} {CURRENCY}</span>
+                                <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+                                    المبلغ المتبقي له (دين): <span className="text-red-600 dark:text-red-400 font-bold">{selectedSupplier.debt} {CURRENCY}</span>
                                 </p>
                             </div>
-                            <button onClick={() => setIsHistoryModalOpen(false)} className="p-2 hover:bg-gray-200 rounded-full transition">
-                                <X size={24} className="text-gray-500" />
+                            <button onClick={() => setIsHistoryModalOpen(false)} className="p-2 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-full transition">
+                                <X size={24} className="text-gray-500 dark:text-slate-400" />
                             </button>
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 overflow-y-auto p-6">
+                        <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-800">
                             <table className="w-full text-right">
-                                <thead className="bg-white text-gray-500 text-xs uppercase sticky top-0 z-10">
+                                <thead className="bg-white dark:bg-slate-800 text-gray-500 dark:text-slate-400 text-xs uppercase sticky top-0 z-10">
                                     <tr>
-                                        <th className="px-4 py-3 bg-gray-50 rounded-r-lg">التاريخ</th>
-                                        <th className="px-4 py-3 bg-gray-50">النوع</th>
-                                        <th className="px-4 py-3 bg-gray-50">البيان</th>
-                                        <th className="px-4 py-3 bg-gray-50">له (مشتريات/سلف)</th>
-                                        <th className="px-4 py-3 bg-gray-50 rounded-l-lg">عليه (دفعات منا)</th>
+                                        <th className="px-4 py-3 bg-gray-50 dark:bg-slate-700 rounded-r-lg">التاريخ</th>
+                                        <th className="px-4 py-3 bg-gray-50 dark:bg-slate-700">النوع</th>
+                                        <th className="px-4 py-3 bg-gray-50 dark:bg-slate-700">البيان</th>
+                                        <th className="px-4 py-3 bg-gray-50 dark:bg-slate-700">له (مشتريات/سلف)</th>
+                                        <th className="px-4 py-3 bg-gray-50 dark:bg-slate-700 rounded-l-lg">عليه (دفعات منا)</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
                                     {historyItems.length === 0 ? (
-                                        <tr><td colSpan={5} className="p-8 text-center text-gray-400">لا توجد عمليات مسجلة مع هذا المورد</td></tr>
+                                        <tr><td colSpan={5} className="p-8 text-center text-gray-400 dark:text-slate-500">لا توجد عمليات مسجلة مع هذا المورد</td></tr>
                                     ) : (
                                         historyItems.map(item => {
                                             const isPurchase = item.type === 'purchase';
@@ -409,37 +408,37 @@ const Suppliers: React.FC = () => {
                                             }
 
                                             return (
-                                                <tr key={item.id} className="hover:bg-gray-50 transition">
-                                                    <td className="px-4 py-3 text-sm text-gray-600 font-mono">
+                                                <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition">
+                                                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-slate-300 font-mono">
                                                         {new Date(item.date).toLocaleDateString('ar-MA')}
                                                     </td>
                                                     <td className="px-4 py-3">
                                                          {isPurchase ? (
-                                                            <span className="flex items-center gap-1 text-xs font-bold bg-purple-50 text-purple-700 px-2 py-1 rounded w-fit">
+                                                            <span className="flex items-center gap-1 text-xs font-bold bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-1 rounded w-fit">
                                                                 <Truck size={12} /> فاتورة شراء
                                                             </span>
                                                         ) : (
                                                             (item as unknown as FinancialTransaction).type === 'out' ? 
-                                                            <span className="flex items-center gap-1 text-xs font-bold bg-red-50 text-red-700 px-2 py-1 rounded w-fit">
+                                                            <span className="flex items-center gap-1 text-xs font-bold bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-2 py-1 rounded w-fit">
                                                                 <ArrowUpRight size={12} /> سند صرف
                                                             </span> :
-                                                            <span className="flex items-center gap-1 text-xs font-bold bg-emerald-50 text-emerald-700 px-2 py-1 rounded w-fit">
+                                                            <span className="flex items-center gap-1 text-xs font-bold bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded w-fit">
                                                                 <ArrowDownLeft size={12} /> سند قبض
                                                             </span>
                                                         )}
                                                     </td>
-                                                    <td className="px-4 py-3 text-sm text-gray-700">
+                                                    <td className="px-4 py-3 text-sm text-gray-700 dark:text-slate-300">
                                                         {isPurchase ? (
                                                             <span className="truncate block max-w-[200px]" title={(item as unknown as Purchase).items.map(i => i.productName).join(', ')}>
                                                                 {(item as unknown as Purchase).items.map(i => i.productName).join(', ')}
                                                             </span>
                                                         ) : (item as unknown as FinancialTransaction).description}
-                                                         <div className="text-xs text-gray-400 font-mono mt-0.5">{item.id.slice(-8)}</div>
+                                                         <div className="text-xs text-gray-400 dark:text-slate-500 font-mono mt-0.5">{item.id.slice(-8)}</div>
                                                     </td>
-                                                    <td className="px-4 py-3 font-bold text-gray-800">
+                                                    <td className="px-4 py-3 font-bold text-gray-800 dark:text-white">
                                                         {credit > 0 ? `${credit}` : '-'}
                                                     </td>
-                                                    <td className="px-4 py-3 font-bold text-emerald-600">
+                                                    <td className="px-4 py-3 font-bold text-emerald-600 dark:text-emerald-400">
                                                         {debit > 0 ? `${debit}` : '-'}
                                                     </td>
                                                 </tr>
