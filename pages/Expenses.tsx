@@ -125,6 +125,12 @@ const Expenses: React.FC = () => {
 
     const calculateTotalBatch = () => expenseRows.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
 
+    const getCategoryTotal = (catId: string) => {
+        return expenses
+            .filter(e => e.categoryId === catId)
+            .reduce((sum, e) => sum + e.amount, 0);
+    };
+
     // --- Actions ---
     const handleSaveBatch = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -350,13 +356,20 @@ const Expenses: React.FC = () => {
                             {categories.map(cat => (
                                 <div key={cat.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-slate-700/50 rounded-xl border border-gray-100 dark:border-slate-700">
                                     <span className="font-medium text-gray-700 dark:text-slate-200">{cat.name}</span>
-                                    {cat.isDefault ? (
-                                        <span className="text-xs text-gray-400 dark:text-slate-500 bg-white dark:bg-slate-800 px-2 py-1 rounded border dark:border-slate-600">افتراضي</span>
-                                    ) : (
-                                        <button onClick={() => handleDeleteCategory(cat.id, !!cat.isDefault)} className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 p-1">
-                                            <Trash2 size={16} />
-                                        </button>
-                                    )}
+                                    
+                                    <div className="flex items-center gap-3">
+                                        <span className="font-bold text-slate-700 dark:text-white text-sm bg-white dark:bg-slate-800 px-2 py-1 rounded border border-gray-100 dark:border-slate-600 min-w-[80px] text-center">
+                                            {getCategoryTotal(cat.id).toLocaleString()} {CURRENCY}
+                                        </span>
+                                        
+                                        {cat.isDefault ? (
+                                            <span className="text-xs text-gray-400 dark:text-slate-500 bg-white dark:bg-slate-800 px-2 py-1 rounded border dark:border-slate-600">افتراضي</span>
+                                        ) : (
+                                            <button onClick={() => handleDeleteCategory(cat.id, !!cat.isDefault)} className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 p-1">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                         </div>
