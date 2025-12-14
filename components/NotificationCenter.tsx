@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, AlertTriangle, TrendingUp, Sparkles, X, ChevronRight, Package, Users, BellRing, Clock, Wallet, Info } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Bell, AlertTriangle, TrendingUp, Sparkles, X, ChevronRight, Package, Users, BellRing, Clock, Wallet, Info, CheckCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 import { getProducts, getClients, getSalesAnalytics, getExpenses, getInvoices } from '../services/db';
@@ -25,7 +26,8 @@ const NotificationCenter: React.FC = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(false);
     const [permission, setPermission] = useState<NotificationPermission>('default');
-    const dropdownRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const [coords, setCoords] = useState({ top: 0, left: 0 });
 
     useEffect(() => {
         if ('Notification' in window) {
@@ -200,16 +202,17 @@ const NotificationCenter: React.FC = () => {
         return () => clearInterval(interval);
     }, [user, settings]);
 
-    // Close on click outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    // Update coordinates when opening
+    const toggleOpen = () => {
+        if (!isOpen && buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect();
+            setCoords({
+                top: rect.bottom + 10,
+                left: rect.left // Align with the left edge of the button (RTL agnostic for simple layout)
+            });
+        }
+        setIsOpen(!isOpen);
+    };
 
     const unreadCount = notifications.length;
 
@@ -226,126 +229,166 @@ const NotificationCenter: React.FC = () => {
     };
 
     return (
-        <div className="relative" ref={dropdownRef}>
+        <>
             <button 
-                onClick={() => setIsOpen(!isOpen)}
-                className="relative p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
+                ref={buttonRef}
+                onClick={toggleOpen}
+                className={`
+                    relative p-2.5 rounded-full transition-all duration-200
+                    ${isOpen 
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' 
+                        : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'}
+                `}
+                aria-label="Notifications"
             >
                 <Bell size={22} />
                 {unreadCount > 0 && (
-                    <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-800 animate-pulse"></span>
+                    <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-800 animate-pulse shadow-sm"></span>
                 )}
             </button>
 
-            {isOpen && (
-                <>
-                    {/* Mobile Backdrop */}
-                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden" onClick={() => setIsOpen(false)}></div>
+            {isOpen && createPortal(
+                <div className="fixed inset-0 z-[100] flex flex-col justify-end md:justify-start overflow-hidden">
+                    {/* Backdrop */}
+                    <div 
+                        className="absolute inset-0 bg-black/30 backdrop-blur-[2px] animate-in fade-in duration-200"
+                        onClick={() => setIsOpen(false)}
+                    />
                     
-                    {/* Notification Panel */}
-                    <div className={`
-                        fixed bottom-0 left-0 right-0 top-auto md:absolute md:top-full md:left-0 md:bottom-auto md:right-auto
-                        w-full md:w-96 
-                        bg-white dark:bg-slate-800 
-                        md:rounded-2xl rounded-t-3xl 
-                        shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.2)] md:shadow-2xl 
-                        border-t md:border border-gray-100 dark:border-slate-700 
-                        overflow-hidden z-50 
-                        animate-in slide-in-from-bottom-10 md:zoom-in-95 duration-200 origin-top-left
-                        max-h-[85vh] md:max-h-[500px] flex flex-col
-                    `}>
-                        <div className="p-4 border-b border-gray-50 dark:border-slate-700 flex justify-between items-center bg-gray-50/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-10">
-                            <div className="flex items-center gap-2">
-                                <h3 className="font-bold text-slate-800 dark:text-white text-lg">الإشعارات اليومية</h3>
-                                <span className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full font-mono">{unreadCount}</span>
+                    {/* Panel */}
+                    <div 
+                        className={`
+                            relative w-full md:w-[380px] bg-white dark:bg-slate-900 
+                            rounded-t-3xl md:rounded-2xl shadow-2xl 
+                            flex flex-col max-h-[85vh] md:max-h-[600px]
+                            animate-in slide-in-from-bottom-10 md:zoom-in-95 duration-200
+                            border border-gray-100 dark:border-slate-700
+                        `}
+                        style={
+                            window.innerWidth >= 768 
+                            ? { 
+                                position: 'absolute', 
+                                top: coords.top, 
+                                left: Math.min(coords.left, window.innerWidth - 390) // Prevent overflow right
+                              } 
+                            : {}
+                        }
+                    >
+                        {/* Header */}
+                        <div className="p-5 border-b border-gray-50 dark:border-slate-800 flex justify-between items-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-t-3xl md:rounded-t-2xl sticky top-0 z-10">
+                            <div>
+                                <h3 className="font-extrabold text-slate-900 dark:text-white text-lg tracking-tight">الإشعارات</h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">تحديثات تشغيلية يومية</p>
                             </div>
                             
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1">
                                 {permission === 'default' && (
                                     <button 
                                         onClick={requestPermission}
-                                        className="p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg hover:bg-indigo-100 transition"
+                                        className="p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition mr-1"
                                         title="تفعيل التنبيهات"
                                     >
                                         <BellRing size={18} />
                                     </button>
                                 )}
-                                <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-full md:hidden">
-                                    <X size={20} className="text-slate-500" />
+                                <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 transition">
+                                    <X size={20} />
                                 </button>
                             </div>
                         </div>
 
-                        <div className="overflow-y-auto custom-scrollbar flex-1 p-2">
+                        {/* Content */}
+                        <div className="overflow-y-auto custom-scrollbar flex-1 p-3 space-y-3 bg-slate-50/50 dark:bg-slate-900/50">
                             {loading ? (
-                                <div className="p-12 text-center text-gray-400 dark:text-slate-500 text-sm">
-                                    جاري تحديث البيانات...
+                                <div className="py-12 text-center text-slate-400 dark:text-slate-500">
+                                    <div className="animate-spin w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full mx-auto mb-3"></div>
+                                    <span className="text-sm font-medium">جاري التحديث...</span>
                                 </div>
                             ) : notifications.length === 0 ? (
-                                <div className="p-12 text-center text-gray-400 dark:text-slate-500 text-sm flex flex-col items-center">
-                                    <div className="w-16 h-16 bg-gray-50 dark:bg-slate-700/50 rounded-full flex items-center justify-center mb-3">
-                                        <Bell className="opacity-20" size={32} />
+                                <div className="py-16 text-center flex flex-col items-center">
+                                    <div className="w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-800 rounded-full flex items-center justify-center mb-4 shadow-inner">
+                                        <Bell className="text-slate-300 dark:text-slate-600" size={32} />
                                     </div>
-                                    <p>لا توجد إشعارات تشغيلية حالياً</p>
-                                    <p className="text-xs mt-1 opacity-70">أمورك تمام!</p>
+                                    <h4 className="text-slate-900 dark:text-white font-bold mb-1">لا توجد إشعارات</h4>
+                                    <p className="text-slate-500 dark:text-slate-400 text-sm max-w-[200px] leading-relaxed">
+                                        أمورك تمام! سننبهك عند وجود أي مستجدات هامة.
+                                    </p>
                                 </div>
                             ) : (
-                                <div className="space-y-2">
-                                    {notifications.map((notif) => (
-                                        <div 
-                                            key={notif.id} 
-                                            className={`
-                                                relative p-4 rounded-xl border transition-all active:scale-[0.98]
-                                                ${notif.priority === 'high' 
-                                                    ? 'bg-red-50/50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30' 
-                                                    : 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50'}
-                                            `}
-                                        >
-                                            <div className="flex gap-4">
-                                                <div className={`mt-1 shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-white dark:bg-slate-700 shadow-sm border border-gray-100 dark:border-slate-600`}>
+                                notifications.map((notif) => (
+                                    <div 
+                                        key={notif.id} 
+                                        className={`
+                                            relative p-4 rounded-2xl border transition-all duration-200 group
+                                            ${notif.priority === 'high' 
+                                                ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30' 
+                                                : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md'}
+                                        `}
+                                    >
+                                        <div className="flex gap-4">
+                                            {/* Icon Column */}
+                                            <div className="shrink-0 flex flex-col items-center gap-2">
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-white dark:bg-slate-700 shadow-sm border border-slate-100 dark:border-slate-600`}>
                                                     {getIcon(notif.subtype)}
                                                 </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex justify-between items-start mb-1">
-                                                        <h4 className="font-bold text-sm text-slate-800 dark:text-white truncate">
-                                                            {notif.title}
-                                                        </h4>
-                                                        <span className="text-[10px] text-gray-400 shrink-0">
-                                                            {notif.date.toLocaleTimeString('ar-MA', {hour: '2-digit', minute:'2-digit'})}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-xs text-gray-600 dark:text-slate-300 leading-relaxed mb-2 line-clamp-2">
-                                                        {notif.message}
-                                                    </p>
-                                                    {notif.actionLink && (
+                                                {notif.priority === 'high' && (
+                                                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                                                )}
+                                            </div>
+
+                                            {/* Content Column */}
+                                            <div className="flex-1 min-w-0 pt-1">
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <h4 className={`font-bold text-sm truncate ${notif.priority === 'high' ? 'text-red-800 dark:text-red-300' : 'text-slate-800 dark:text-white'}`}>
+                                                        {notif.title}
+                                                    </h4>
+                                                    <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap bg-slate-100 dark:bg-slate-700/50 px-1.5 py-0.5 rounded">
+                                                        {notif.date.toLocaleTimeString('ar-MA', {hour: '2-digit', minute:'2-digit'})}
+                                                    </span>
+                                                </div>
+                                                
+                                                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mb-3 line-clamp-3">
+                                                    {notif.message}
+                                                </p>
+                                                
+                                                {notif.actionLink && (
+                                                    <div className="flex justify-end">
                                                         <a 
                                                             href={`#${notif.actionLink}`} 
                                                             onClick={() => setIsOpen(false)}
-                                                            className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-slate-900 dark:bg-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-800 transition shadow-sm"
+                                                            className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-slate-900 dark:bg-emerald-600 hover:bg-slate-800 dark:hover:bg-emerald-700 px-3 py-1.5 rounded-lg transition-colors shadow-sm"
                                                         >
-                                                            اتخاذ إجراء <ChevronRight size={10} className="rtl:rotate-180" />
+                                                            <span>اتخاذ إجراء</span>
+                                                            <ChevronRight size={12} className="rtl:rotate-180" />
                                                         </a>
-                                                    )}
-                                                </div>
+                                                    </div>
+                                                )}
                                             </div>
-                                            {notif.priority === 'high' && (
-                                                <span className="absolute top-2 left-2 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                                            )}
                                         </div>
-                                    ))}
-                                </div>
+                                    </div>
+                                ))
                             )}
                         </div>
                         
-                        <div className="p-3 bg-gray-50 dark:bg-slate-900 border-t border-gray-100 dark:border-slate-700 text-center">
-                            <button onClick={loadNotifications} className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition font-medium">
-                                تحديث القائمة
+                        {/* Footer */}
+                        <div className="p-4 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center rounded-b-3xl md:rounded-b-2xl">
+                            <button onClick={loadNotifications} className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition flex items-center gap-1.5">
+                                <Clock size={14} />
+                                تحديث الآن
                             </button>
+                            
+                            {notifications.length > 0 && (
+                                <button className="text-xs font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition flex items-center gap-1.5">
+                                    <CheckCheck size={16} />
+                                    تحديد الكل كمقروء
+                                </button>
+                            )}
                         </div>
                     </div>
-                </>
+                </div>,
+                document.body
             )}
-        </div>
+        </>
     );
 };
 
