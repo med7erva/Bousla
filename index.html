@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
   <head>
@@ -14,6 +15,22 @@
     <title>بوصلة - نظام محاسبي ذكي</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class', // This is CRITICAL for the toggle to work
+        theme: {
+          extend: {
+            colors: {
+              slate: {
+                850: '#151e2e',
+                900: '#0f172a',
+                950: '#020617',
+              }
+            }
+          }
+        }
+      }
+    </script>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,13 +41,20 @@
       }
       body {
         font-family: var(--font-cairo);
-        background-color: #f8fafc; /* Slate-50 for a softer look */
-        color: #1e293b; /* Slate-800 for better readability */
+        background-color: #f8fafc; /* Slate-50 */
+        color: #1e293b; /* Slate-800 */
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        overscroll-behavior-y: none; /* Prevents pull-to-refresh on mobile app feel */
+        overscroll-behavior-y: none;
+        transition: background-color 0.3s ease, color 0.3s ease;
       }
       
+      /* Dark Mode Global Overrides */
+      .dark body {
+        background-color: #0f172a; /* Slate-900 */
+        color: #f1f5f9; /* Slate-100 */
+      }
+
       /* Modern Scrollbar */
       ::-webkit-scrollbar {
         width: 8px;
@@ -42,7 +66,11 @@
       ::-webkit-scrollbar-thumb {
         background: #cbd5e1; 
         border-radius: 10px;
-        border: 2px solid #f8fafc; /* Creates padding effect */
+        border: 2px solid #f8fafc;
+      }
+      .dark ::-webkit-scrollbar-thumb {
+        background: #475569;
+        border-color: #0f172a;
       }
       ::-webkit-scrollbar-thumb:hover {
         background: #94a3b8; 
@@ -53,6 +81,10 @@
         background: rgba(255, 255, 255, 0.85);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
+      }
+      .dark .glass-effect {
+        background: rgba(15, 23, 42, 0.85);
+        border-bottom: 1px solid rgba(51, 65, 85, 0.5);
       }
     </style>
 <script type="importmap">

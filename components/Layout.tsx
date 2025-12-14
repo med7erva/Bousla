@@ -49,7 +49,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   return (
-    <div className="h-[100dvh] flex bg-slate-50 text-slate-900 font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-hidden">
+    <div className="h-[100dvh] flex bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-hidden transition-colors duration-300">
       {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div 
@@ -61,8 +61,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Sidebar - Fixed width, full height of viewport */}
       <aside 
         className={`
-          fixed inset-y-0 right-0 z-50 w-72 bg-slate-900 text-white transition-transform duration-300 ease-out shadow-2xl flex flex-col h-full
-          lg:static lg:translate-x-0
+          fixed inset-y-0 right-0 z-50 w-72 bg-slate-900 dark:bg-slate-950 text-white transition-transform duration-300 ease-out shadow-2xl flex flex-col h-full
+          lg:static lg:translate-x-0 border-l border-slate-800/50
           ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}
         `}
       >
@@ -102,7 +102,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </nav>
           </div>
 
-          <div className="p-4 bg-slate-950/30 border-t border-slate-800/50 shrink-0">
+          <div className="p-4 bg-slate-950/30 dark:bg-slate-900/50 border-t border-slate-800/50 shrink-0">
              <Link
               to="/ai-chat"
               onClick={() => setIsSidebarOpen(false)}
@@ -132,21 +132,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Main Content Area - Scrollable */}
       <main className="flex-1 flex flex-col min-w-0 h-full relative transition-all duration-300">
         {/* Glass Header */}
-        <header className="shrink-0 h-20 px-6 lg:px-10 flex items-center justify-between glass-effect border-b border-slate-200/60 shadow-sm z-30">
+        <header className="shrink-0 h-20 px-6 lg:px-10 flex items-center justify-between glass-effect border-b border-slate-200/60 dark:border-slate-800 shadow-sm z-30 transition-colors duration-300">
           <div className="flex items-center gap-4">
             <button 
               onClick={toggleSidebar}
-              className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              className="lg:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
             >
               {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
             
             <div className="flex flex-col">
-               <h2 className="text-xl font-bold text-slate-800 tracking-tight">
+               <h2 className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">
                 {NAV_ITEMS.find(i => i.path === location.pathname)?.label || 
                  (location.pathname === '/ai-chat' ? 'المساعد الذكي' : 'لوحة التحكم')}
               </h2>
-              <span className="text-xs text-slate-500 font-medium hidden sm:block">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:block">
                   {new Date().toLocaleDateString('ar-MA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
             </div>
@@ -156,12 +156,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* Integrated Notification Center */}
             <NotificationCenter />
 
-            <Link to="/profile" className="flex items-center gap-3 p-1.5 pr-3 rounded-full hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 transition-all duration-200 group">
+            <Link to="/profile" className="flex items-center gap-3 p-1.5 pr-3 rounded-full hover:bg-white dark:hover:bg-slate-800 hover:shadow-md border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-all duration-200 group">
               <div className="flex flex-col items-end hidden md:flex">
-                <span className="text-sm font-bold text-slate-700 group-hover:text-emerald-700 transition-colors">{user?.storeName || 'متجري'}</span>
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-200 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{user?.storeName || 'متجري'}</span>
                 <span className="text-[10px] text-slate-400 font-medium">{user?.name}</span>
               </div>
-              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-100 to-teal-50 text-emerald-700 flex items-center justify-center font-bold text-lg border-2 border-white shadow-sm group-hover:scale-105 transition-transform">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-100 to-teal-50 text-emerald-700 flex items-center justify-center font-bold text-lg border-2 border-white dark:border-slate-700 shadow-sm group-hover:scale-105 transition-transform">
                 {user?.name?.charAt(0) || 'م'}
               </div>
             </Link>
@@ -170,7 +170,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         {/* Scrollable Page Content */}
         <div className="flex-1 overflow-y-auto p-4 lg:p-8 custom-scrollbar">
-          <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+          <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10 text-slate-800 dark:text-slate-100">
             {children}
           </div>
         </div>
