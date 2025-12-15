@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, Trash2, Printer, CreditCard, CheckCircle, ShoppingBag, User, Banknote, X, PackagePlus, Wallet, Calendar, AlertCircle, History, FileDown, ChevronDown, ChevronUp, Eye, Loader2, MoreVertical, Edit2 } from 'lucide-react';
+import { Search, Plus, Trash2, Printer, CreditCard, CheckCircle, ShoppingBag, User, Banknote, X, PackagePlus, Wallet, Calendar, AlertCircle, History, FileDown, ChevronDown, ChevronUp, Eye, Loader2, MoreVertical, Edit2, FileText, Phone, Clock } from 'lucide-react';
 import { CURRENCY } from '../constants';
 import { Product, SaleItem, PaymentMethod, Client, Invoice, ProductCategory } from '../types';
 import { getProducts, createInvoice, getPaymentMethods, ensurePaymentMethodsExist, getClients, getInvoices, getProductCategories, deleteInvoice, updateInvoice } from '../services/db';
@@ -30,6 +30,9 @@ const Sales: React.FC = () => {
   const [isEditInvoiceModalOpen, setIsEditInvoiceModalOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // View Details Invoice State
+  const [viewDetailsInvoice, setViewDetailsInvoice] = useState<Invoice | null>(null);
 
   // Checkout & Modal States
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -228,6 +231,7 @@ const Sales: React.FC = () => {
               await deleteInvoice(id);
               loadData();
               setActiveMenuId(null);
+              setViewDetailsInvoice(null);
           } catch (error) {
               console.error(error);
               alert("حدث خطأ أثناء حذف الفاتورة.");
@@ -517,17 +521,27 @@ const Sales: React.FC = () => {
                         <tr><td colSpan={8} className="p-8 text-center text-gray-400">لا توجد مبيعات مسجلة حتى الآن</td></tr>
                     ) : (
                         displayedInvoices.map(inv => (
-                            <tr key={inv.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition group relative">
+                            <tr 
+                                key={inv.id} 
+                                className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition group relative cursor-pointer"
+                                onClick={() => setViewDetailsInvoice(inv)}
+                            >
                                 <td className="px-6 py-4 font-mono text-xs text-gray-500 dark:text-slate-400">{inv.id.slice(-6)}</td>
                                 <td className="px-6 py-4 text-sm text-gray-600 dark:text-slate-300">{new Date(inv.date).toLocaleDateString('ar-MA')}</td>
                                 <td className="px-6 py-4 font-bold text-gray-800 dark:text-white">{inv.customerName}</td>
-                                <td className="px-6 py-4 text-sm text-gray-600 dark:text-slate-300">
-                                    <div className="font-bold text-gray-800 dark:text-white">
-                                        {inv.items.length === 1 
-                                            ? `1 "${inv.items[0].productName}"` 
-                                            : `${inv.items.length} منتجات`
-                                        }
-                                        {inv.items.length > 1 && <span className="text-xs font-normal text-gray-400 mr-1">...</span>}
+                                <td className="px-6 py-4">
+                                    <div className="flex flex-col gap-0.5 max-w-[200px]">
+                                        {inv.items.slice(0, 2).map((item, idx) => (
+                                            <div key={idx} className="text-sm font-bold text-gray-700 dark:text-slate-200 truncate" title={item.productName}>
+                                                {item.productName} 
+                                                {item.quantity > 1 && <span className="text-xs text-gray-400 dark:text-slate-500 mr-1">x{item.quantity}</span>}
+                                            </div>
+                                        ))}
+                                        {inv.items.length > 2 && (
+                                            <span className="text-[10px] text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-md w-fit font-bold">
+                                                +{inv.items.length - 2} أصناف أخرى
+                                            </span>
+                                        )}
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 font-bold text-emerald-600 dark:text-emerald-400">{inv.total} {CURRENCY}</td>
@@ -744,6 +758,116 @@ const Sales: React.FC = () => {
           </div>
       )}
       
+      {/* Invoice Details Modal */}
+      {viewDetailsInvoice && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="p-5 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-700/30">
+                    <h3 className="font-bold text-lg text-gray-800 dark:text-white flex items-center gap-2">
+                        <FileText className="text-emerald-600 dark:text-emerald-400" size={20} />
+                        تفاصيل الفاتورة
+                    </h3>
+                    <div className="flex gap-2">
+                        <button className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-full text-gray-500 dark:text-slate-400 transition" title="طباعة">
+                            <Printer size={18} onClick={() => window.print()} />
+                        </button>
+                        <button onClick={() => setViewDetailsInvoice(null)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-full text-gray-500 dark:text-slate-400 transition">
+                            <X size={20} />
+                        </button>
+                    </div>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                    {/* Header Info */}
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-sm text-gray-500 dark:text-slate-400">رقم الفاتورة</p>
+                            <p className="font-mono font-bold text-gray-800 dark:text-white text-lg">#{viewDetailsInvoice.id.slice(-6)}</p>
+                        </div>
+                        <div className="text-left">
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                viewDetailsInvoice.remainingAmount > 0 
+                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' 
+                                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                            }`}>
+                                {viewDetailsInvoice.remainingAmount > 0 ? 'غير مكتملة' : 'مدفوعة بالكامل'}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Meta Grid */}
+                    <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-slate-700/30 p-4 rounded-xl border border-gray-100 dark:border-slate-700">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                                <User size={18} />
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500 dark:text-slate-400">العميل</p>
+                                <p className="font-bold text-sm text-gray-800 dark:text-white">{viewDetailsInvoice.customerName}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                                <Calendar size={18} />
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500 dark:text-slate-400">التاريخ</p>
+                                <p className="font-bold text-sm text-gray-800 dark:text-white">{new Date(viewDetailsInvoice.date).toLocaleDateString('ar-MA')}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Items List */}
+                    <div>
+                        <h4 className="text-sm font-bold text-gray-500 dark:text-slate-400 mb-3 flex items-center gap-2">
+                            <ShoppingBag size={14} /> المنتجات
+                        </h4>
+                        <div className="border border-gray-100 dark:border-slate-700 rounded-xl overflow-hidden">
+                            <table className="w-full text-sm text-right">
+                                <thead className="bg-gray-50 dark:bg-slate-700/50 text-gray-500 dark:text-slate-400 font-medium">
+                                    <tr>
+                                        <th className="px-4 py-3">المنتج</th>
+                                        <th className="px-4 py-3 text-center">الكمية</th>
+                                        <th className="px-4 py-3">السعر</th>
+                                        <th className="px-4 py-3">المجموع</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                                    {viewDetailsInvoice.items.map((item, i) => (
+                                        <tr key={i}>
+                                            <td className="px-4 py-3 text-gray-800 dark:text-white font-medium">{item.productName}</td>
+                                            <td className="px-4 py-3 text-center text-gray-600 dark:text-slate-300">{item.quantity}</td>
+                                            <td className="px-4 py-3 text-gray-600 dark:text-slate-300">{item.priceAtSale}</td>
+                                            <td className="px-4 py-3 font-bold text-gray-800 dark:text-white">{(item.quantity * item.priceAtSale).toLocaleString()}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Financial Summary */}
+                    <div className="border-t border-dashed border-gray-200 dark:border-slate-600 pt-4 space-y-2">
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-500 dark:text-slate-400">المجموع الكلي</span>
+                            <span className="font-bold text-gray-900 dark:text-white text-lg">{viewDetailsInvoice.total.toLocaleString()} {CURRENCY}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><CheckCircle size={14}/> المدفوع</span>
+                            <span className="font-bold text-emerald-600 dark:text-emerald-400">{viewDetailsInvoice.paidAmount.toLocaleString()} {CURRENCY}</span>
+                        </div>
+                        {viewDetailsInvoice.remainingAmount > 0 && (
+                            <div className="flex justify-between items-center text-sm bg-red-50 dark:bg-red-900/20 p-2 rounded-lg mt-2">
+                                <span className="text-red-600 dark:text-red-400 font-bold flex items-center gap-1"><AlertCircle size={14}/> المتبقي (دين)</span>
+                                <span className="font-bold text-red-600 dark:text-red-400">{viewDetailsInvoice.remainingAmount.toLocaleString()} {CURRENCY}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+      )}
+
       {/* Edit Invoice Metadata Modal */}
       {isEditInvoiceModalOpen && editingInvoice && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
