@@ -21,6 +21,7 @@ import {
   IdCard 
 } from 'lucide-react';
 import NotificationCenter from './NotificationCenter';
+import BouslaLogo from './BouslaLogo';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -39,35 +40,6 @@ const NAV_ITEMS = [
   { label: 'التقارير', icon: FileText, path: '/reports' },
   { label: 'الإعدادات', icon: Settings, path: '/settings' },
 ];
-
-// Custom Typographic Logo: "Bousla" with Chart Arrow in 'Ba'
-const BouslaLogo: React.FC<{ className?: string }> = ({ className = "h-8" }) => (
-  <svg viewBox="0 0 140 50" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} preserveAspectRatio="xMidYMid meet">
-    {/* Text: "وصلة" (Waw, Sad, Lam, Ta) - Dynamic Color (Black/White) */}
-    <path 
-      d="M105 25 H95 V35 H85 V25 H65 V35 H55 V15 H65 V25 H85 V15 H105 V25 Z M45 35 H35 V15 H45 V35 Z M25 28 A 5 5 0 1 1 25 38 A 5 5 0 1 1 25 28" 
-      fill="currentColor" 
-      className="text-slate-900 dark:text-white"
-    />
-    <path 
-      d="M100 25 V35 M70 25 V35" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      className="text-slate-900 dark:text-white"
-    />
-    
-    {/* Letter: "Ba" (ب) with Integrated Chart Arrow - Brand Color */}
-    <path 
-      d="M135 35 H115 V25 L125 15 L135 5 M135 5 V12 M135 5 H128" 
-      stroke="#10b981" 
-      strokeWidth="4" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-    />
-    {/* Ba Dot */}
-    <circle cx="125" cy="42" r="2.5" fill="#10b981" />
-  </svg>
-);
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -96,8 +68,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       >
         <div className="h-24 shrink-0 flex items-center justify-center px-6 border-b border-slate-800/50">
           <Link to="/" className="flex items-center gap-3 group w-full justify-center">
-            {/* The Logo Component now includes the full word mark */}
-            <BouslaLogo className="h-12 w-auto transition-transform group-hover:scale-105 duration-300" />
+            {/* The Logo Component now includes the full word mark - Passing isWhite because sidebar is dark */}
+            <BouslaLogo className="h-12 w-auto transition-transform group-hover:scale-105 duration-300" isWhite={true} />
           </Link>
         </div>
 

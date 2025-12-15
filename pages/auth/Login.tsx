@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { loginUser } from '../../services/db';
 import { Smartphone, Lock, Loader2 } from 'lucide-react';
+import BouslaLogo from '../../components/BouslaLogo';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -35,28 +36,9 @@ const Login: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans" dir="rtl">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Link to="/" className="flex justify-center items-center gap-2 mb-6 group">
-            <svg viewBox="0 0 140 50" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-16 w-auto" preserveAspectRatio="xMidYMid meet">
-                <path 
-                d="M105 25 H95 V35 H85 V25 H65 V35 H55 V15 H65 V25 H85 V15 H105 V25 Z M45 35 H35 V15 H45 V35 Z M25 28 A 5 5 0 1 1 25 38 A 5 5 0 1 1 25 28" 
-                fill="currentColor" 
-                className="text-slate-900"
-                />
-                <path 
-                d="M100 25 V35 M70 25 V35" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                className="text-slate-900"
-                />
-                <path 
-                d="M135 35 H115 V25 L125 15 L135 5 M135 5 V12 M135 5 H128" 
-                stroke="#10b981" 
-                strokeWidth="4" 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                />
-                <circle cx="125" cy="42" r="2.5" fill="#10b981" />
-            </svg>
+        <Link to="/" className="flex justify-center items-center gap-2 mb-6 group hover:opacity-80 transition-opacity">
+            {/* Using component prevents white screen errors from inline SVG typos */}
+            <BouslaLogo className="h-16 w-auto" />
         </Link>
         <h2 className="text-center text-2xl font-bold text-gray-900">
           تسجيل الدخول
