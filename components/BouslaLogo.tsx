@@ -8,63 +8,57 @@ interface BouslaLogoProps {
 
 const BouslaLogo: React.FC<BouslaLogoProps> = ({ className = "h-10 w-auto", isWhite = false }) => {
   return (
-    <svg viewBox="0 0 180 60" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} preserveAspectRatio="xMidYMid meet">
+    <svg viewBox="0 0 180 50" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} preserveAspectRatio="xMidYMid meet">
       {/* 
-        LOGOTYPE DESIGN:
-        1. Left side: Text "وصلة" using Cairo Font (matches app font).
-        2. Right side: Letter "Ba" (ب) constructed as a Sales Chart.
+        Logo Composition:
+        1. Icon: Green Rounded Square with White Chart/Arrow (Right side).
+        2. Text: "بوصلة" in Cairo Font (Left side).
       */}
 
-      {/* 1. Text: "وصلة" */}
-      <text 
-        x="115" 
-        y="42" 
-        textAnchor="end" 
-        fontFamily="'Cairo', sans-serif" 
-        fontWeight="800" 
-        fontSize="38" 
-        fill="currentColor"
-        className={isWhite ? "text-white" : "text-slate-900 dark:text-white"}
-      >
-        وصلة
-      </text>
-
-      {/* 2. Icon: Letter "Ba" (ب) as a Chart */}
-      <g transform="translate(125, 10)">
+      {/* --- 1. The Icon (Matches the attached image style) --- */}
+      <g transform="translate(135, 5)">
+        {/* Background: Emerald Green Rounded Square */}
+        <rect width="40" height="40" rx="10" fill="#10b981" />
         
-        {/* The "Tray" of the Ba (The base line) */}
-        {/* It looks like the axis of a chart but curved like the letter */}
+        {/* Bars: White */}
+        {/* Small */}
+        <rect x="8" y="22" width="6" height="10" rx="1" fill="white" />
+        {/* Medium */}
+        <rect x="17" y="16" width="6" height="16" rx="1" fill="white" />
+        {/* Large */}
+        <rect x="26" y="8" width="6" height="24" rx="1" fill="white" />
+
+        {/* Arrow: White, Going Up */}
         <path 
-          d="M0 28 V32 H40 V15" 
-          stroke="currentColor" 
-          strokeWidth="4" 
-          strokeLinecap="round" 
-          className={isWhite ? "text-white" : "text-slate-900 dark:text-white"}
-          fill="none"
-        />
-
-        {/* Chart Bars (Inside the Ba) */}
-        {/* Bar 1 (Small) */}
-        <rect x="5" y="18" width="6" height="12" rx="1" fill="currentColor" className={isWhite ? "text-white" : "text-slate-900 dark:text-white opacity-60"} />
-        
-        {/* Bar 2 (Medium) */}
-        <rect x="15" y="10" width="6" height="20" rx="1" fill="currentColor" className={isWhite ? "text-white" : "text-slate-900 dark:text-white opacity-80"} />
-        
-        {/* Bar 3 (Tall - Growth) - Colored Emerald */}
-        <rect x="25" y="2" width="6" height="28" rx="1" fill="#10b981" />
-
-        {/* The Arrow (Shooting up) */}
-        <path 
-          d="M5 20 L35 0 M35 0 V8 M35 0 H27" 
-          stroke="#10b981" 
-          strokeWidth="3" 
+          d="M6 28 L14 22 L22 24 L34 6" 
+          stroke="white" 
+          strokeWidth="2.5" 
           strokeLinecap="round" 
           strokeLinejoin="round" 
         />
-
-        {/* The Dot of the Ba (Below) */}
-        <circle cx="20" cy="42" r="3.5" fill="#10b981" />
+        {/* Arrow Head */}
+        <path 
+          d="M28 6 H34 V12" 
+          stroke="white" 
+          strokeWidth="2.5" 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+        />
       </g>
+
+      {/* --- 2. The Text: "بوصلة" --- */}
+      <text 
+        x="125" 
+        y="37" 
+        textAnchor="end" 
+        fontFamily="'Cairo', sans-serif" 
+        fontWeight="800" 
+        fontSize="32" 
+        className={isWhite ? "fill-white" : "fill-slate-900 dark:fill-white"}
+        style={{ letterSpacing: '-0.02em' }}
+      >
+        بوصلة
+      </text>
     </svg>
   );
 };
