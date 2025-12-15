@@ -40,22 +40,23 @@ const NAV_ITEMS = [
   { label: 'الإعدادات', icon: Settings, path: '/settings' },
 ];
 
-// Professional Custom Logo Component: "Geometric Growth"
+// Professional Custom Logo Component: "Solid Growth Compass"
 const BouslaLogo: React.FC<{ className?: string }> = ({ className = "w-8 h-8" }) => (
   <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    {/* Outer Ring - Stable Foundation */}
-    <circle cx="20" cy="20" r="18" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2.5" />
+    {/* Compass Ring Base - Subtle */}
+    <circle cx="20" cy="20" r="18" stroke="currentColor" strokeOpacity="0.15" strokeWidth="3" />
     
-    {/* Geometric Arrow - Points North-East (Growth) */}
-    {/* Using a filled path for a solid, professional look (not handwriting) */}
+    {/* Cardinal Points - Geometric Ticks */}
+    <path d="M20 6V9 M20 31V34 M34 20H31 M9 20H6" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2" strokeLinecap="round"/>
+    
+    {/* The Growth Chart Arrow - Solid Fill (Geometric & Professional) */}
     <path 
-      d="M16 29.5 L27 13 L24 24 L35 27 L16 29.5Z" 
+      fillRule="evenodd" 
+      clipRule="evenodd" 
+      d="M12.2929 26.2929C11.9024 26.6834 11.9024 27.3166 12.2929 27.7071C12.6834 28.0976 13.3166 28.0976 13.7071 27.7071L20 21.4142L23.2929 24.7071C23.6834 25.0976 24.3166 25.0976 24.7071 24.7071L32 17.4142V21C32 21.5523 32.4477 22 33 22C33.5523 22 34 21.5523 34 21V15C34 14.4477 33.5523 14 33 14H27C26.4477 14 26 14.4477 26 15C26 15.5523 26.4477 16 27 16H30.5858L24 22.5858L20.7071 19.2929C20.3166 18.9024 19.6834 18.9024 19.2929 19.2929L12.2929 26.2929Z" 
       fill="currentColor" 
       className="text-emerald-500" 
     />
-    
-    {/* Inner Core Detail - The Pivot */}
-    <circle cx="22" cy="22" r="2" fill="white" className="dark:fill-slate-900" />
   </svg>
 );
 
@@ -86,7 +87,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       >
         <div className="h-20 shrink-0 flex items-center px-6 border-b border-slate-800/50">
           <Link to="/" className="flex items-center gap-3 group">
-            <BouslaLogo className="w-10 h-10 transition-transform group-hover:rotate-12 duration-500" />
+            <BouslaLogo className="w-10 h-10 transition-transform group-hover:scale-105 duration-300" />
             <h1 className="text-3xl font-black text-white tracking-tighter">
               بوصلة
             </h1>
