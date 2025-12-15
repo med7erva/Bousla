@@ -40,21 +40,22 @@ const NAV_ITEMS = [
   { label: 'الإعدادات', icon: Settings, path: '/settings' },
 ];
 
-// Professional Custom Logo Component: "Growth Compass"
+// Professional Custom Logo Component: "Geometric Growth"
 const BouslaLogo: React.FC<{ className?: string }> = ({ className = "w-8 h-8" }) => (
   <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    {/* Compass Ring & Base */}
-    <circle cx="20" cy="20" r="18" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2" />
-    <path d="M20 5V8 M20 32V35 M35 20H32 M8 20H5" stroke="currentColor" strokeOpacity="0.3" strokeWidth="2" strokeLinecap="round"/>
+    {/* Outer Ring - Stable Foundation */}
+    <circle cx="20" cy="20" r="18" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2.5" />
     
-    {/* Growth Trend Line (The Needle) */}
-    <path d="M11 25 L17 28 L23 18 L31 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500" />
+    {/* Geometric Arrow - Points North-East (Growth) */}
+    {/* Using a filled path for a solid, professional look (not handwriting) */}
+    <path 
+      d="M16 29.5 L27 13 L24 24 L35 27 L16 29.5Z" 
+      fill="currentColor" 
+      className="text-emerald-500" 
+    />
     
-    {/* Arrow Head (Success Direction) */}
-    <path d="M23 10 H31 V18" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500" />
-    
-    {/* Starting Dot (Foundation) */}
-    <circle cx="11" cy="25" r="2.5" className="fill-emerald-500" />
+    {/* Inner Core Detail - The Pivot */}
+    <circle cx="22" cy="22" r="2" fill="white" className="dark:fill-slate-900" />
   </svg>
 );
 
@@ -85,7 +86,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       >
         <div className="h-20 shrink-0 flex items-center px-6 border-b border-slate-800/50">
           <Link to="/" className="flex items-center gap-3 group">
-            <BouslaLogo className="w-10 h-10 transition-transform group-hover:scale-110 duration-300" />
+            <BouslaLogo className="w-10 h-10 transition-transform group-hover:rotate-12 duration-500" />
             <h1 className="text-3xl font-black text-white tracking-tighter">
               بوصلة
             </h1>

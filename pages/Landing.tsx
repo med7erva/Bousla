@@ -5,11 +5,13 @@ import { TrendingUp, ShieldCheck, Zap, ArrowRight, Smartphone } from 'lucide-rea
 
 const BouslaLogo: React.FC<{ className?: string }> = ({ className = "w-8 h-8" }) => (
   <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <circle cx="20" cy="20" r="18" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2" />
-    <path d="M20 5V8 M20 32V35 M35 20H32 M8 20H5" stroke="currentColor" strokeOpacity="0.3" strokeWidth="2" strokeLinecap="round"/>
-    <path d="M11 25 L17 28 L23 18 L31 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500" />
-    <path d="M23 10 H31 V18" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500" />
-    <circle cx="11" cy="25" r="2.5" className="fill-emerald-500" />
+    <circle cx="20" cy="20" r="18" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2.5" />
+    <path 
+      d="M16 29.5 L27 13 L24 24 L35 27 L16 29.5Z" 
+      fill="currentColor" 
+      className="text-emerald-500" 
+    />
+    <circle cx="22" cy="22" r="2" fill="white" />
   </svg>
 );
 
@@ -20,8 +22,8 @@ const Landing: React.FC = () => {
       <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
-            <div className="flex items-center gap-2">
-                <BouslaLogo className="w-10 h-10 text-emerald-600" />
+            <div className="flex items-center gap-2 group">
+                <BouslaLogo className="w-10 h-10 text-emerald-600 transition-transform group-hover:rotate-12 duration-500" />
                 <span className="text-2xl font-bold text-slate-900">بوصلة</span>
             </div>
             <div className="flex items-center gap-4">
