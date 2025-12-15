@@ -3,17 +3,27 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, ShieldCheck, Zap, ArrowRight, Smartphone } from 'lucide-react';
 
-const BouslaLogo: React.FC<{ className?: string }> = ({ className = "w-8 h-8" }) => (
-  <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <circle cx="20" cy="20" r="18" stroke="currentColor" strokeOpacity="0.15" strokeWidth="3" />
-    <path d="M20 6V9 M20 31V34 M34 20H31 M9 20H6" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2" strokeLinecap="round"/>
+const BouslaLogo: React.FC<{ className?: string }> = ({ className = "h-8" }) => (
+  <svg viewBox="0 0 140 50" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} preserveAspectRatio="xMidYMid meet">
     <path 
-      fillRule="evenodd" 
-      clipRule="evenodd" 
-      d="M12.2929 26.2929C11.9024 26.6834 11.9024 27.3166 12.2929 27.7071C12.6834 28.0976 13.3166 28.0976 13.7071 27.7071L20 21.4142L23.2929 24.7071C23.6834 25.0976 24.3166 25.0976 24.7071 24.7071L32 17.4142V21C32 21.5523 32.4477 22 33 22C33.5523 22 34 21.5523 34 21V15C34 14.4477 33.5523 14 33 14H27C26.4477 14 26 14.4477 26 15C26 15.5523 26.4477 16 27 16H30.5858L24 22.5858L20.7071 19.2929C20.3166 18.9024 19.6834 18.9024 19.2929 19.2929L12.2929 26.2929Z" 
+      d="M105 25 H95 V35 H85 V25 H65 V35 H55 V15 H65 V25 H85 V15 H105 V25 Z M45 35 H35 V15 H45 V35 Z M25 28 A 5 5 0 1 1 25 38 A 5 5 0 1 1 25 28" 
       fill="currentColor" 
-      className="text-emerald-500" 
+      className="text-slate-900"
     />
+    <path 
+      d="M100 25 V35 M70 25 V35" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      className="text-slate-900"
+    />
+    <path 
+      d="M135 35 H115 V25 L125 15 L135 5 M135 5 V12 M135 5 H128" 
+      stroke="#10b981" 
+      strokeWidth="4" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+    />
+    <circle cx="125" cy="42" r="2.5" fill="#10b981" />
   </svg>
 );
 
@@ -25,8 +35,7 @@ const Landing: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center gap-2 group">
-                <BouslaLogo className="w-10 h-10 text-emerald-600 transition-transform group-hover:scale-105 duration-500" />
-                <span className="text-2xl font-bold text-slate-900">بوصلة</span>
+                <BouslaLogo className="h-10 w-auto" />
             </div>
             <div className="flex items-center gap-4">
               <Link to="/login" className="text-slate-600 hover:text-emerald-600 font-medium transition">
@@ -118,9 +127,8 @@ const Landing: React.FC = () => {
 
       {/* Footer */}
       <footer className="bg-slate-900 py-12 text-center text-slate-400">
-        <div className="flex items-center justify-center gap-2 mb-4">
-            <BouslaLogo className="w-8 h-8 text-emerald-500" />
-            <span className="text-xl font-bold text-white">بوصلة</span>
+        <div className="flex items-center justify-center gap-2 mb-4 text-white">
+            <BouslaLogo className="h-8 w-auto text-white" />
         </div>
         <p>© {new Date().getFullYear()} جميع الحقوق محفوظة. صُنع بفخر للمتاجر الموريتانية.</p>
       </footer>
