@@ -40,17 +40,21 @@ const NAV_ITEMS = [
   { label: 'الإعدادات', icon: Settings, path: '/settings' },
 ];
 
-// Professional Custom Logo Component
+// Professional Custom Logo Component: "Growth Compass"
 const BouslaLogo: React.FC<{ className?: string }> = ({ className = "w-8 h-8" }) => (
   <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    {/* Outer Scope Ring */}
-    <path d="M20 4C11.1634 4 4 11.1634 4 20C4 28.8366 11.1634 36 20 36C28.8366 36 36 28.8366 36 20" stroke="currentColor" strokeOpacity="0.3" strokeWidth="3" strokeLinecap="round" />
+    {/* Compass Ring & Base */}
+    <circle cx="20" cy="20" r="18" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2" />
+    <path d="M20 5V8 M20 32V35 M35 20H32 M8 20H5" stroke="currentColor" strokeOpacity="0.3" strokeWidth="2" strokeLinecap="round"/>
     
-    {/* Main North Star Needle */}
-    <path d="M20 8L23.5 16.5L32 20L23.5 23.5L20 32L16.5 23.5L8 20L16.5 16.5L20 8Z" fill="currentColor" className="text-emerald-500" />
+    {/* Growth Trend Line (The Needle) */}
+    <path d="M11 25 L17 28 L23 18 L31 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500" />
     
-    {/* Inner Detail */}
-    <circle cx="20" cy="20" r="2.5" className="fill-white dark:fill-slate-900" />
+    {/* Arrow Head (Success Direction) */}
+    <path d="M23 10 H31 V18" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500" />
+    
+    {/* Starting Dot (Foundation) */}
+    <circle cx="11" cy="25" r="2.5" className="fill-emerald-500" />
   </svg>
 );
 
