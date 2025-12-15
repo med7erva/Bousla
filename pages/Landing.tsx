@@ -38,7 +38,7 @@ const Landing: React.FC = () => {
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-16 pb-32 lg:pt-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <span className="inline-flex items-center gap-2 py-1 px-3 rounded-full bg-emerald-50 text-emerald-700 text-sm font-bold mb-6 border border-emerald-100 shadow-sm">
+          <span className="inline-flex items-center gap-2 py-1 px-3 rounded-full bg-emerald-50 text-emerald-700 text-sm font-bold mb-6 border border-emerald-100 shadow-sm animate-fade-in-up">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -69,10 +69,11 @@ const Landing: React.FC = () => {
           </div>
         </div>
         
-        {/* Simple Background Decoration (Safe) */}
+        {/* Abstract shapes (Restored) */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 opacity-30 pointer-events-none">
-            <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-100 rounded-full blur-3xl opacity-60"></div>
-            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-100 rounded-full blur-3xl opacity-60"></div>
+            <div className="absolute top-10 left-10 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+            <div className="absolute top-10 right-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
+            <div className="absolute -bottom-32 left-1/2 w-72 h-72 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
         </div>
       </section>
 
