@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { registerUser } from '../../services/db';
-import { Compass, Smartphone, Lock, User as UserIcon, Store, Loader2 } from 'lucide-react';
+import { Smartphone, Lock, User as UserIcon, Store, Loader2 } from 'lucide-react';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -51,7 +52,11 @@ const Register: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans" dir="rtl">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link to="/" className="flex justify-center items-center gap-2 mb-6">
-            <Compass className="text-emerald-600 w-10 h-10" />
+            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 text-emerald-600">
+                <path d="M20 4C11.1634 4 4 11.1634 4 20C4 28.8366 11.1634 36 20 36C28.8366 36 36 28.8366 36 20" stroke="currentColor" strokeOpacity="0.3" strokeWidth="3" strokeLinecap="round" />
+                <path d="M20 8L23.5 16.5L32 20L23.5 23.5L20 32L16.5 23.5L8 20L16.5 16.5L20 8Z" fill="currentColor" />
+                <circle cx="20" cy="20" r="2.5" className="fill-white" />
+            </svg>
             <h2 className="text-3xl font-extrabold text-gray-900">بوصلة</h2>
         </Link>
         <h2 className="text-center text-2xl font-bold text-gray-900">

@@ -1,7 +1,15 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Compass, TrendingUp, ShieldCheck, Zap, ArrowRight, Smartphone } from 'lucide-react';
+import { TrendingUp, ShieldCheck, Zap, ArrowRight, Smartphone } from 'lucide-react';
+
+const BouslaLogo: React.FC<{ className?: string }> = ({ className = "w-8 h-8" }) => (
+  <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M20 4C11.1634 4 4 11.1634 4 20C4 28.8366 11.1634 36 20 36C28.8366 36 36 28.8366 36 20" stroke="currentColor" strokeOpacity="0.3" strokeWidth="3" strokeLinecap="round" />
+    <path d="M20 8L23.5 16.5L32 20L23.5 23.5L20 32L16.5 23.5L8 20L16.5 16.5L20 8Z" fill="currentColor" className="text-emerald-500" />
+    <circle cx="20" cy="20" r="2.5" className="fill-white" />
+  </svg>
+);
 
 const Landing: React.FC = () => {
   return (
@@ -11,7 +19,7 @@ const Landing: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center gap-2">
-                <Compass className="text-emerald-600 w-8 h-8" />
+                <BouslaLogo className="w-10 h-10 text-emerald-600" />
                 <span className="text-2xl font-bold text-slate-900">بوصلة</span>
             </div>
             <div className="flex items-center gap-4">
@@ -105,7 +113,7 @@ const Landing: React.FC = () => {
       {/* Footer */}
       <footer className="bg-slate-900 py-12 text-center text-slate-400">
         <div className="flex items-center justify-center gap-2 mb-4">
-            <Compass className="text-emerald-500" />
+            <BouslaLogo className="w-8 h-8 text-emerald-500" />
             <span className="text-xl font-bold text-white">بوصلة</span>
         </div>
         <p>© {new Date().getFullYear()} جميع الحقوق محفوظة. صُنع بفخر للمتاجر الموريتانية.</p>
