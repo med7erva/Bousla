@@ -13,7 +13,7 @@ const Landing: React.FC = () => {
           <div className="flex justify-between items-center h-20">
             {/* Logo Section */}
             <div className="flex-shrink-0 flex items-center">
-                <BouslaLogo />
+                <BouslaLogo className="h-10 w-auto text-3xl" />
             </div>
 
             {/* Buttons Section */}
@@ -115,7 +115,8 @@ const Landing: React.FC = () => {
       {/* Footer */}
       <footer className="bg-slate-900 py-12 text-center text-slate-400">
         <div className="flex items-center justify-center gap-2 mb-6 text-white">
-            <BouslaLogo isWhite={true} />
+            {/* Increased size here */}
+            <BouslaLogo isWhite={true} className="h-20 w-auto text-4xl" />
         </div>
         <p>© {new Date().getFullYear()} جميع الحقوق محفوظة. صُنع بفخر للمتاجر الموريتانية.</p>
       </footer>
