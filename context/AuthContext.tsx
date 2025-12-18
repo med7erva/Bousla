@@ -20,13 +20,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         // Map Supabase user to our App User type
+        // Fix: Added missing required properties subscriptionStatus and trialEndDate from user metadata to satisfy the User interface
+        const metadata = session.user.user_metadata;
         const appUser: User = {
           id: session.user.id,
-          name: session.user.user_metadata.name || 'User',
-          phone: session.user.phone || '',
-          storeName: session.user.user_metadata.storeName || 'My Store',
+          name: metadata.name || 'User',
+          phone: metadata.phone || session.user.phone || '',
+          storeName: metadata.storeName || 'My Store',
           email: session.user.email,
-          createdAt: session.user.created_at
+          createdAt: session.user.created_at,
+          subscriptionStatus: metadata.subscriptionStatus || 'trial',
+          trialEndDate: metadata.trialEndDate || new Date().toISOString(),
+          subscriptionEndDate: metadata.subscriptionEndDate
         };
         setUser(appUser);
       }
@@ -36,13 +41,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 2. Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
+        // Fix: Added missing required properties subscriptionStatus and trialEndDate from user metadata to satisfy the User interface
+        const metadata = session.user.user_metadata;
         const appUser: User = {
           id: session.user.id,
-          name: session.user.user_metadata.name || 'User',
-          phone: session.user.phone || '',
-          storeName: session.user.user_metadata.storeName || 'My Store',
+          name: metadata.name || 'User',
+          phone: metadata.phone || session.user.phone || '',
+          storeName: metadata.storeName || 'My Store',
           email: session.user.email,
-          createdAt: session.user.created_at
+          createdAt: session.user.created_at,
+          subscriptionStatus: metadata.subscriptionStatus || 'trial',
+          trialEndDate: metadata.trialEndDate || new Date().toISOString(),
+          subscriptionEndDate: metadata.subscriptionEndDate
         };
         setUser(appUser);
       } else {

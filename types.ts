@@ -1,13 +1,16 @@
 
-
 export interface User {
   id: string;
   name: string;
-  phone: string; // Unique identifier
+  phone: string; 
   password?: string;
   storeName: string;
   email?: string;
   createdAt: string;
+  // Subscription Fields
+  subscriptionStatus: 'trial' | 'active' | 'expired';
+  trialEndDate: string;
+  subscriptionEndDate?: string;
 }
 
 export interface AppSettings {
@@ -57,11 +60,11 @@ export interface ProductCategory {
 
 export interface Product {
   id: string;
-  userId: string; // Link to user
+  userId: string; 
   name: string;
-  category: string; // Changed from enum to string to support dynamic categories
-  price: number; // Selling price
-  cost: number; // Cost price
+  category: string; 
+  price: number; 
+  cost: number; 
   stock: number;
   barcode: string;
 }
@@ -80,10 +83,10 @@ export interface Invoice {
   date: string;
   items: SaleItem[];
   total: number;
-  paidAmount: number; // New: Amount paid at checkout
-  remainingAmount: number; // New: Debt calculated
+  paidAmount: number; 
+  remainingAmount: number; 
   status: 'Completed' | 'Pending' | 'Returned';
-  paymentMethodId?: string; // Where the money went
+  paymentMethodId?: string; 
 }
 
 export interface Client {
@@ -92,7 +95,7 @@ export interface Client {
   name: string;
   phone: string;
   debt: number;
-  openingBalance?: number; // Manual opening balance
+  openingBalance?: number; 
   lastPurchaseDate?: string;
   notes?: string;
 }
@@ -102,7 +105,7 @@ export interface Supplier {
   userId: string;
   name: string;
   phone: string;
-  debt: number; // Amount we owe them
+  debt: number; 
   productsSummary?: string;
 }
 
@@ -121,8 +124,8 @@ export interface Purchase {
   date: string;
   items: PurchaseItem[];
   totalCost: number;
-  paidAmount: number; // If less than totalCost, difference is added to supplier debt
-  paymentMethodId?: string; // Where the money came from
+  paidAmount: number; 
+  paymentMethodId?: string; 
   status: 'Completed' | 'Pending';
 }
 
@@ -130,7 +133,7 @@ export interface ExpenseCategory {
   id: string;
   userId: string;
   name: string;
-  isDefault?: boolean; // System categories like Salaries that shouldn't be deleted easily
+  isDefault?: boolean; 
 }
 
 export interface Expense {
@@ -138,11 +141,11 @@ export interface Expense {
   userId: string;
   title: string;
   amount: number;
-  categoryId: string; // Linked to ExpenseCategory
-  categoryName?: string; // Snapshot for display
-  employeeId?: string; // Optional: Linked to Employee if it's a salary
+  categoryId: string; 
+  categoryName?: string; 
+  employeeId?: string; 
   date: string;
-  paymentMethodId?: string; // Where the money came from
+  paymentMethodId?: string; 
   notes?: string;
 }
 
@@ -154,13 +157,13 @@ export interface Employee {
   phone: string;
   salary: number;
   joinDate: string;
-  loanBalance?: number; // Track loans/advances given to employee
+  loanBalance?: number; 
 }
 
 export interface FinancialTransaction {
   id: string;
   userId: string;
-  type: 'in' | 'out'; // 'in' = Receipt (قبض), 'out' = Payment (صرف)
+  type: 'in' | 'out'; 
   amount: number;
   date: string;
   paymentMethodId: string;

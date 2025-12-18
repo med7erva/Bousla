@@ -17,9 +17,12 @@ import Settings from './pages/Settings';
 import Landing from './pages/Landing';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import Profile from './pages/Profile';
+import Pricing from './pages/Pricing';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
-import { UserCircle, Wrench } from 'lucide-react';
+import { UserCircle, Wrench, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const PlaceholderPage: React.FC<{ title: string; icon: any }> = ({ title, icon: Icon }) => (
   <div className="flex flex-col items-center justify-center h-[60vh] text-center p-8 bg-white dark:bg-slate-800 rounded-3xl border border-dashed border-gray-300 dark:border-slate-700">
@@ -34,10 +37,44 @@ const PlaceholderPage: React.FC<{ title: string; icon: any }> = ({ title, icon: 
 );
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
+
+  // Subscription Guard
+  if (user?.subscriptionStatus === 'expired') {
+    return (
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4 font-sans" dir="rtl">
+            <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl max-w-md w-full text-center border border-red-100 dark:border-red-900/30">
+                <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <AlertTriangle size={40} />
+                </div>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-4">انتهت صلاحية الحساب</h2>
+                <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
+                    عذراً، لقد انتهت الفترة التجريبية أو مدة اشتراكك الحالي. يرجى التجديد للمتابعة في استخدام نظام بوصلة.
+                </p>
+                <div className="space-y-3">
+                    <Link 
+                        to="/pricing" 
+                        className="flex items-center justify-center gap-2 bg-emerald-600 text-white py-4 rounded-2xl font-bold hover:bg-emerald-700 transition shadow-lg shadow-emerald-200 dark:shadow-none"
+                    >
+                        عرض خطط الاشتراك
+                    </Link>
+                    <Link 
+                        to="/profile" 
+                        className="flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 py-2 font-bold hover:text-slate-800 dark:hover:text-white transition"
+                    >
+                        <span>لديك كود تفعيل؟ أدخله هنا</span>
+                        <ArrowRight size={16} className="rotate-180" />
+                    </Link>
+                </div>
+            </div>
+        </div>
+    );
+  }
+
   return <Layout>{children}</Layout>;
 };
 
@@ -50,15 +87,18 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 const AppRoutes: React.FC = () => {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
 
     return (
         <Routes>
             <Route path="/landing" element={<PublicRoute><Landing /></PublicRoute>} />
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+            <Route path="/pricing" element={isAuthenticated ? <Pricing /> : <Navigate to="/login" />} />
 
-            <Route path="/" element={isAuthenticated ? <Layout><Dashboard /></Layout> : <Landing />} />
+            <Route path="/" element={isAuthenticated ? (
+                user?.subscriptionStatus === 'expired' ? <Navigate to="/pricing" /> : <Layout><Dashboard /></Layout>
+            ) : <Landing />} />
 
             <Route path="/sales" element={<ProtectedRoute><Sales /></ProtectedRoute>} />
             <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
@@ -73,7 +113,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><PlaceholderPage title="الملف الشخصي" icon={UserCircle} /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             
             <Route path="*" element={<PlaceholderPage title="صفحة غير موجودة" icon={Wrench} />} />
         </Routes>
