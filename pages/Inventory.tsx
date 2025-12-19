@@ -14,7 +14,8 @@ import {
   Save,
   Truck,
   DollarSign,
-  Loader2 // Import Loader
+  Loader2,
+  Lock
 } from 'lucide-react';
 import { CURRENCY } from '../constants';
 import { Product, ProductCategory, Supplier } from '../types';
@@ -31,6 +32,9 @@ const Inventory: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [insight, setInsight] = useState('');
   
+  const isExpired = user?.subscriptionStatus === 'expired';
+  const isPlusPlan = user?.subscriptionPlan === 'plus';
+
   // Loading States for Actions
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -92,7 +96,6 @@ const Inventory: React.FC = () => {
 
   useEffect(() => {
     loadData();
-    // Close menu when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
         if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
             setActiveMenuId(null);
@@ -112,9 +115,9 @@ const Inventory: React.FC = () => {
   // --- Product Actions ---
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || isExpired) return;
     
-    setIsSubmitting(true); // Lock button
+    setIsSubmitting(true);
     try {
         await addProduct({
             ...newProduct,
@@ -134,11 +137,12 @@ const Inventory: React.FC = () => {
         console.error(error);
         alert("حدث خطأ أثناء إضافة المنتج.");
     } finally {
-        setIsSubmitting(false); // Unlock button
+        setIsSubmitting(false);
     }
   };
 
   const handleDeleteProduct = async (id: string) => {
+      if(isExpired) return;
       if(window.confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
           try {
             await deleteProduct(id);
@@ -153,7 +157,7 @@ const Inventory: React.FC = () => {
 
   const handleUpdateProduct = async (e: React.FormEvent) => {
       e.preventDefault();
-      if(!editingProduct) return;
+      if(!editingProduct || isExpired) return;
       
       setIsSubmitting(true);
       try {
@@ -169,6 +173,7 @@ const Inventory: React.FC = () => {
   };
 
   const openEditModal = (product: Product) => {
+      if(isExpired) return;
       setEditingProduct(product);
       setIsEditModalOpen(true);
       setActiveMenuId(null);
@@ -177,13 +182,14 @@ const Inventory: React.FC = () => {
   // --- Category Actions ---
   const handleAddCategory = async (e: React.FormEvent) => {
       e.preventDefault();
-      if(!user || !newCatName.trim()) return;
+      if(!user || !newCatName.trim() || isExpired) return;
       await addProductCategory(user.id, newCatName);
       setNewCatName('');
       loadData();
   };
 
   const handleDeleteCategory = async (id: string) => {
+      if(isExpired) return;
       if(window.confirm("حذف القسم؟")) {
           try {
               await deleteProductCategory(id);
@@ -198,6 +204,11 @@ const Inventory: React.FC = () => {
   // --- Manufacturing ---
   const handleManufacture = async (e: React.FormEvent) => {
       e.preventDefault();
+      if(isExpired) return;
+      if(isPlusPlan) {
+          alert("ميزة التصنيع متاحة فقط في خطة Pro.");
+          return;
+      }
       setIsSubmitting(true);
       try {
           await manufactureProduct(
@@ -229,6 +240,14 @@ const Inventory: React.FC = () => {
 
   return (
     <div className="space-y-6 relative">
+      
+      {isExpired && (
+          <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 p-4 rounded-xl flex items-center gap-3 text-red-700 dark:text-red-400 font-bold mb-4">
+              <AlertCircle />
+              <span>اشتراكك منتهي. يرجى التجديد لتتمكن من إضافة أو تعديل المنتجات.</span>
+          </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">إدارة المخزون</h1>
@@ -237,21 +256,25 @@ const Inventory: React.FC = () => {
         <div className="flex gap-2">
             <button 
                 onClick={() => setIsCatModalOpen(true)}
-                className="p-2.5 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600 transition"
+                disabled={isExpired}
+                className="p-2.5 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600 transition disabled:opacity-50"
                 title="إدارة الأقسام"
             >
                 <Settings size={20} />
             </button>
             <button 
                 onClick={() => setIsManuModalOpen(true)}
-                className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-lg hover:bg-indigo-700 transition shadow-sm"
+                disabled={isExpired}
+                className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2.5 rounded-lg hover:bg-indigo-700 transition shadow-sm disabled:opacity-50"
             >
                 <Scissors size={20} />
                 <span>تصنيع / خياطة</span>
+                {isPlusPlan && <Lock size={14} className="opacity-50" />}
             </button>
             <button 
                 onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2.5 rounded-lg hover:bg-emerald-700 transition shadow-sm"
+                disabled={isExpired}
+                className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2.5 rounded-lg hover:bg-emerald-700 transition shadow-sm disabled:opacity-50"
             >
                 <Plus size={20} />
                 <span>منتج جديد</span>
@@ -259,7 +282,6 @@ const Inventory: React.FC = () => {
         </div>
       </div>
 
-      {/* AI Insight (Collapsible) */}
       <AIInsightAlert 
         title="تحليل المخزون الذكي"
         insight={insight}
@@ -267,7 +289,6 @@ const Inventory: React.FC = () => {
         baseColor="blue"
       />
 
-      {/* Filters and Search */}
       <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700">
         <div className="relative">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -281,7 +302,6 @@ const Inventory: React.FC = () => {
         </div>
       </div>
 
-      {/* Products Table */}
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden min-h-[300px]">
         <div className="overflow-x-auto">
           <table className="w-full text-right">
@@ -293,7 +313,7 @@ const Inventory: React.FC = () => {
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">السعر</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">الكمية</th>
                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">الحالة</th>
-                <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">إجراءات</th>
+                {!isExpired && <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">إجراءات</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
@@ -331,32 +351,29 @@ const Inventory: React.FC = () => {
                         </div>
                     )}
                   </td>
-                  <td className="px-6 py-4">
-                    <button 
-                        onClick={(e) => { 
-                            e.stopPropagation();
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            setMenuPos({ top: rect.bottom, left: rect.left });
-                            setActiveMenuId(activeMenuId === product.id ? null : product.id); 
-                        }}
-                        className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full text-gray-500 dark:text-slate-400 transition"
-                    >
-                      <MoreVertical size={18} />
-                    </button>
-                  </td>
+                  {!isExpired && (
+                      <td className="px-6 py-4">
+                        <button 
+                            onClick={(e) => { 
+                                e.stopPropagation();
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setMenuPos({ top: rect.bottom, left: rect.left });
+                                setActiveMenuId(activeMenuId === product.id ? null : product.id); 
+                            }}
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full text-gray-500 dark:text-slate-400 transition"
+                        >
+                        <MoreVertical size={18} />
+                        </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        {filteredProducts.length === 0 && (
-            <div className="p-8 text-center text-gray-500 dark:text-slate-400">
-                لا توجد منتجات مطابقة للبحث.
-            </div>
-        )}
       </div>
       
-      {/* Floating Action Menu (Fixed Position) */}
+      {/* Floating Action Menu */}
       {activeMenuId && activeProduct && (
         <div 
             ref={menuRef} 
@@ -456,117 +473,16 @@ const Inventory: React.FC = () => {
                     <button 
                         type="submit" 
                         disabled={isSubmitting}
-                        className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold hover:bg-emerald-700 transition mt-2 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
+                        className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold hover:bg-emerald-700 transition mt-2 disabled:opacity-50 flex justify-center items-center"
                     >
-                        {isSubmitting ? (
-                            <>
-                                <Loader2 className="animate-spin ml-2" size={20} />
-                                جاري الحفظ...
-                            </>
-                        ) : 'حفظ المنتج'}
+                        {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : 'حفظ المنتج'}
                     </button>
                 </form>
             </div>
         </div>
       )}
 
-      {/* Edit Product Modal */}
-      {isEditModalOpen && editingProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-6 shadow-xl animate-in fade-in zoom-in duration-200">
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">تعديل المنتج</h2>
-                    <button onClick={() => setIsEditModalOpen(false)} className="text-gray-500 hover:text-gray-800 dark:hover:text-white">
-                        <X size={24} />
-                    </button>
-                </div>
-                
-                <form onSubmit={handleUpdateProduct} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">اسم المنتج</label>
-                        <input 
-                            required
-                            type="text" 
-                            className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
-                            value={editingProduct.name}
-                            onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})}
-                        />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">الباركود</label>
-                            <input 
-                                type="text" 
-                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
-                                value={editingProduct.barcode}
-                                onChange={(e) => setEditingProduct({...editingProduct, barcode: e.target.value})}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">القسم</label>
-                            <select 
-                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
-                                value={editingProduct.category}
-                                onChange={(e) => setEditingProduct({...editingProduct, category: e.target.value})}
-                            >
-                                {categories.map(cat => (
-                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">السعر</label>
-                            <input 
-                                required type="number" 
-                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
-                                value={editingProduct.price}
-                                onChange={(e) => setEditingProduct({...editingProduct, price: Number(e.target.value)})}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">التكلفة</label>
-                            <input 
-                                required type="number" 
-                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
-                                value={editingProduct.cost}
-                                onChange={(e) => setEditingProduct({...editingProduct, cost: Number(e.target.value)})}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">الكمية</label>
-                            <input 
-                                required type="number" 
-                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
-                                value={editingProduct.stock}
-                                onChange={(e) => setEditingProduct({...editingProduct, stock: Number(e.target.value)})}
-                            />
-                        </div>
-                    </div>
-                    <button 
-                        type="submit" 
-                        disabled={isSubmitting}
-                        className="w-full bg-slate-800 dark:bg-emerald-600 text-white py-3 rounded-lg font-bold hover:bg-slate-900 dark:hover:bg-emerald-700 transition mt-2 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
-                    >
-                         {isSubmitting ? (
-                            <>
-                                <Loader2 className="animate-spin ml-2" size={20} />
-                                جاري التحديث...
-                            </>
-                        ) : (
-                            <>
-                                <Save size={18} className="ml-2" />
-                                حفظ التعديلات
-                            </>
-                        )}
-                    </button>
-                </form>
-            </div>
-        </div>
-      )}
-
-      {/* Manufacturing Modal */}
+      {/* Manufacturing Modal with Pro Check */}
       {isManuModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
             <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-xl animate-in fade-in zoom-in duration-200">
@@ -580,150 +496,54 @@ const Inventory: React.FC = () => {
                     </button>
                 </div>
                 
-                <div className="bg-indigo-50 dark:bg-indigo-900/30 p-4 rounded-lg text-sm text-indigo-700 dark:text-indigo-300 mb-6">
-                    قم بتحويل المواد الخام إلى منتجات جاهزة. سيتم حساب التكلفة وإضافتها كدين على الخياط (المورد) إذا لزم الأمر.
-                </div>
-                
-                <form onSubmit={handleManufacture} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">المادة الخام (المصدر)</label>
-                            <select 
-                                required
-                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none bg-gray-50"
-                                value={manuData.sourceId}
-                                onChange={(e) => setManuData({...manuData, sourceId: e.target.value})}
-                            >
-                                <option value="">اختر الخام...</option>
-                                {products.map(p => (
-                                    <option key={p.id} value={p.id}>
-                                        {p.name} (متوفر: {p.stock})
-                                    </option>
-                                ))}
-                            </select>
+                {isPlusPlan ? (
+                    <div className="text-center py-8">
+                        <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Lock size={32} />
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">المنتج النهائي</label>
-                            <select 
-                                required
-                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none bg-gray-50"
-                                value={manuData.targetId}
-                                onChange={(e) => setManuData({...manuData, targetId: e.target.value})}
-                            >
-                                <option value="">اختر المنتج...</option>
-                                {products.map(p => (
-                                    <option key={p.id} value={p.id}>
-                                        {p.name} (متوفر: {p.stock})
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">ميزة حصرية لخطة Pro</h3>
+                        <p className="text-sm text-slate-500 mb-6">خطة Plus لا تدعم تتبع عمليات التصنيع. يرجى الترقية للوصول لهذه الميزة.</p>
+                        <button onClick={() => setIsManuModalOpen(false)} className="bg-indigo-600 text-white px-8 py-2 rounded-lg font-bold">حسناً</button>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">الكمية المراد إنتاجها</label>
-                            <input 
-                                required type="number" min="1"
-                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
-                                value={manuData.quantityToMake}
-                                onChange={(e) => setManuData({...manuData, quantityToMake: Number(e.target.value)})}
-                            />
+                ) : (
+                    <form onSubmit={handleManufacture} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">المادة الخام (المصدر)</label>
+                                <select 
+                                    required
+                                    className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
+                                    value={manuData.sourceId}
+                                    onChange={(e) => setManuData({...manuData, sourceId: e.target.value})}
+                                >
+                                    <option value="">اختر الخام...</option>
+                                    {products.map(p => (
+                                        <option key={p.id} value={p.id}>{p.name} (متوفر: {p.stock})</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">المنتج النهائي</label>
+                                <select 
+                                    required
+                                    className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
+                                    value={manuData.targetId}
+                                    onChange={(e) => setManuData({...manuData, targetId: e.target.value})}
+                                >
+                                    <option value="">اختر المنتج...</option>
+                                    {products.map(p => (
+                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">استهلاك الخام (للقطعة)</label>
-                            <input 
-                                required type="number" min="0.1" step="0.1"
-                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
-                                value={manuData.rawPerUnit}
-                                onChange={(e) => setManuData({...manuData, rawPerUnit: Number(e.target.value)})}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 border-t pt-4 border-dashed border-gray-200 dark:border-slate-700">
-                        <div className="col-span-2">
-                             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">الخياط / المورد (اختياري)</label>
-                             <select 
-                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none bg-gray-50"
-                                value={manuData.supplierId}
-                                onChange={(e) => setManuData({...manuData, supplierId: e.target.value})}
-                            >
-                                <option value="">اختر الخياط...</option>
-                                {suppliers.map(s => (
-                                    <option key={s.id} value={s.id}>{s.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">تكلفة الخياطة (للقطعة)</label>
-                            <input 
-                                type="number" min="0"
-                                className="w-full p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white outline-none"
-                                value={manuData.laborCostPerUnit}
-                                onChange={(e) => setManuData({...manuData, laborCostPerUnit: Number(e.target.value)})}
-                            />
-                        </div>
-                         <div className="flex flex-col justify-end">
-                             <div className="text-sm text-gray-500 dark:text-slate-400 mb-1">إجمالي أجرة الخياط</div>
-                             <div className="font-bold text-red-600 bg-red-50 dark:bg-red-900/30 p-2 rounded-lg text-center">
-                                 {manuData.laborCostPerUnit * manuData.quantityToMake} {CURRENCY}
-                             </div>
-                        </div>
-                    </div>
-
-                    <button 
-                        type="submit" 
-                        disabled={isSubmitting}
-                        className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition mt-4 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
-                    >
-                        {isSubmitting ? (
-                            <>
-                                <Loader2 className="animate-spin ml-2" size={20} />
-                                جاري التصنيع...
-                            </>
-                        ) : 'تأكيد التصنيع'}
-                    </button>
-                </form>
+                        <button type="submit" disabled={isSubmitting} className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold flex justify-center items-center">
+                            {isSubmitting ? <Loader2 className="animate-spin" /> : 'تأكيد التصنيع'}
+                        </button>
+                    </form>
+                )}
             </div>
         </div>
-      )}
-
-      {/* Categories Management Modal */}
-      {isCatModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-sm p-6 shadow-xl animate-in fade-in zoom-in duration-200">
-                  <div className="flex justify-between items-center mb-6">
-                      <h2 className="text-xl font-bold text-gray-800 dark:text-white">إدارة الأقسام</h2>
-                      <button onClick={() => setIsCatModalOpen(false)} className="text-gray-500 hover:text-gray-800 dark:hover:text-white">
-                          <X size={24} />
-                      </button>
-                  </div>
-
-                  <form onSubmit={handleAddCategory} className="flex gap-2 mb-6">
-                      <input 
-                        type="text" 
-                        placeholder="اسم القسم الجديد"
-                        className="flex-1 p-2 border dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
-                        value={newCatName}
-                        onChange={(e) => setNewCatName(e.target.value)}
-                        required
-                      />
-                      <button type="submit" className="bg-emerald-600 text-white p-2 rounded-lg hover:bg-emerald-700"><Plus size={20}/></button>
-                  </form>
-
-                  <div className="max-h-60 overflow-y-auto space-y-2">
-                      {categories.map(cat => (
-                          <div key={cat.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
-                              <span className="font-medium text-gray-700 dark:text-slate-200">{cat.name}</span>
-                              <button onClick={() => handleDeleteCategory(cat.id)} className="text-gray-400 hover:text-red-500">
-                                  <Trash2 size={18} />
-                              </button>
-                          </div>
-                      ))}
-                  </div>
-              </div>
-          </div>
       )}
     </div>
   );

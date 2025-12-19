@@ -19,9 +19,10 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Profile from './pages/Profile';
 import Pricing from './pages/Pricing';
+import Admin from './pages/Admin'; // New Admin Page
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
-import { UserCircle, Wrench, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Wrench, AlertTriangle, ArrowRight, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const PlaceholderPage: React.FC<{ title: string; icon: any }> = ({ title, icon: Icon }) => (
@@ -43,7 +44,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     return <Navigate to="/login" replace />;
   }
 
-  // Subscription Guard
+  // Subscription Guard (Expired status)
   if (user?.subscriptionStatus === 'expired') {
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4 font-sans" dir="rtl">
@@ -78,6 +79,33 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <Layout>{children}</Layout>;
 };
 
+const ProRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { user } = useAuth();
+    if (user?.subscriptionPlan !== 'pro' && !user?.isAdmin) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[60vh] text-center p-8 bg-white dark:bg-slate-800 rounded-3xl border border-indigo-100 dark:border-indigo-900/30">
+                <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mb-6">
+                    <Lock size={40} />
+                </div>
+                <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">ميزة حصرية لعملاء Pro</h2>
+                <p className="text-slate-500 dark:text-slate-400 max-w-md mb-6">
+                    هذه الميزة متاحة فقط في خطة الأعمال (Pro). قم بترقية حسابك الآن للاستفادة منها.
+                </p>
+                <Link to="/pricing" className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg">
+                    ترقية الآن
+                </Link>
+            </div>
+        );
+    }
+    return <>{children}</>;
+};
+
+const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { user } = useAuth();
+    if (!user?.isAdmin) return <Navigate to="/" replace />;
+    return <Layout>{children}</Layout>;
+};
+
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { isAuthenticated } = useAuth();
     if (isAuthenticated) {
@@ -103,17 +131,18 @@ const AppRoutes: React.FC = () => {
             <Route path="/sales" element={<ProtectedRoute><Sales /></ProtectedRoute>} />
             <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
             <Route path="/finance" element={<ProtectedRoute><Finance /></ProtectedRoute>} />
-            <Route path="/ai-chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
+            <Route path="/ai-chat" element={<ProtectedRoute><ProRoute><AIChat /></ProRoute></ProtectedRoute>} />
             
             <Route path="/purchases" element={<ProtectedRoute><Purchases /></ProtectedRoute>} />
             <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
             <Route path="/suppliers" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />
-            <Route path="/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
+            <Route path="/employees" element={<ProtectedRoute><ProRoute><Employees /></ProRoute></ProtectedRoute>} />
             <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
             
             <Route path="*" element={<PlaceholderPage title="صفحة غير موجودة" icon={Wrench} />} />
         </Routes>

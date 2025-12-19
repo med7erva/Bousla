@@ -1,11 +1,11 @@
-
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { Product, Invoice, Client, Expense, Supplier } from "../types";
 
 // Initialize AI with the API key from environment variables
 // Using process.env.API_KEY as per @google/genai guidelines
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-const MODEL_NAME = 'gemini-2.5-flash';
+// Fix: Updated model name to 'gemini-3-flash-preview' for basic text tasks as per guidelines
+const MODEL_NAME = 'gemini-3-flash-preview';
 
 // --- Caching Helpers ---
 const CACHE_DURATION = 1000 * 60 * 60; // 1 Hour

@@ -9,8 +9,10 @@ export interface User {
   createdAt: string;
   // Subscription Fields
   subscriptionStatus: 'trial' | 'active' | 'expired';
+  subscriptionPlan: 'plus' | 'pro'; // New field to differentiate plans
   trialEndDate: string;
   subscriptionEndDate?: string;
+  isAdmin?: boolean; // Field to identify app owner
 }
 
 export interface AppSettings {

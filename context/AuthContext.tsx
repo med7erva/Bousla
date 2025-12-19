@@ -20,7 +20,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         // Map Supabase user to our App User type
-        // Fix: Added missing required properties subscriptionStatus and trialEndDate from user metadata to satisfy the User interface
         const metadata = session.user.user_metadata;
         const appUser: User = {
           id: session.user.id,
@@ -30,6 +29,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: session.user.email,
           createdAt: session.user.created_at,
           subscriptionStatus: metadata.subscriptionStatus || 'trial',
+          // Fix: Added missing subscriptionPlan property required by User interface
+          subscriptionPlan: metadata.subscriptionPlan || 'pro',
           trialEndDate: metadata.trialEndDate || new Date().toISOString(),
           subscriptionEndDate: metadata.subscriptionEndDate
         };
@@ -41,7 +42,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 2. Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        // Fix: Added missing required properties subscriptionStatus and trialEndDate from user metadata to satisfy the User interface
         const metadata = session.user.user_metadata;
         const appUser: User = {
           id: session.user.id,
@@ -51,6 +51,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: session.user.email,
           createdAt: session.user.created_at,
           subscriptionStatus: metadata.subscriptionStatus || 'trial',
+          // Fix: Added missing subscriptionPlan property required by User interface
+          subscriptionPlan: metadata.subscriptionPlan || 'pro',
           trialEndDate: metadata.trialEndDate || new Date().toISOString(),
           subscriptionEndDate: metadata.subscriptionEndDate
         };

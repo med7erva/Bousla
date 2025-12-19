@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { User, Store, Phone, Calendar, ShieldCheck, Ticket, ExternalLink, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
@@ -21,8 +20,9 @@ const Profile: React.FC = () => {
         setMessage({ text: '', type: '' });
         
         try {
-            const newEndDate = await activateSubscription(user.id, activationCode);
-            setMessage({ text: `تم تفعيل الاشتراك بنجاح حتى ${new Date(newEndDate).toLocaleDateString('ar-MA')}`, type: 'success' });
+            // Fix: Destructured endDate from the result object as activateSubscription returns { endDate, plan }
+            const { endDate } = await activateSubscription(user.id, activationCode);
+            setMessage({ text: `تم تفعيل الاشتراك بنجاح حتى ${new Date(endDate).toLocaleDateString('ar-MA')}`, type: 'success' });
             setActivationCode('');
             // Optional: You could reload the window to refresh auth context or handle state locally
         } catch (error: any) {

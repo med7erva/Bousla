@@ -4,7 +4,7 @@ import { Product, Invoice, SaleItem, User, Client, Expense, Purchase, Supplier, 
 import { SEED_PRODUCTS, SEED_PAYMENT_METHODS } from '../constants';
 
 // --- Auth Operations ---
-export const registerUser = async (user: Omit<User, 'id' | 'createdAt' | 'email' | 'subscriptionStatus' | 'trialEndDate'>) => {
+export const registerUser = async (user: Omit<User, 'id' | 'createdAt' | 'email' | 'subscriptionStatus' | 'subscriptionPlan' | 'trialEndDate'>) => {
   const sanitizedPhone = user.phone.replace(/\D/g, ''); 
   const pseudoEmail = `${sanitizedPhone}@bousla.app`;
   
@@ -21,7 +21,9 @@ export const registerUser = async (user: Omit<User, 'id' | 'createdAt' | 'email'
         storeName: user.storeName,
         phone: sanitizedPhone,
         subscriptionStatus: 'trial',
-        trialEndDate: trialEndDate.toISOString()
+        subscriptionPlan: 'pro', // New users start as Pro Trial
+        trialEndDate: trialEndDate.toISOString(),
+        isAdmin: sanitizedPhone === '47071347' // Hardcoded admin check for the provided number
       }
     }
   });
@@ -66,7 +68,9 @@ export const registerUser = async (user: Omit<User, 'id' | 'createdAt' | 'email'
     email: pseudoEmail, 
     createdAt: new Date().toISOString(),
     subscriptionStatus: 'trial' as const,
-    trialEndDate: trialEndDate.toISOString()
+    subscriptionPlan: 'pro' as const,
+    trialEndDate: trialEndDate.toISOString(),
+    isAdmin: sanitizedPhone === '47071347'
   };
 };
 
@@ -96,6 +100,7 @@ export const loginUser = async (phone: string, password: string): Promise<User> 
 
     // Determine status
     let subStatus: 'trial' | 'active' | 'expired' = profile?.subscription_status || data.user.user_metadata.subscriptionStatus || 'trial';
+    const subPlan: 'plus' | 'pro' = profile?.subscription_plan || data.user.user_metadata.subscriptionPlan || 'pro';
     const trialEnd = profile?.trial_end_date || data.user.user_metadata.trialEndDate;
     const subEnd = profile?.subscription_end_date;
 
@@ -113,30 +118,69 @@ export const loginUser = async (phone: string, password: string): Promise<User> 
         storeName: profile?.store_name || data.user.user_metadata.storeName,
         createdAt: data.user.created_at,
         subscriptionStatus: subStatus,
+        subscriptionPlan: subPlan,
         trialEndDate: trialEnd,
-        subscriptionEndDate: subEnd
+        subscriptionEndDate: subEnd,
+        isAdmin: profile?.is_admin || data.user.user_metadata.isAdmin || sanitizedPhone === '47071347'
     };
 };
 
-export const activateSubscription = async (userId: string, code: string) => {
-    // In a real app, you'd verify the code against a database table of 'prepaid_codes'
-    // For this demo, we'll simulate verification: codes ending in '30' add 30 days, '365' add a year
-    let daysToAdd = 0;
-    if (code.endsWith('30')) daysToAdd = 30;
-    else if (code.endsWith('180')) daysToAdd = 180;
-    else if (code.endsWith('365')) daysToAdd = 365;
-    else throw new Error("كود تفعيل غير صحيح");
+// --- PREPAID CODES (Admin Functions) ---
 
+export const generatePrepaidCode = async (days: number, plan: 'plus' | 'pro') => {
+    const code = `BSL-${plan.toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${days}`;
+    const { error } = await supabase.from('prepaid_codes').insert({
+        code,
+        days,
+        plan,
+        is_used: false
+    });
+    if (error) throw error;
+    return code;
+};
+
+export const getUnusedCodes = async () => {
+    const { data, error } = await supabase
+        .from('prepaid_codes')
+        .select('*')
+        .eq('is_used', false)
+        .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+};
+
+export const activateSubscription = async (userId: string, code: string) => {
+    // 1. Verify Code in Database
+    const { data: codeData, error: codeError } = await supabase
+        .from('prepaid_codes')
+        .select('*')
+        .eq('code', code.trim().toUpperCase())
+        .eq('is_used', false)
+        .single();
+
+    if (codeError || !codeData) {
+        throw new Error("كود تفعيل غير صحيح أو تم استخدامه مسبقاً");
+    }
+
+    // 2. Calculate New End Date
+    const daysToAdd = codeData.days;
+    const plan = codeData.plan;
     const newEndDate = new Date();
     newEndDate.setDate(newEndDate.getDate() + daysToAdd);
 
-    const { error } = await supabase.from('profiles').update({
+    // 3. Update User Profile
+    const { error: profileError } = await supabase.from('profiles').update({
         subscription_status: 'active',
+        subscription_plan: plan,
         subscription_end_date: newEndDate.toISOString()
     }).eq('id', userId);
 
-    if (error) throw error;
-    return newEndDate.toISOString();
+    if (profileError) throw profileError;
+
+    // 4. Mark Code as Used
+    await supabase.from('prepaid_codes').update({ is_used: true }).eq('id', codeData.id);
+
+    return { endDate: newEndDate.toISOString(), plan };
 };
 
 export const initDB = async () => { return true; };
@@ -365,9 +409,9 @@ export const deleteInvoice = async (id: string) => {
     const items = Array.isArray(inv.items) ? inv.items : [];
     for(const item of items) {
         if(item.productId && !item.productId.startsWith('custom-') && !item.productId.startsWith('opening-bal')) {
-             const { data: prod } = await supabase.from('products').select('stock').eq('id', item.productId).single();
+             const { data: prod = {} } = await supabase.from('products').select('stock').eq('id', item.productId).single();
              if(prod) {
-                 await supabase.from('products').update({ stock: prod.stock + item.quantity }).eq('id', item.productId);
+                 await supabase.from('products').update({ stock: (prod.stock || 0) + item.quantity }).eq('id', item.productId);
              }
         }
     }
@@ -511,9 +555,9 @@ export const createPurchase = async (userId: string, supplierId: string, supplie
     }).select().single();
     if (error) throw error;
     for (const item of items) {
-        const { data: prod } = await supabase.from('products').select('*').eq('id', item.productId).single();
+        const { data: prod = {} } = await supabase.from('products').select('*').eq('id', item.productId).single();
         if (prod) {
-            await supabase.from('products').update({ stock: prod.stock + item.quantity, cost: item.costPrice }).eq('id', item.productId);
+            await supabase.from('products').update({ stock: (prod.stock || 0) + item.quantity, cost: item.costPrice }).eq('id', item.productId);
         }
     }
     const debtAmount = totalCost - paidAmount;
@@ -541,16 +585,16 @@ export const deletePurchase = async (id: string) => {
     if (error || !purchase) throw new Error("الفاتورة غير موجودة");
     const items = Array.isArray(purchase.items) ? purchase.items : [];
     for (const item of items) {
-        const { data: prod } = await supabase.from('products').select('stock, name').eq('id', item.productId).single();
+        const { data: prod = {} } = await supabase.from('products').select('stock, name').eq('id', item.productId).single();
         if (!prod) continue;
-        if (prod.stock < item.quantity) {
+        if ((prod.stock || 0) < item.quantity) {
             throw new Error(`لا يمكن حذف الفاتورة: المنتج "${prod.name}" تم بيع جزء منه أو استهلاكه.`);
         }
     }
     for (const item of items) {
-        const { data: prod } = await supabase.from('products').select('stock').eq('id', item.productId).single();
+        const { data: prod = {} } = await supabase.from('products').select('stock').eq('id', item.productId).single();
         if (prod) {
-            await supabase.from('products').update({ stock: prod.stock - item.quantity }).eq('id', item.productId);
+            await supabase.from('products').update({ stock: (prod.stock || 0) - item.quantity }).eq('id', item.productId);
         }
     }
     const debtAdded = purchase.total_cost - purchase.paid_amount;
