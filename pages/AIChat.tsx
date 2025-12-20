@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, Loader2, Sparkles, Download, Database, TrendingUp, Info, Users, Wallet, RefreshCw, AlertCircle } from 'lucide-react';
+import { Send, User, Bot, Loader2, Sparkles, Database, TrendingUp, Info, Users, Wallet, RefreshCw, AlertCircle } from 'lucide-react';
 import { getChatStream } from '../services/geminiService';
 import { getProducts, getInvoices, getExpenses, getClients, getSuppliers } from '../services/db';
 import { useAuth } from '../context/AuthContext';
@@ -19,7 +19,7 @@ const AIChat: React.FC = () => {
     {
       id: 'welcome',
       role: 'model',
-      text: 'أهلاً بك! أنا مستشارك الذكي. جاري الآن قراءة وتحليل بيانات متجرك لأتمكن من إجابتك بدقة...',
+      text: 'أهلاً بك! أنا مستشارك المالي الذكي. لقد قمت بتحميل بيانات متجرك بالكامل وأنا جاهز للإجابة على أي استفسار حول أرباحك، ديونك، أو حالة مخزونك. كيف يمكنني مساعدتك الآن؟',
       timestamp: new Date()
     }
   ]);
@@ -73,11 +73,6 @@ const AIChat: React.FC = () => {
         };
         
         setStoreSnapshot(snapshot);
-        setMessages(prev => prev.map(m => 
-            m.id === 'welcome' 
-            ? { ...m, text: 'تم تحديث بيانات المتجر بنجاح! أنا الآن جاهز لتحليل أرباحك، ديونك، أو تقديم نصائح حول المخزون. كيف أساعدك؟' } 
-            : m
-        ));
     } catch (error) {
         console.error("Sync Error:", error);
     } finally {
@@ -96,16 +91,23 @@ const AIChat: React.FC = () => {
   const handleSend = async () => {
     if (!input.trim() || loading) return;
     if (!storeSnapshot) {
-        alert("يرجى الانتظار حتى اكتمال تحميل بيانات المتجر.");
+        alert("يرجى الانتظار ثانية حتى تكتمل مزامنة بيانات المتجر.");
         return;
     }
 
+    const promptText = input;
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      text: input,
+      text: promptText,
       timestamp: new Date()
     };
+
+    // حفظ نسخة من السجل الحالي قبل إضافة الرسالة الجديدة لإرسالها للـ API
+    // هذا يمنع تعارض الأدوار لأن السجل المرسل لن يحتوي على الرسالة الحالية بعد
+    const chatHistory = messages
+        .filter(m => m.id !== 'welcome')
+        .map(m => ({ role: m.role, text: m.text }));
 
     setMessages(prev => [...prev, userMessage]);
     setInput('');
@@ -120,11 +122,7 @@ const AIChat: React.FC = () => {
         timestamp: new Date()
       }]);
 
-      const stream = await getChatStream(
-        messages.filter(m => m.id !== 'welcome').map(m => ({ role: m.role, text: m.text })), 
-        userMessage.text,
-        storeSnapshot
-      );
+      const stream = await getChatStream(chatHistory, promptText, storeSnapshot);
 
       let fullText = '';
       for await (const chunk of stream) {
@@ -135,13 +133,10 @@ const AIChat: React.FC = () => {
 
     } catch (error: any) {
       console.error("Chat Error:", error);
-      let errorMessage = 'عذراً، حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.';
-      if (error.message?.includes("API key")) errorMessage = "هناك مشكلة في مفتاح التشغيل (API Key).";
-      
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'model',
-        text: errorMessage,
+        text: 'عذراً، واجهت مشكلة في معالجة طلبك. يرجى التأكد من اتصالك بالإنترنت ثم المحاولة مرة أخرى.',
         timestamp: new Date()
       }]);
     } finally {
@@ -155,7 +150,7 @@ const AIChat: React.FC = () => {
       {/* Header */}
       <div className="p-4 bg-slate-900 text-white flex justify-between items-center z-20">
         <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-900/20">
                 <Sparkles className="text-white" size={24} />
             </div>
             <div>
@@ -164,18 +159,18 @@ const AIChat: React.FC = () => {
                     {isSyncing ? (
                          <RefreshCw size={10} className="animate-spin text-emerald-400" />
                     ) : (
-                        <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
                     )}
-                    <p className="text-indigo-200 text-[10px] font-bold uppercase">متصل ببياناتك المباشرة</p>
+                    <p className="text-indigo-200 text-[10px] font-bold uppercase tracking-widest">مزامنة البيانات مباشرة</p>
                 </div>
             </div>
         </div>
         <button 
             onClick={syncStoreData}
             disabled={isSyncing}
-            className="p-2.5 hover:bg-white/10 rounded-xl transition-all" 
+            className="p-2.5 hover:bg-white/10 rounded-xl transition-all border border-white/5" 
         >
-            <RefreshCw size={20} className={isSyncing ? "animate-spin" : ""} />
+            <RefreshCw size={18} className={isSyncing ? "animate-spin" : ""} />
         </button>
       </div>
 
@@ -186,25 +181,30 @@ const AIChat: React.FC = () => {
             key={msg.id}
             className={`flex items-start gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
           >
-            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border ${msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-700 text-emerald-600'}`}>
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border ${
+                msg.role === 'user' ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 border-gray-100 dark:border-slate-600'
+            }`}>
               {msg.role === 'user' ? <User size={20} /> : <Bot size={20} />}
             </div>
             
             <div className={`flex flex-col max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                <div className={`px-5 py-3 rounded-2xl text-sm leading-relaxed ${
+                <div className={`px-5 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${
                     msg.role === 'user'
-                    ? 'bg-indigo-600 text-white rounded-tl-none shadow-md'
-                    : 'bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-100 rounded-tr-none border border-gray-100 dark:border-slate-700 shadow-sm'
+                    ? 'bg-indigo-600 text-white rounded-tl-none'
+                    : 'bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-100 rounded-tr-none border border-gray-100 dark:border-slate-700'
                 }`}>
                 {msg.text ? (
                     <div className="whitespace-pre-wrap">{msg.text}</div>
                 ) : (
                     <div className="flex items-center gap-2 py-1">
                         <Loader2 className="animate-spin w-4 h-4 text-emerald-500" />
-                        <span className="text-xs text-slate-400 font-medium">جاري التحليل...</span>
+                        <span className="text-xs text-slate-400 font-medium italic">جاري التفكير والتحليل...</span>
                     </div>
                 )}
                 </div>
+                <span className="text-[9px] text-gray-400 dark:text-slate-500 mt-1.5 font-bold">
+                    {msg.timestamp.toLocaleTimeString('ar-MA', { hour: '2-digit', minute: '2-digit' })}
+                </span>
             </div>
           </div>
         ))}
@@ -219,14 +219,14 @@ const AIChat: React.FC = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="اسأل عن الأرباح، الديون، أو تحليل المخزون..."
-                className="flex-1 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 block w-full p-4 pr-6 disabled:opacity-50 outline-none"
+                placeholder="اسأل عن أرباحك، ديونك، أو اطلب نصيحة تجارية..."
+                className="flex-1 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 text-gray-900 dark:text-white text-sm rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 block w-full p-4 pr-6 disabled:opacity-50 outline-none transition-all"
                 disabled={loading || !storeSnapshot}
             />
             <button 
                 onClick={handleSend}
                 disabled={!input.trim() || loading || !storeSnapshot}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-2xl transition-all shadow-lg disabled:opacity-50"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white p-4 rounded-2xl transition-all shadow-lg shadow-emerald-200 dark:shadow-none disabled:opacity-50"
             >
                 {loading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} className="transform rotate-180" />}
             </button>
@@ -235,10 +235,10 @@ const AIChat: React.FC = () => {
         {/* Quick Suggestion Chips */}
         <div className="mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {[
-                { label: 'كم صافي أرباحي؟', icon: TrendingUp },
-                { label: 'من هم أكثر المدينين؟', icon: Users },
-                { label: 'تنبيهات المخزون', icon: Info },
-                { label: 'كيف أقلل المصاريف؟', icon: Wallet }
+                { label: 'كم بلغت أرباحي اليوم؟', icon: TrendingUp },
+                { label: 'أكثر عملاء مدينين حالياً', icon: Users },
+                { label: 'تحليل حالة المخزون', icon: Info },
+                { label: 'كيف أزيد مبيعاتي؟', icon: Sparkles }
             ].map((sug, idx) => (
                 <button 
                     key={idx}
@@ -246,7 +246,7 @@ const AIChat: React.FC = () => {
                     disabled={!storeSnapshot}
                     className="flex items-center gap-2 text-[11px] font-bold px-4 py-2 bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all whitespace-nowrap shadow-sm disabled:opacity-50"
                 >
-                    <sug.icon size={14} />
+                    <sug.icon size={14} className="text-emerald-500" />
                     {sug.label}
                 </button>
             ))}
