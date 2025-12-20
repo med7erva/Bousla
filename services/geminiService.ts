@@ -2,13 +2,9 @@
 import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
 import { Product, Invoice, Client, Expense, Supplier } from "../types";
 
-// استخدام موديل Gemini 3 Flash للتوازن المثالي بين السرعة والذكاء
+// استخدام موديل Gemini 3 Flash لضمان أسرع استجابة وأقل استهلاك للتوكنز
 const MODEL_NAME = 'gemini-3-flash-preview';
 
-/**
- * Interface for Dashboard analysis context
- */
-// Fix: Added missing DashboardContext interface to resolve error in Dashboard.tsx
 export interface DashboardContext {
     totalSales: number;
     totalExpenses: number;
@@ -21,57 +17,56 @@ export interface DashboardContext {
 }
 
 /**
- * دالة لتحويل بيانات المتجر إلى تقرير نصي مركز جداً
- * لتقليل عدد التوكنز وضمان تركيز الذكاء الاصطناعي على الأرقام الهامة
+ * توليد تقرير نصي شديد الاختصار لبيانات المتجر
  */
 const generateSystemContext = (data: any): string => {
     if (!data) return "لا توجد بيانات متاحة حالياً.";
 
-    const { financials, inventory, recent_activity, clients, metadata } = data;
+    const { financials, inventory, clients, metadata } = data;
 
     return `
-أنت "مساعد بوصلة المالي الذكي". أنت خبير محاسبي مدمج في تطبيق "بوصلة" لإدارة محلات الملابس في موريتانيا.
-لديك صلاحية الوصول الكاملة والآنية لبيانات متجر المستخدم التالية:
+خلفية المتجر (${metadata.store_name}):
+- المالية: إيرادات ${financials.total_revenue}، مصاريف ${financials.total_expenses}، كاش ${financials.cash_in_hand} MRU.
+- الديون: زبائن ${financials.outstanding_customer_debts}، موردين ${financials.debts_to_suppliers} MRU.
+- المخزون: ${inventory.total_unique_items} صنف، إجمالي ${inventory.total_stock_count} قطعة، تكلفة ${inventory.inventory_cost_value} MRU.
+- المدينين: ${clients.slice(0,5).map((c:any) => `${c.name}:${c.debt}`).join(' | ')}
 
-[بيانات المتجر - ${metadata.store_name}]
-- الإيرادات الكلية: ${financials.total_revenue} MRU
-- المصاريف الكلية: ${financials.total_expenses} MRU
-- السيولة النقدية (الكاش): ${financials.cash_in_hand} MRU
-- إجمالي ديون الزبائن: ${financials.outstanding_customer_debts} MRU
-- إجمالي ديون الموردين: ${financials.debts_to_suppliers} MRU
-
-[المخزون]
-- عدد المنتجات: ${inventory.total_unique_items}
-- إجمالي القطع: ${inventory.total_stock_count}
-- قيمة المخزون (تكلفة): ${inventory.inventory_cost_value} MRU
-- منتجات قاربت على النفاد: ${inventory.critical_stock_items.length} أصناف.
-
-[النشاط الأخير]
-- آخر المبيعات لـ: ${recent_activity.last_5_sales.map((s:any) => s.customer).join(', ')}
-- أهم المدينين: ${clients.map((c:any) => `${c.name} (${c.debt} MRU)`).join(' | ')}
-
-[قواعد العمل]
-1. العملة: الأوقية الموريتانية (MRU).
-2. الإجابة حصراً من البيانات أعلاه. إذا سُئلت عن شيء غير موجود، اطلب من المستخدم تسجيله في التطبيق.
-3. كن ناصحاً: إذا وجدت ديوناً تزيد عن 30% من الإيرادات، حذر المستخدم.
-4. الأسلوب: مهني، مباشر، وباللغة العربية السليمة.
+قواعد:
+1. العملة MRU.
+2. لا تجب إلا من الأرقام أعلاه. إذا سُئلت عن شيء غير موجود، قل "غير مسجل".
+3. كن مختصراً ومهنياً جداً باللغة العربية.
 `;
 };
 
 export const getChatStream = async (history: { role: string, text: string }[], message: string, storeSnapshot: any) => {
-    // تهيئة API داخل الدالة لضمان استخدام المفتاح الصحيح
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    
     const systemInstruction = generateSystemContext(storeSnapshot);
 
-    // بناء مصفوفة المحتوى مع ضمان التناوب الصحيح (user ثم model)
-    const contents = history.map(h => ({
-        role: h.role === 'user' ? 'user' : 'model',
-        parts: [{ text: h.text }]
-    }));
+    // تنظيف السجل لضمان التناوب الصحيح (user -> model -> user)
+    const cleanedHistory: any[] = [];
+    let lastRole = '';
 
-    // إضافة الرسالة الحالية
-    contents.push({ role: 'user', parts: [{ text: message }] });
+    history.forEach(msg => {
+        const currentRole = msg.role === 'user' ? 'user' : 'model';
+        // لا تضف الرسالة إذا كانت فارغة أو إذا كان الدور متكرراً
+        if (msg.text.trim() && currentRole !== lastRole) {
+            cleanedHistory.push({
+                role: currentRole,
+                parts: [{ text: msg.text }]
+            });
+            lastRole = currentRole;
+        }
+    });
+
+    // إذا كانت آخر رسالة في السجل هي 'user'، يجب حذفها لأننا سنضيف الرسالة الحالية كـ 'user'
+    if (cleanedHistory.length > 0 && cleanedHistory[cleanedHistory.length - 1].role === 'user') {
+        cleanedHistory.pop();
+    }
+
+    const contents = [
+        ...cleanedHistory,
+        { role: 'user', parts: [{ text: message }] }
+    ];
 
     try {
         return await ai.models.generateContentStream({
@@ -80,35 +75,31 @@ export const getChatStream = async (history: { role: string, text: string }[], m
             config: {
                 systemInstruction,
                 temperature: 0.7,
-                topP: 0.9,
-                topK: 40
+                topP: 0.8,
             }
         });
     } catch (error: any) {
-        console.error("Gemini API Stream Error:", error);
-        throw new Error(error.message || "فشل الاتصال بمحرك الذكاء الاصطناعي");
+        console.error("Gemini Critical Error:", error);
+        throw error;
     }
 };
 
-// وظائف التحليل السريع للوحة التحكم
-// Fix: Updated parameter type to use the newly defined DashboardContext
 export const getDashboardInsights = async (context: DashboardContext): Promise<string[]> => {
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `أنت خبير مالي. حلل هذه البيانات لمتجر ملابس وقدم 3 نصائح قصيرة جداً للمالك: ${JSON.stringify(context)}. الرد بالعربية فقط.`;
+    const prompt = `حلل بيانات متجر ملابس الموريتاني وقدم 3 نصائح قصيرة جداً: ${JSON.stringify(context)}`;
     const response = await ai.models.generateContent({ 
         model: 'gemini-3-flash-preview', 
         contents: prompt 
     });
     return (response.text || "").split('\n').filter(l => l.trim()).slice(0, 3);
-  } catch { return ["استمر في مراقبة مبيعاتك اليومية."]; }
+  } catch { return ["استمر في مراقبة المبيعات."]; }
 };
 
 export const getNotificationBriefing = async (sales: number, expenses: number, topProduct: string, debt: number) => {
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const prompt = `أنت نظام تنبيهات. مبيعات: ${sales}، مصاريف: ${expenses}، منتج قمة: ${topProduct}، ديون: ${debt}. اقترح 3 تنبيهات.`;
-        // Fix: Configured responseSchema for reliable JSON output according to coding guidelines
+        const prompt = `أنت نظام إشعارات لمتجر. مبيعات ${sales}، مصاريف ${expenses}، توب ${topProduct}، ديون ${debt}. اقترح 3 تنبيهات JSON.`;
         const response = await ai.models.generateContent({ 
             model: 'gemini-3-flash-preview', 
             contents: prompt,
@@ -119,12 +110,11 @@ export const getNotificationBriefing = async (sales: number, expenses: number, t
                     items: {
                         type: Type.OBJECT,
                         properties: {
-                            title: { type: Type.STRING, description: 'عنوان التنبيه' },
-                            text: { type: Type.STRING, description: 'محتوى التنبيه' },
-                            type: { type: Type.STRING, description: 'نوع التنبيه (warning/opportunity/info)' }
+                            title: { type: Type.STRING },
+                            text: { type: Type.STRING },
+                            type: { type: Type.STRING }
                         },
-                        required: ['title', 'text', 'type'],
-                        propertyOrdering: ["title", "text", "type"]
+                        required: ['title', 'text', 'type']
                     }
                 }
             }
@@ -136,35 +126,35 @@ export const getNotificationBriefing = async (sales: number, expenses: number, t
 export const getInventoryInsights = async (products: Product[]) => {
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const context = `المخزون: ${products.length} أصناف. القيمة: ${products.reduce((s,p)=>s+(p.cost*p.stock),0)}`;
-        const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: `حلل هذا المخزون في سطر واحد: ${context}` });
-        return response.text || "";
-    } catch { return "مخزونك بوضع مستقر."; }
+        const ctx = `المخزون: ${products.length} أصناف. القيمة: ${products.reduce((s,p)=>s+(p.cost*p.stock),0)}`;
+        const res = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: `حلل المخزون في جملة: ${ctx}` });
+        return res.text || "";
+    } catch { return "المخزون مستقر."; }
 };
 
 export const getClientInsights = async (clients: Client[]) => {
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const context = `ديون العملاء: ${clients.reduce((s,c)=>s+c.debt, 0)} لعدد ${clients.length} عملاء.`;
-        const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: `حلل هذه الديون في سطر واحد: ${context}` });
-        return response.text || "";
-    } catch { return "تابع تحصيل ديونك بانتظام."; }
+        const ctx = `ديون الزبائن: ${clients.reduce((s,c)=>s+c.debt, 0)}`;
+        const res = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: `نصيحة حول الديون في جملة: ${ctx}` });
+        return res.text || "";
+    } catch { return "تابع تحصيل الديون."; }
 };
 
 export const getSupplierInsights = async (suppliers: Supplier[]) => {
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const context = `ديون الموردين: ${suppliers.reduce((s,su)=>s+su.debt, 0)}`;
-        const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: `حلل هذه الالتزامات في سطر واحد: ${context}` });
-        return response.text || "";
-    } catch { return "حافظ على علاقات جيدة مع مورديك."; }
+        const ctx = `ديون الموردين: ${suppliers.reduce((s,su)=>s+su.debt, 0)}`;
+        const res = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: `نصيحة حول الموردين: ${ctx}` });
+        return res.text || "";
+    } catch { return "علاقات الموردين جيدة."; }
 };
 
 export const getExpenseInsights = async (expenses: Expense[], totalSales: number) => {
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const context = `مصاريف: ${expenses.reduce((s,e)=>s+e.amount, 0)} من مبيعات ${totalSales}`;
-        const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: `حلل المصاريف في سطر واحد: ${context}` });
-        return [response.text || ""];
-    } catch { return ["راقب توازن المصاريف والإيرادات."]; }
+        const ctx = `مصاريف ${expenses.reduce((s,e)=>s+e.amount, 0)} من مبيعات ${totalSales}`;
+        const res = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: `تحليل مصاريف: ${ctx}` });
+        return [res.text || ""];
+    } catch { return ["راقب توازن المصاريف."]; }
 };

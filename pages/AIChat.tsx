@@ -103,10 +103,10 @@ const AIChat: React.FC = () => {
       timestamp: new Date()
     };
 
-    // حفظ نسخة من السجل الحالي قبل إضافة الرسالة الجديدة لإرسالها للـ API
-    // هذا يمنع تعارض الأدوار لأن السجل المرسل لن يحتوي على الرسالة الحالية بعد
+    // نأخذ آخر 10 رسائل فقط للحفاظ على استقرار السياق
     const chatHistory = messages
-        .filter(m => m.id !== 'welcome')
+        .filter(m => m.id !== 'welcome' && m.text.trim() !== '')
+        .slice(-10)
         .map(m => ({ role: m.role, text: m.text }));
 
     setMessages(prev => [...prev, userMessage]);
@@ -132,11 +132,21 @@ const AIChat: React.FC = () => {
       }
 
     } catch (error: any) {
-      console.error("Chat Error:", error);
+      console.error("DETAILED CHAT ERROR:", error);
+      let errorMessage = 'عذراً، واجهت مشكلة في الاتصال بالمستشار الذكي.';
+      
+      if (error.message?.includes('401') || error.message?.includes('API_KEY_INVALID')) {
+        errorMessage = 'خطأ: مفتاح الـ API الخاص بـ Gemini غير صالح أو منتهي الصلاحية.';
+      } else if (error.message?.includes('429')) {
+        errorMessage = 'تم تجاوز حد الاستخدام المسموح به لليوم. يرجى المحاولة لاحقاً.';
+      } else if (error.message?.includes('safety')) {
+        errorMessage = 'عذراً، تم حظر هذا الرد بواسطة فلاتر الأمان الخاصة بالذكاء الاصطناعي.';
+      }
+
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'model',
-        text: 'عذراً، واجهت مشكلة في معالجة طلبك. يرجى التأكد من اتصالك بالإنترنت ثم المحاولة مرة أخرى.',
+        text: errorMessage,
         timestamp: new Date()
       }]);
     } finally {
