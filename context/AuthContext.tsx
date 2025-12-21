@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
 import { supabase } from '../services/supabase';
@@ -11,52 +12,45 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// الرقم المسؤول الوحيد للتطبيق
+const ADMIN_PHONE = '47071347';
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const mapUser = (sessionUser: any): User => {
+    const metadata = sessionUser.user_metadata;
+    const phone = metadata.phone || sessionUser.phone || '';
+    const sanitizedPhone = phone.replace(/\D/g, '');
+
+    return {
+      id: sessionUser.id,
+      name: metadata.name || 'User',
+      phone: sanitizedPhone,
+      storeName: metadata.storeName || 'My Store',
+      email: sessionUser.email,
+      createdAt: sessionUser.created_at,
+      subscriptionStatus: metadata.subscriptionStatus || 'trial',
+      subscriptionPlan: metadata.subscriptionPlan || 'pro',
+      trialEndDate: metadata.trialEndDate || new Date().toISOString(),
+      subscriptionEndDate: metadata.subscriptionEndDate,
+      // فرض صلاحية الأدمن إذا طابق الرقم
+      isAdmin: sanitizedPhone === ADMIN_PHONE || metadata.isAdmin === true
+    };
+  };
+
   useEffect(() => {
-    // 1. Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        // Map Supabase user to our App User type
-        const metadata = session.user.user_metadata;
-        const appUser: User = {
-          id: session.user.id,
-          name: metadata.name || 'User',
-          phone: metadata.phone || session.user.phone || '',
-          storeName: metadata.storeName || 'My Store',
-          email: session.user.email,
-          createdAt: session.user.created_at,
-          subscriptionStatus: metadata.subscriptionStatus || 'trial',
-          // Fix: Added missing subscriptionPlan property required by User interface
-          subscriptionPlan: metadata.subscriptionPlan || 'pro',
-          trialEndDate: metadata.trialEndDate || new Date().toISOString(),
-          subscriptionEndDate: metadata.subscriptionEndDate
-        };
-        setUser(appUser);
+        setUser(mapUser(session.user));
       }
       setLoading(false);
     });
 
-    // 2. Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        const metadata = session.user.user_metadata;
-        const appUser: User = {
-          id: session.user.id,
-          name: metadata.name || 'User',
-          phone: metadata.phone || session.user.phone || '',
-          storeName: metadata.storeName || 'My Store',
-          email: session.user.email,
-          createdAt: session.user.created_at,
-          subscriptionStatus: metadata.subscriptionStatus || 'trial',
-          // Fix: Added missing subscriptionPlan property required by User interface
-          subscriptionPlan: metadata.subscriptionPlan || 'pro',
-          trialEndDate: metadata.trialEndDate || new Date().toISOString(),
-          subscriptionEndDate: metadata.subscriptionEndDate
-        };
-        setUser(appUser);
+        setUser(mapUser(session.user));
       } else {
         setUser(null);
       }
@@ -72,7 +66,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-50">جاري الاتصال بالسيرفر...</div>;
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 font-sans">
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-slate-500 font-bold">جاري تحميل بوصلة...</p>
+      </div>
+    );
   }
 
   return (
