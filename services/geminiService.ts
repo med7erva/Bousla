@@ -2,7 +2,6 @@
 import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
 import { Product, Invoice, Client, Expense, Supplier } from "../types";
 
-// استخدام موديل Gemini 3 Flash لضمان أسرع استجابة وأقل استهلاك للتوكنز
 const MODEL_NAME = 'gemini-3-flash-preview';
 
 export interface DashboardContext {
@@ -16,49 +15,40 @@ export interface DashboardContext {
     expenseRatio: number;
 }
 
-/**
- * توليد تقرير نصي شديد الاختصار لبيانات المتجر
- */
 const generateSystemContext = (data: any): string => {
-    if (!data) return "لا توجد بيانات متاحة حالياً.";
-
-    const { financials, inventory, clients, metadata } = data;
-
-    return `
-خلفية المتجر (${metadata.store_name}):
-- المالية: إيرادات ${financials.total_revenue}، مصاريف ${financials.total_expenses}، كاش ${financials.cash_in_hand} MRU.
-- الديون: زبائن ${financials.outstanding_customer_debts}، موردين ${financials.debts_to_suppliers} MRU.
-- المخزون: ${inventory.total_unique_items} صنف، إجمالي ${inventory.total_stock_count} قطعة، تكلفة ${inventory.inventory_cost_value} MRU.
-- المدينين: ${clients.slice(0,5).map((c:any) => `${c.name}:${c.debt}`).join(' | ')}
-
-قواعد:
-1. العملة MRU.
-2. لا تجب إلا من الأرقام أعلاه. إذا سُئلت عن شيء غير موجود، قل "غير مسجل".
-3. كن مختصراً ومهنياً جداً باللغة العربية.
-`;
+    if (!data) return "لا توجد بيانات متاحة.";
+    const { financials, inventory, metadata } = data;
+    return `مساعد بوصلة المالي لمتجر: ${metadata.store_name}. 
+البيانات الحالية بالعملة MRU:
+- إيرادات: ${financials.total_revenue}
+- مصاريف: ${financials.total_expenses}
+- سيولة: ${financials.cash_in_hand}
+- ديون زبائن: ${financials.outstanding_customer_debts}
+- ديون موردين: ${financials.debts_to_suppliers}
+- عدد المنتجات: ${inventory.total_unique_items}
+قواعد: تحدث بالعربية، كن مهنياً، اعتمد على الأرقام فقط.`;
 };
 
 export const getChatStream = async (history: { role: string, text: string }[], message: string, storeSnapshot: any) => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const systemInstruction = generateSystemContext(storeSnapshot);
 
-    // تنظيف السجل لضمان التناوب الصحيح (user -> model -> user)
+    // بناء سجل نظيف يضمن التناوب: user -> model -> user
     const cleanedHistory: any[] = [];
-    let lastRole = '';
+    let expectedRole = 'user';
 
     history.forEach(msg => {
         const currentRole = msg.role === 'user' ? 'user' : 'model';
-        // لا تضف الرسالة إذا كانت فارغة أو إذا كان الدور متكرراً
-        if (msg.text.trim() && currentRole !== lastRole) {
+        if (currentRole === expectedRole && msg.text.trim() !== '') {
             cleanedHistory.push({
                 role: currentRole,
                 parts: [{ text: msg.text }]
             });
-            lastRole = currentRole;
+            expectedRole = currentRole === 'user' ? 'model' : 'user';
         }
     });
 
-    // إذا كانت آخر رسالة في السجل هي 'user'، يجب حذفها لأننا سنضيف الرسالة الحالية كـ 'user'
+    // إذا انتهى السجل بـ user، نحذفه لأن الرسالة الجديدة ستكون هي الـ user
     if (cleanedHistory.length > 0 && cleanedHistory[cleanedHistory.length - 1].role === 'user') {
         cleanedHistory.pop();
     }
@@ -68,41 +58,30 @@ export const getChatStream = async (history: { role: string, text: string }[], m
         { role: 'user', parts: [{ text: message }] }
     ];
 
-    try {
-        return await ai.models.generateContentStream({
-            model: MODEL_NAME,
-            contents: contents,
-            config: {
-                systemInstruction,
-                temperature: 0.7,
-                topP: 0.8,
-            }
-        });
-    } catch (error: any) {
-        console.error("Gemini Critical Error:", error);
-        throw error;
-    }
+    return await ai.models.generateContentStream({
+        model: MODEL_NAME,
+        contents,
+        config: { systemInstruction, temperature: 0.7 }
+    });
 };
 
 export const getDashboardInsights = async (context: DashboardContext): Promise<string[]> => {
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const prompt = `حلل بيانات متجر ملابس الموريتاني وقدم 3 نصائح قصيرة جداً: ${JSON.stringify(context)}`;
     const response = await ai.models.generateContent({ 
         model: 'gemini-3-flash-preview', 
-        contents: prompt 
+        contents: `حلل هذه البيانات وقدم 3 نصائح لتاجر ملابس بموريتانيا: ${JSON.stringify(context)}`
     });
     return (response.text || "").split('\n').filter(l => l.trim()).slice(0, 3);
-  } catch { return ["استمر في مراقبة المبيعات."]; }
+  } catch { return ["راجع مبيعاتك اليوم."]; }
 };
 
 export const getNotificationBriefing = async (sales: number, expenses: number, topProduct: string, debt: number) => {
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const prompt = `أنت نظام إشعارات لمتجر. مبيعات ${sales}، مصاريف ${expenses}، توب ${topProduct}، ديون ${debt}. اقترح 3 تنبيهات JSON.`;
         const response = await ai.models.generateContent({ 
             model: 'gemini-3-flash-preview', 
-            contents: prompt,
+            contents: `أنت نظام إشعارات. حلل: مبيعات ${sales}، مصاريف ${expenses}، منتج ${topProduct}، ديون ${debt}. اقترح 3 تنبيهات.`,
             config: { 
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -126,17 +105,15 @@ export const getNotificationBriefing = async (sales: number, expenses: number, t
 export const getInventoryInsights = async (products: Product[]) => {
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const ctx = `المخزون: ${products.length} أصناف. القيمة: ${products.reduce((s,p)=>s+(p.cost*p.stock),0)}`;
-        const res = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: `حلل المخزون في جملة: ${ctx}` });
+        const res = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: `حلل مخزون ${products.length} صنف بقيمة ${products.reduce((s,p)=>s+(p.cost*p.stock),0)} في سطر.` });
         return res.text || "";
-    } catch { return "المخزون مستقر."; }
+    } catch { return "المخزون يحتاج متابعة."; }
 };
 
 export const getClientInsights = async (clients: Client[]) => {
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const ctx = `ديون الزبائن: ${clients.reduce((s,c)=>s+c.debt, 0)}`;
-        const res = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: `نصيحة حول الديون في جملة: ${ctx}` });
+        const res = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: `حلل ديون عملاء بمبلغ ${clients.reduce((s,c)=>s+c.debt, 0)} في سطر.` });
         return res.text || "";
     } catch { return "تابع تحصيل الديون."; }
 };
@@ -144,17 +121,15 @@ export const getClientInsights = async (clients: Client[]) => {
 export const getSupplierInsights = async (suppliers: Supplier[]) => {
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const ctx = `ديون الموردين: ${suppliers.reduce((s,su)=>s+su.debt, 0)}`;
-        const res = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: `نصيحة حول الموردين: ${ctx}` });
+        const res = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: `حلل ديون موردين ${suppliers.reduce((s,su)=>s+su.debt, 0)} في سطر.` });
         return res.text || "";
-    } catch { return "علاقات الموردين جيدة."; }
+    } catch { return "راجع التزاماتك للموردين."; }
 };
 
 export const getExpenseInsights = async (expenses: Expense[], totalSales: number) => {
     try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const ctx = `مصاريف ${expenses.reduce((s,e)=>s+e.amount, 0)} من مبيعات ${totalSales}`;
-        const res = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: `تحليل مصاريف: ${ctx}` });
+        const res = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: `حلل مصاريف ${expenses.reduce((s,e)=>s+e.amount, 0)} مقابل مبيعات ${totalSales} في سطر.` });
         return [res.text || ""];
-    } catch { return ["راقب توازن المصاريف."]; }
+    } catch { return ["راقب المصاريف."]; }
 };
