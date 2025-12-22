@@ -55,16 +55,14 @@ export const registerUser = async (user: Omit<User, 'id' | 'createdAt' | 'email'
   return { id: data.user.id, ...user, email: pseudoEmail, createdAt: new Date().toISOString(), subscriptionStatus: 'trial' as const, subscriptionPlan: 'pro' as const, trialEndDate: trialEndDate.toISOString() };
 };
 
-export const loginUser = async (phone: string, password: string): Promise<User> => {
+export const loginUser = async (phone: string, password: string): Promise<boolean> => {
     const sanitizedPhone = phone.replace(/\D/g, '');
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
         email: `${sanitizedPhone}@bousla.app`,
         password
     });
-    if (error) throw new Error('بيانات الدخول غير صحيحة');
-    
-    // AuthContext سيتكفل بالباقي عبر fetchUserProfile
-    return {} as User; 
+    if (error) throw new Error(error.message || 'بيانات الدخول غير صحيحة');
+    return true; 
 };
 
 export const activateSubscription = async (userId: string, code: string) => {
@@ -489,7 +487,7 @@ export const deletePurchase = async (id: string) => {
         }
     }
     if (purchase.paid_amount > 0 && purchase.payment_method_id) {
-        const { data: pmRes } = await supabase.from('payment_methods').select('balance').eq('id', purchase.payment_method_id).single();
+        const { data: pmRes = { balance: 0 } } = await supabase.from('payment_methods').select('balance').eq('id', purchase.payment_method_id).single();
         const pm = pmRes as any;
         if (pm) {
             await supabase.from('payment_methods').update({ balance: Number(pm.balance || 0) + purchase.paid_amount }).eq('id', purchase.payment_method_id);
@@ -555,7 +553,7 @@ export const getEmployees = async (userId: string): Promise<Employee[]> => {
     const { data, error } = await supabase.from('employees').select('*').eq('user_id', userId);
     if (error) throw error;
     return (data || []).map((d: any) => ({
-        id: d.id, userId: d.user_id, name: d.name, role: d.role, phone: d.phone, salary: d.salary || 0, joinDate: d.join_date, loanBalance: d.loan_balance || 0
+        id: d.id, userId: d.user_id, name: d.name, role: d.role, phone: d.phone, salary: d.salary || 0, joinDate: d.join_date, loan_balance: d.loan_balance || 0
     }));
 };
 
