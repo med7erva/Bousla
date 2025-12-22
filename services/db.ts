@@ -124,14 +124,23 @@ export const loginUser = async (phone: string, password: string): Promise<User> 
 
 // --- PREPAID CODES ---
 export const generatePrepaidCode = async (days: number, plan: 'plus' | 'pro') => {
+    // جلب معرف المسؤول الحالي لربطه بالكود (مطلوب لسياسات Supabase)
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("يجب تسجيل الدخول كمسؤول أولاً");
+
     const code = `BSL-${plan.toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${days}`;
     const { error } = await supabase.from('prepaid_codes').insert({
         code,
         days,
         plan,
-        is_used: false
+        is_used: false,
+        created_by: user.id // ربط الكود بمن أنشأه
     });
-    if (error) throw error;
+    
+    if (error) {
+        console.error("Supabase Insert Error:", error);
+        throw new Error(error.message || "فشل في تحديث قاعدة البيانات");
+    }
     return code;
 };
 
@@ -300,17 +309,17 @@ export const manufactureProduct = async (sourceId: string, targetId: string, qty
     if (!source || !target) throw new Error("منتج غير موجود");
 
     const totalRawNeeded = qty * rawPerUnit;
-    if (source.stock < totalRawNeeded) throw new Error(`نقص مواد خام. متاح: ${source.stock}`);
+    if ((source as any).stock < totalRawNeeded) throw new Error(`نقص مواد خام. متاح: ${(source as any).stock}`);
 
-    await supabase.from('products').update({ stock: source.stock - totalRawNeeded }).eq('id', sourceId);
+    await supabase.from('products').update({ stock: (source as any).stock - totalRawNeeded }).eq('id', sourceId);
 
-    const totalRawCost = totalRawNeeded * source.cost;
+    const totalRawCost = totalRawNeeded * (source as any).cost;
     const totalLaborCost = qty * laborCostPerUnit;
     const newUnitCost = (totalRawCost + totalLaborCost) / qty;
     
-    const currentStockVal = target.stock * target.cost;
+    const currentStockVal = (target as any).stock * (target as any).cost;
     const newBatchVal = qty * newUnitCost;
-    const newTotalStock = target.stock + qty;
+    const newTotalStock = (target as any).stock + qty;
     const weightedCost = Math.round((currentStockVal + newBatchVal) / newTotalStock);
 
     await supabase.from('products').update({ stock: newTotalStock, cost: weightedCost }).eq('id', targetId);
@@ -318,7 +327,7 @@ export const manufactureProduct = async (sourceId: string, targetId: string, qty
     if (supplierId && totalLaborCost > 0) {
         const { data: supplier } = await supabase.from('suppliers').select('*').eq('id', supplierId).single();
         if (supplier) {
-            await supabase.from('suppliers').update({ debt: Number(supplier.debt) + totalLaborCost }).eq('id', supplierId);
+            await supabase.from('suppliers').update({ debt: Number((supplier as any).debt) + totalLaborCost }).eq('id', supplierId);
         }
     }
     return true;
@@ -376,8 +385,8 @@ export const createInvoice = async (userId: string, items: SaleItem[], total: nu
 
     if (client) {
         const updateData: any = { last_purchase_date: date };
-        updateData.debt = Number(client.debt) + netChange;
-        await supabase.from('clients').update(updateData).eq('id', client.id);
+        updateData.debt = Number((client as any).debt) + netChange;
+        await supabase.from('clients').update(updateData).eq('id', (client as any).id);
     } else if (netChange !== 0) {
         await supabase.from('clients').insert({
             user_id: userId, name: finalCustomerName, phone: '', debt: netChange, last_purchase_date: date

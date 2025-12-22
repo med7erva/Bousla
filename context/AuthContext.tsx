@@ -27,6 +27,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // تحديد الخطة والحالة بناءً على الصلاحيات أو Metadata
     const isAdmin = sanitizedPhone === ADMIN_PHONE;
 
+    // المسؤول دائماً لديه باقة Pro وتاريخ تجربة طويل لضمان ظهور العداد
+    const status = isAdmin ? 'active' : (metadata.subscriptionStatus || 'trial');
+    const plan = isAdmin ? 'pro' : (metadata.subscriptionPlan || 'plus');
+    
+    // تاريخ وهمي للمسؤول لضمان عمل العداد
+    const adminTrialEnd = new Date();
+    adminTrialEnd.setFullYear(adminTrialEnd.getFullYear() + 10);
+
     return {
       id: sessionUser.id,
       name: metadata.name || 'User',
@@ -34,10 +42,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       storeName: metadata.storeName || 'My Store',
       email: sessionUser.email,
       createdAt: sessionUser.created_at,
-      subscriptionStatus: metadata.subscriptionStatus || 'trial',
-      subscriptionPlan: isAdmin ? 'pro' : (metadata.subscriptionPlan || 'plus'),
-      trialEndDate: metadata.trialEndDate || new Date().toISOString(),
-      subscriptionEndDate: metadata.subscriptionEndDate,
+      subscriptionStatus: status,
+      subscriptionPlan: plan,
+      trialEndDate: isAdmin ? adminTrialEnd.toISOString() : (metadata.trialEndDate || new Date().toISOString()),
+      subscriptionEndDate: isAdmin ? adminTrialEnd.toISOString() : metadata.subscriptionEndDate,
       isAdmin: isAdmin || metadata.isAdmin === true
     };
   };

@@ -30,7 +30,10 @@ const Admin: React.FC = () => {
         try {
             await generatePrepaidCode(days, plan);
             await loadCodes();
-        } catch (e) { alert("فشل توليد الكود"); }
+        } catch (e: any) { 
+            console.error("GENERATE ERROR:", e);
+            alert("فشل توليد الكود: " + (e.message || "خطأ في قاعدة البيانات")); 
+        }
         finally { setGenLoading(false); }
     };
 
@@ -92,7 +95,7 @@ const Admin: React.FC = () => {
                                 <th className="px-6 py-4">الخطة</th>
                                 <th className="px-6 py-4">المدة</th>
                                 <th className="px-6 py-4">تاريخ الإصدار</th>
-                                <th className="px-6 py-4">إجراء</th>
+                                <th className="px-6 py-4 text-center">إجراء</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
