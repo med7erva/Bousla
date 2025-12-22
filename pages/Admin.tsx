@@ -54,6 +54,45 @@ const Admin: React.FC = () => {
         setTimeout(() => setCopyId(null), 2000);
     };
 
+    // كود SQL المحسن لتجنب الأخطاء
+    const getCleanSQL = () => {
+        return `-- 1. تحديث جدول الملفات الشخصية (profiles) بالأعمدة المطلوبة
+ALTER TABLE public.profiles 
+ADD COLUMN IF NOT EXISTS subscription_status text DEFAULT 'trial',
+ADD COLUMN IF NOT EXISTS subscription_plan text DEFAULT 'plus',
+ADD COLUMN IF NOT EXISTS trial_end_date timestamptz,
+ADD COLUMN IF NOT EXISTS subscription_end_date timestamptz,
+ADD COLUMN IF NOT EXISTS is_admin boolean DEFAULT false;
+
+-- 2. إنشاء جدول أكواد التفعيل (prepaid_codes)
+CREATE TABLE IF NOT EXISTS public.prepaid_codes (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  code text UNIQUE NOT NULL,
+  days integer NOT NULL,
+  plan text NOT NULL,
+  is_used boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  created_by uuid REFERENCES auth.users(id)
+);
+
+-- 3. تفعيل الحماية (RLS)
+ALTER TABLE public.prepaid_codes ENABLE ROW LEVEL SECURITY;
+
+-- 4. إعادة إنشاء سياسات الوصول (بأمان لتجنب خطأ التكرار)
+DROP POLICY IF EXISTS "Allow admins to manage codes" ON public.prepaid_codes;
+CREATE POLICY "Allow admins to manage codes" ON public.prepaid_codes
+FOR ALL USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE profiles.id = auth.uid() AND (profiles.phone = '47071347' OR profiles.is_admin = true)
+  )
+);
+
+DROP POLICY IF EXISTS "Allow users to read unused codes for activation" ON public.prepaid_codes;
+CREATE POLICY "Allow users to read unused codes for activation" ON public.prepaid_codes
+FOR SELECT USING (is_used = false);`;
+    };
+
     return (
         <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
             <div className="flex justify-between items-center">
@@ -69,41 +108,31 @@ const Admin: React.FC = () => {
                 <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-500/50 p-6 rounded-3xl animate-in zoom-in duration-300">
                     <div className="flex items-center gap-4 mb-4 text-red-600 dark:text-red-400">
                         <AlertTriangle size={32} />
-                        <h2 className="text-xl font-black">جدول الأكواد مفقود!</h2>
+                        <h2 className="text-xl font-black">جدول الأكواد مفقود أو غير مكتمل!</h2>
                     </div>
                     <p className="text-slate-700 dark:text-slate-300 mb-6 font-medium">
-                        يبدو أنك لم تقم بإنشاء جدول <code className="bg-red-100 dark:bg-red-900/50 px-2 py-0.5 rounded">prepaid_codes</code> في قاعدة بيانات Supabase. اتبع الخطوات التالية:
+                        يرجى نسخ الكود التالي وتنفيذه في <b>SQL Editor</b> الخاص بـ Supabase لإصلاح المشكلة تماماً:
                     </p>
                     <div className="bg-slate-900 rounded-2xl p-4 overflow-hidden relative group">
-                        <div className="absolute top-2 left-2 flex gap-2">
+                        <div className="absolute top-2 left-2">
                              <button 
                                 onClick={() => {
-                                    const code = `CREATE TABLE IF NOT EXISTS public.prepaid_codes (\n  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,\n  code text UNIQUE NOT NULL,\n  days integer NOT NULL,\n  plan text NOT NULL,\n  is_used boolean DEFAULT false,\n  created_at timestamp with time zone DEFAULT now(),\n  created_by uuid REFERENCES auth.users(id)\n);`;
-                                    navigator.clipboard.writeText(code);
-                                    alert('تم نسخ الكود!');
+                                    navigator.clipboard.writeText(getCleanSQL());
+                                    alert('تم نسخ الكود المحسن! قم بلصقه في Supabase واضغط Run.');
                                 }}
-                                className="bg-white/10 hover:bg-white/20 text-white text-[10px] px-3 py-1 rounded font-bold transition"
-                             >نسخ الكود</button>
+                                className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] px-4 py-2 rounded-lg font-bold transition flex items-center gap-2"
+                             >
+                                 <Copy size={12} />
+                                 نسخ الكود المحسن
+                             </button>
                         </div>
-                        <pre className="text-emerald-400 text-xs font-mono overflow-x-auto p-2">
-{`CREATE TABLE public.prepaid_codes (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  code text UNIQUE NOT NULL,
-  days integer NOT NULL,
-  plan text NOT NULL,
-  is_used boolean DEFAULT false,
-  created_at timestamptz DEFAULT now(),
-  created_by uuid REFERENCES auth.users(id)
-);`}
+                        <pre className="text-emerald-400 text-xs font-mono overflow-x-auto p-4 mt-8">
+                            {getCleanSQL()}
                         </pre>
-                    </div>
-                    <div className="mt-6 flex items-center gap-4">
-                        <div className="bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">1</div>
-                        <p className="text-sm dark:text-white">انسخ الكود أعلاه واذهب لـ <b>Supabase SQL Editor</b> ونفذه.</p>
                     </div>
                     <button 
                         onClick={loadCodes}
-                        className="mt-6 w-full bg-slate-900 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"
+                        className="mt-6 w-full bg-slate-900 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition"
                     >
                         <Check size={18} /> لقد قمت بالتنفيذ، أعد المحاولة
                     </button>
@@ -123,7 +152,7 @@ const Admin: React.FC = () => {
                             {[30, 180, 365].map(days => (
                                 <button 
                                     key={days}
-                                    disabled={genLoading || tableMissing}
+                                    disabled={genLoading}
                                     onClick={() => handleGenerate(days, plan)}
                                     className={`py-3 rounded-xl font-bold text-xs transition-all transform active:scale-95 disabled:opacity-30 ${plan === 'pro' ? 'bg-white text-indigo-600 hover:bg-indigo-600 hover:text-white border border-indigo-100' : 'bg-white text-emerald-600 hover:bg-emerald-600 hover:text-white border border-emerald-100'}`}
                                 >
@@ -150,15 +179,14 @@ const Admin: React.FC = () => {
                                 <th className="px-6 py-4">الكود المولد</th>
                                 <th className="px-6 py-4">الخطة</th>
                                 <th className="px-6 py-4">المدة</th>
-                                <th className="px-6 py-4">تاريخ الإصدار</th>
                                 <th className="px-6 py-4 text-center">إجراء</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50 dark:divide-slate-700">
                             {loading ? (
-                                <tr><td colSpan={5} className="p-20 text-center"><Loader2 className="animate-spin mx-auto text-indigo-500" size={40} /></td></tr>
+                                <tr><td colSpan={4} className="p-20 text-center"><Loader2 className="animate-spin mx-auto text-indigo-500" size={40} /></td></tr>
                             ) : codes.length === 0 ? (
-                                <tr><td colSpan={5} className="p-20 text-center text-slate-400 font-medium">لا توجد أكواد غير مستخدمة</td></tr>
+                                <tr><td colSpan={4} className="p-20 text-center text-slate-400 font-medium">لا توجد أكواد غير مستخدمة</td></tr>
                             ) : (
                                 codes.map((c) => (
                                     <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
@@ -167,7 +195,6 @@ const Admin: React.FC = () => {
                                             <span className={`px-3 py-0.5 rounded-full text-[10px] font-black uppercase ${c.plan === 'pro' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'}`}>{c.plan}</span>
                                         </td>
                                         <td className="px-6 py-4 text-sm font-bold text-slate-700 dark:text-slate-300">{c.days} يوم</td>
-                                        <td className="px-6 py-4 text-slate-400 text-xs">{new Date(c.created_at).toLocaleDateString('ar-MA')}</td>
                                         <td className="px-6 py-4 text-center">
                                             <button 
                                                 onClick={() => handleCopy(c.code, c.id)}
