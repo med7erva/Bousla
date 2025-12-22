@@ -20,9 +20,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const mapUser = (sessionUser: any): User => {
-    const metadata = sessionUser.user_metadata;
+    const metadata = sessionUser.user_metadata || {};
     const phone = metadata.phone || sessionUser.phone || '';
     const sanitizedPhone = phone.replace(/\D/g, '');
+
+    // تحديد الخطة والحالة بناءً على الصلاحيات أو Metadata
+    const isAdmin = sanitizedPhone === ADMIN_PHONE;
 
     return {
       id: sessionUser.id,
@@ -32,11 +35,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email: sessionUser.email,
       createdAt: sessionUser.created_at,
       subscriptionStatus: metadata.subscriptionStatus || 'trial',
-      subscriptionPlan: metadata.subscriptionPlan || 'pro',
+      subscriptionPlan: isAdmin ? 'pro' : (metadata.subscriptionPlan || 'plus'),
       trialEndDate: metadata.trialEndDate || new Date().toISOString(),
       subscriptionEndDate: metadata.subscriptionEndDate,
-      // فرض صلاحية الأدمن إذا طابق الرقم
-      isAdmin: sanitizedPhone === ADMIN_PHONE || metadata.isAdmin === true
+      isAdmin: isAdmin || metadata.isAdmin === true
     };
   };
 

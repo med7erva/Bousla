@@ -8,7 +8,6 @@ export const registerUser = async (user: Omit<User, 'id' | 'createdAt' | 'email'
   const sanitizedPhone = user.phone.replace(/\D/g, ''); 
   const pseudoEmail = `${sanitizedPhone}@bousla.app`;
   
-  // Set trial to 30 days from now
   const trialEndDate = new Date();
   trialEndDate.setDate(trialEndDate.getDate() + 30);
 
@@ -21,9 +20,9 @@ export const registerUser = async (user: Omit<User, 'id' | 'createdAt' | 'email'
         storeName: user.storeName,
         phone: sanitizedPhone,
         subscriptionStatus: 'trial',
-        subscriptionPlan: 'pro', // New users start as Pro Trial
+        subscriptionPlan: 'pro',
         trialEndDate: trialEndDate.toISOString(),
-        isAdmin: sanitizedPhone === '47071347' // Hardcoded admin check for the provided number
+        isAdmin: sanitizedPhone === '47071347'
       }
     }
   });
@@ -39,7 +38,6 @@ export const registerUser = async (user: Omit<User, 'id' | 'createdAt' | 'email'
 
   const userId = data.user.id;
 
-  // Insert initial payment methods
   const methodsToInsert = SEED_PAYMENT_METHODS.map(pm => ({
       user_id: userId,
       name: pm.name,
@@ -98,7 +96,6 @@ export const loginUser = async (phone: string, password: string): Promise<User> 
         .eq('id', data.user.id)
         .single();
 
-    // Determine status
     let subStatus: 'trial' | 'active' | 'expired' = profile?.subscription_status || data.user.user_metadata.subscriptionStatus || 'trial';
     const subPlan: 'plus' | 'pro' = profile?.subscription_plan || data.user.user_metadata.subscriptionPlan || 'pro';
     const trialEnd = profile?.trial_end_date || data.user.user_metadata.trialEndDate;
@@ -125,8 +122,7 @@ export const loginUser = async (phone: string, password: string): Promise<User> 
     };
 };
 
-// --- PREPAID CODES (Admin Functions) ---
-
+// --- PREPAID CODES ---
 export const generatePrepaidCode = async (days: number, plan: 'plus' | 'pro') => {
     const code = `BSL-${plan.toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${days}`;
     const { error } = await supabase.from('prepaid_codes').insert({
@@ -150,7 +146,6 @@ export const getUnusedCodes = async () => {
 };
 
 export const activateSubscription = async (userId: string, code: string) => {
-    // 1. Verify Code in Database
     const { data: codeData, error: codeError } = await supabase
         .from('prepaid_codes')
         .select('*')
@@ -162,13 +157,11 @@ export const activateSubscription = async (userId: string, code: string) => {
         throw new Error("كود تفعيل غير صحيح أو تم استخدامه مسبقاً");
     }
 
-    // 2. Calculate New End Date
     const daysToAdd = codeData.days;
     const plan = codeData.plan;
     const newEndDate = new Date();
     newEndDate.setDate(newEndDate.getDate() + daysToAdd);
 
-    // 3. Update User Profile
     const { error: profileError } = await supabase.from('profiles').update({
         subscription_status: 'active',
         subscription_plan: plan,
@@ -177,7 +170,6 @@ export const activateSubscription = async (userId: string, code: string) => {
 
     if (profileError) throw profileError;
 
-    // 4. Mark Code as Used
     await supabase.from('prepaid_codes').update({ is_used: true }).eq('id', codeData.id);
 
     return { endDate: newEndDate.toISOString(), plan };
@@ -374,7 +366,7 @@ export const createInvoice = async (userId: string, items: SaleItem[], total: nu
         if (!item.productId.startsWith('custom-') && !item.productId.startsWith('opening-bal')) {
             const { data: prod } = await supabase.from('products').select('stock').eq('id', item.productId).single();
             if (prod) {
-                await supabase.from('products').update({ stock: prod.stock - item.quantity }).eq('id', item.productId);
+                await supabase.from('products').update({ stock: (prod as any).stock - item.quantity }).eq('id', item.productId);
             }
         }
     }
@@ -395,7 +387,7 @@ export const createInvoice = async (userId: string, items: SaleItem[], total: nu
     if (paymentMethodId && paidAmount > 0) {
         const { data: pm } = await supabase.from('payment_methods').select('balance').eq('id', paymentMethodId).single();
         if (pm) {
-            await supabase.from('payment_methods').update({ balance: pm.balance + paidAmount }).eq('id', paymentMethodId);
+            await supabase.from('payment_methods').update({ balance: (pm as any).balance + paidAmount }).eq('id', paymentMethodId);
         }
     }
 
@@ -406,29 +398,29 @@ export const deleteInvoice = async (id: string) => {
     const { data: inv, error } = await supabase.from('invoices').select('*').eq('id', id).single();
     if(error || !inv) throw new Error("Invoice not found");
 
-    const items = Array.isArray(inv.items) ? inv.items : [];
+    const items = Array.isArray((inv as any).items) ? (inv as any).items : [];
     for(const item of items) {
         if(item.productId && !item.productId.startsWith('custom-') && !item.productId.startsWith('opening-bal')) {
-             const { data: prod = {} } = await supabase.from('products').select('stock').eq('id', item.productId).single();
+             const { data: prod } = await supabase.from('products').select('stock').eq('id', item.productId).single();
              if(prod) {
-                 await supabase.from('products').update({ stock: (prod.stock || 0) + item.quantity }).eq('id', item.productId);
+                 await supabase.from('products').update({ stock: ((prod as any).stock || 0) + item.quantity }).eq('id', item.productId);
              }
         }
     }
 
-    if(inv.remaining_amount !== 0) {
-         const { data: client } = await supabase.from('clients').select('*').eq('user_id', inv.user_id).ilike('name', inv.customer_name).single();
+    if((inv as any).remaining_amount !== 0) {
+         const { data: client } = await supabase.from('clients').select('*').eq('user_id', (inv as any).user_id).ilike('name', (inv as any).customer_name).single();
          if(client) {
-             const newDebt = Number(client.debt) - Number(inv.remaining_amount);
-             await supabase.from('clients').update({ debt: newDebt }).eq('id', client.id);
+             const newDebt = Number((client as any).debt) - Number((inv as any).remaining_amount);
+             await supabase.from('clients').update({ debt: newDebt }).eq('id', (client as any).id);
          }
     }
 
-    if(inv.payment_method_id && inv.paid_amount > 0) {
-         const { data: pm } = await supabase.from('payment_methods').select('balance').eq('id', inv.payment_method_id).single();
+    if((inv as any).payment_method_id && (inv as any).paid_amount > 0) {
+         const { data: pm } = await supabase.from('payment_methods').select('balance').eq('id', (inv as any).payment_method_id).single();
          if(pm) {
-             const newBalance = Number(pm.balance) - Number(inv.paid_amount);
-             await supabase.from('payment_methods').update({ balance: newBalance }).eq('id', inv.payment_method_id);
+             const newBalance = Number((pm as any).balance) - Number((inv as any).paid_amount);
+             await supabase.from('payment_methods').update({ balance: newBalance }).eq('id', (inv as any).payment_method_id);
          }
     }
 
@@ -493,7 +485,7 @@ export const addClient = async (client: Omit<Client, 'id'>) => {
         await supabase.from('invoices').insert({
             user_id: client.userId, customer_name: client.name, date: date, total: totalDebt, paid_amount: 0, remaining_amount: totalDebt, status: 'Pending', items: [openingItem]
         });
-        await supabase.from('clients').update({ debt: totalDebt, last_purchase_date: date }).eq('id', newClient.id);
+        await supabase.from('clients').update({ debt: totalDebt, last_purchase_date: date }).eq('id', (newClient as any).id);
     }
 };
 
@@ -555,22 +547,22 @@ export const createPurchase = async (userId: string, supplierId: string, supplie
     }).select().single();
     if (error) throw error;
     for (const item of items) {
-        const { data: prod = {} } = await supabase.from('products').select('*').eq('id', item.productId).single();
+        const { data: prod } = await supabase.from('products').select('*').eq('id', item.productId).single();
         if (prod) {
-            await supabase.from('products').update({ stock: (prod.stock || 0) + item.quantity, cost: item.costPrice }).eq('id', item.productId);
+            await supabase.from('products').update({ stock: ((prod as any).stock || 0) + item.quantity, cost: item.costPrice }).eq('id', item.productId);
         }
     }
     const debtAmount = totalCost - paidAmount;
     if (debtAmount > 0) {
         const { data: supp } = await supabase.from('suppliers').select('debt').eq('id', supplierId).single();
         if (supp) {
-            await supabase.from('suppliers').update({ debt: Number(supp.debt) + debtAmount }).eq('id', supplierId);
+            await supabase.from('suppliers').update({ debt: Number((supp as any).debt) + debtAmount }).eq('id', supplierId);
         }
     }
     if (paidAmount > 0 && paymentMethodId) {
         const { data: pm } = await supabase.from('payment_methods').select('balance').eq('id', paymentMethodId).single();
         if (pm) {
-            await supabase.from('payment_methods').update({ balance: Number(pm.balance) - paidAmount }).eq('id', paymentMethodId);
+            await supabase.from('payment_methods').update({ balance: Number((pm as any).balance) - paidAmount }).eq('id', paymentMethodId);
         }
     }
     return purchase;
@@ -583,32 +575,33 @@ export const updatePurchase = async (purchase: Purchase) => {
 export const deletePurchase = async (id: string) => {
     const { data: purchase, error } = await supabase.from('purchases').select('*').eq('id', id).single();
     if (error || !purchase) throw new Error("الفاتورة غير موجودة");
-    const items = Array.isArray(purchase.items) ? purchase.items : [];
+    
+    const items = Array.isArray((purchase as any).items) ? (purchase as any).items : [];
     for (const item of items) {
-        const { data: prod = {} } = await supabase.from('products').select('stock, name').eq('id', item.productId).single();
+        const { data: prod } = await supabase.from('products').select('stock, name').eq('id', item.productId).single();
         if (!prod) continue;
-        if ((prod.stock || 0) < item.quantity) {
-            throw new Error(`لا يمكن حذف الفاتورة: المنتج "${prod.name}" تم بيع جزء منه أو استهلاكه.`);
+        if (((prod as any).stock || 0) < item.quantity) {
+            throw new Error(`لا يمكن حذف الفاتورة: المنتج "${(prod as any).name}" تم بيع جزء منه أو استهلاكه.`);
         }
     }
     for (const item of items) {
-        const { data: prod = {} } = await supabase.from('products').select('stock').eq('id', item.productId).single();
+        const { data: prod } = await supabase.from('products').select('stock').eq('id', item.productId).single();
         if (prod) {
-            await supabase.from('products').update({ stock: (prod.stock || 0) - item.quantity }).eq('id', item.productId);
+            await supabase.from('products').update({ stock: ((prod as any).stock || 0) - item.quantity }).eq('id', item.productId);
         }
     }
-    const debtAdded = purchase.total_cost - purchase.paid_amount;
-    if (debtAdded > 0 && purchase.supplier_id) {
-        const { data: supplier } = await supabase.from('suppliers').select('debt').eq('id', purchase.supplier_id).single();
+    const debtAdded = (purchase as any).total_cost - (purchase as any).paid_amount;
+    if (debtAdded > 0 && (purchase as any).supplier_id) {
+        const { data: supplier } = await supabase.from('suppliers').select('debt').eq('id', (purchase as any).supplier_id).single();
         if (supplier) {
-            const newDebt = Math.max(0, Number(supplier.debt) - debtAdded);
-            await supabase.from('suppliers').update({ debt: newDebt }).eq('id', purchase.supplier_id);
+            const newDebt = Math.max(0, Number((supplier as any).debt) - debtAdded);
+            await supabase.from('suppliers').update({ debt: newDebt }).eq('id', (purchase as any).supplier_id);
         }
     }
-    if (purchase.paid_amount > 0 && purchase.payment_method_id) {
-        const { data: pm } = await supabase.from('payment_methods').select('balance').eq('id', purchase.payment_method_id).single();
+    if ((purchase as any).paid_amount > 0 && (purchase as any).payment_method_id) {
+        const { data: pm } = await supabase.from('payment_methods').select('balance').eq('id', (purchase as any).payment_method_id).single();
         if (pm) {
-            await supabase.from('payment_methods').update({ balance: Number(pm.balance) + purchase.paid_amount }).eq('id', purchase.payment_method_id);
+            await supabase.from('payment_methods').update({ balance: Number((pm as any).balance) + (purchase as any).paid_amount }).eq('id', (purchase as any).payment_method_id);
         }
     }
     await supabase.from('purchases').delete().eq('id', id);
@@ -651,7 +644,7 @@ export const addExpensesBatch = async (userId: string, batchData: { date: string
     if (batchData.paymentMethodId && totalAmount > 0) {
         const { data: pm } = await supabase.from('payment_methods').select('balance').eq('id', batchData.paymentMethodId).single();
         if (pm) {
-            await supabase.from('payment_methods').update({ balance: Number(pm.balance) - totalAmount }).eq('id', batchData.paymentMethodId);
+            await supabase.from('payment_methods').update({ balance: Number((pm as any).balance) - totalAmount }).eq('id', batchData.paymentMethodId);
         }
     }
 };
@@ -698,7 +691,7 @@ export const addFinancialTransaction = async (txData: Omit<FinancialTransaction,
     if (entityId) { await adjustEntityBalance(entityType, entityId, type, amount); }
     const { data: pm } = await supabase.from('payment_methods').select('balance').eq('id', paymentMethodId).single();
     if (pm) {
-        const newBal = type === 'in' ? Number(pm.balance) + Number(amount) : Number(pm.balance) - Number(amount);
+        const newBal = type === 'in' ? Number((pm as any).balance) + Number(amount) : Number((pm as any).balance) - Number(amount);
         await supabase.from('payment_methods').update({ balance: newBal }).eq('id', paymentMethodId);
     }
     return tx;
@@ -709,10 +702,10 @@ export const transferFunds = async (userId: string, fromPmId: string, toPmId: st
     const { data: toPm } = await supabase.from('payment_methods').select('name').eq('id', toPmId).single();
     if (!fromPm || !toPm) throw new Error("حساب الدفع غير موجود");
     await addFinancialTransaction({
-        userId, type: 'out', amount: Number(amount), date: date, paymentMethodId: fromPmId, entityType: 'Other', entityId: null, description: `تحويل إلى: ${toPm.name} ${description ? `(${description})` : ''}`
+        userId, type: 'out', amount: Number(amount), date: date, paymentMethodId: fromPmId, entityType: 'Other', entityId: null, description: `تحويل إلى: ${(toPm as any).name} ${description ? `(${description})` : ''}`
     });
     await addFinancialTransaction({
-        userId, type: 'in', amount: Number(amount), date: date, paymentMethodId: toPmId, entityType: 'Other', entityId: null, description: `تحويل من: ${fromPm.name} ${description ? `(${description})` : ''}`
+        userId, type: 'in', amount: Number(amount), date: date, paymentMethodId: toPmId, entityType: 'Other', entityId: null, description: `تحويل من: ${(fromPm as any).name} ${description ? `(${description})` : ''}`
     });
     return true;
 };
@@ -722,19 +715,19 @@ const adjustEntityBalance = async (entityType: string, entityId: string, txType:
     if (entityType === 'Client') {
         const { data: ent } = await supabase.from('clients').select('debt').eq('id', entityId).single();
         if (ent) {
-            const newDebt = txType === 'in' ? Number(ent.debt) - numAmount : Number(ent.debt) + numAmount;
+            const newDebt = txType === 'in' ? Number((ent as any).debt) - numAmount : Number((ent as any).debt) + numAmount;
             await supabase.from('clients').update({ debt: newDebt }).eq('id', entityId);
         }
     } else if (entityType === 'Supplier') {
         const { data: ent } = await supabase.from('suppliers').select('debt').eq('id', entityId).single();
         if (ent) {
-            const newDebt = txType === 'out' ? Number(ent.debt) - numAmount : Number(ent.debt) + numAmount;
+            const newDebt = txType === 'out' ? Number((ent as any).debt) - numAmount : Number((ent as any).debt) + numAmount;
             await supabase.from('suppliers').update({ debt: newDebt }).eq('id', entityId);
         }
     } else if (entityType === 'Employee') {
         const { data: ent } = await supabase.from('employees').select('loan_balance').eq('id', entityId).single();
         if (ent) {
-            const newLoan = txType === 'out' ? Number(ent.loan_balance) + numAmount : Number(ent.loan_balance) - numAmount;
+            const newLoan = txType === 'out' ? Number((ent as any).loan_balance) + numAmount : Number((ent as any).loan_balance) - numAmount;
             await supabase.from('employees').update({ loan_balance: newLoan }).eq('id', entityId);
         }
     }
@@ -743,19 +736,19 @@ const adjustEntityBalance = async (entityType: string, entityId: string, txType:
 export const updateFinancialTransaction = async (txId: string, newData: Omit<FinancialTransaction, 'id' | 'paymentMethodName' | 'entityName'>) => {
     const { data: oldTx, error } = await supabase.from('transactions').select('*').eq('id', txId).single();
     if (error || !oldTx) throw new Error("Transaction not found");
-    if (oldTx.entity_id) {
-        let reverseAmount = -Number(oldTx.amount); 
-        await adjustEntityBalance(oldTx.entity_type, oldTx.entity_id, oldTx.type as 'in' | 'out', reverseAmount);
+    if ((oldTx as any).entity_id) {
+        let reverseAmount = -Number((oldTx as any).amount); 
+        await adjustEntityBalance((oldTx as any).entity_type, (oldTx as any).entity_id, (oldTx as any).type as 'in' | 'out', reverseAmount);
     }
-    const { data: oldPm } = await supabase.from('payment_methods').select('balance').eq('id', oldTx.payment_method_id).single();
+    const { data: oldPm } = await supabase.from('payment_methods').select('balance').eq('id', (oldTx as any).payment_method_id).single();
     if (oldPm) {
-        const revertBal = oldTx.type === 'in' ? Number(oldPm.balance) - Number(oldTx.amount) : Number(oldPm.balance) + Number(oldTx.amount);
-        await supabase.from('payment_methods').update({ balance: revertBal }).eq('id', oldTx.payment_method_id);
+        const revertBal = (oldTx as any).type === 'in' ? Number((oldPm as any).balance) - Number((oldTx as any).amount) : Number((oldPm as any).balance) + Number((oldTx as any).amount);
+        await supabase.from('payment_methods').update({ balance: revertBal }).eq('id', (oldTx as any).payment_method_id);
     }
     if (newData.entityId) { await adjustEntityBalance(newData.entityType, newData.entityId, newData.type, Number(newData.amount)); }
     const { data: newPm } = await supabase.from('payment_methods').select('balance').eq('id', newData.paymentMethodId).single();
     if (newPm) {
-        const newBal = newData.type === 'in' ? Number(newPm.balance) + Number(newData.amount) : Number(newPm.balance) - Number(newData.amount);
+        const newBal = newData.type === 'in' ? Number((newPm as any).balance) + Number(newData.amount) : Number((newPm as any).balance) - Number(newData.amount);
         await supabase.from('payment_methods').update({ balance: newBal }).eq('id', newData.paymentMethodId);
     }
     await supabase.from('transactions').update({ type: newData.type, amount: Number(newData.amount), date: newData.date, payment_method_id: newData.paymentMethodId, entity_type: newData.entityType, entity_id: newData.entityId, description: newData.description }).eq('id', txId);
@@ -764,11 +757,11 @@ export const updateFinancialTransaction = async (txId: string, newData: Omit<Fin
 export const deleteFinancialTransaction = async (txId: string) => {
     const { data: oldTx, error } = await supabase.from('transactions').select('*').eq('id', txId).single();
     if (error || !oldTx) throw new Error("Transaction not found");
-    if (oldTx.entity_id) { await adjustEntityBalance(oldTx.entity_type, oldTx.entity_id, oldTx.type as 'in' | 'out', -Number(oldTx.amount)); }
-    const { data: pm } = await supabase.from('payment_methods').select('balance').eq('id', oldTx.payment_method_id).single();
+    if ((oldTx as any).entity_id) { await adjustEntityBalance((oldTx as any).entity_type, (oldTx as any).entity_id, (oldTx as any).type as 'in' | 'out', -Number((oldTx as any).amount)); }
+    const { data: pm } = await supabase.from('payment_methods').select('balance').eq('id', (oldTx as any).payment_method_id).single();
     if (pm) {
-        const revertBal = oldTx.type === 'in' ? Number(pm.balance) - Number(oldTx.amount) : Number(pm.balance) + Number(oldTx.amount);
-        await supabase.from('payment_methods').update({ balance: revertBal }).eq('id', oldTx.payment_method_id);
+        const revertBal = (oldTx as any).type === 'in' ? Number((pm as any).balance) - Number((oldTx as any).amount) : Number((pm as any).balance) + Number((oldTx as any).amount);
+        await supabase.from('payment_methods').update({ balance: revertBal }).eq('id', (oldTx as any).payment_method_id);
     }
     await supabase.from('transactions').delete().eq('id', txId);
 };
