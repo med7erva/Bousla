@@ -29,7 +29,8 @@ import {
 } from 'recharts';
 import { CURRENCY } from '../constants';
 import { getDashboardInsights, DashboardContext } from '../services/geminiService';
-import { getProducts, getSalesAnalytics, initDB, getExpenses, getInvoices } from '../services/db';
+// Removed initDB as it is not exported from services/db
+import { getProducts, getSalesAnalytics, getExpenses, getInvoices } from '../services/db';
 import { useAuth } from '../context/AuthContext';
 import { Invoice } from '../types';
 
@@ -52,7 +53,7 @@ const Dashboard: React.FC = () => {
     const loadData = async () => {
       if (!user) return;
       
-      await initDB();
+      // Removed call to initDB() as it's not required for Supabase
       const [products, analytics, expenses, allInvoices] = await Promise.all([
           getProducts(user.id),
           getSalesAnalytics(user.id),

@@ -3,7 +3,7 @@ import { supabase } from './supabase';
 import { Product, Invoice, SaleItem, User, Client, Expense, Purchase, Supplier, PurchaseItem, PaymentMethod, Employee, ExpenseCategory, FinancialTransaction, ProductCategory, AppSettings } from '../types';
 import { SEED_PRODUCTS, SEED_PAYMENT_METHODS } from '../constants';
 
-// --- Auth Operations ---
+// --- Auth & Subscription ---
 export const registerUser = async (user: Omit<User, 'id' | 'createdAt' | 'email' | 'subscriptionStatus' | 'subscriptionPlan' | 'trialEndDate'>) => {
   const sanitizedPhone = user.phone.replace(/\D/g, ''); 
   const pseudoEmail = `${sanitizedPhone}@bousla.app`;
@@ -27,20 +27,12 @@ export const registerUser = async (user: Omit<User, 'id' | 'createdAt' | 'email'
     }
   });
 
-  if (error) {
-      if (error.message.includes('already registered')) {
-          throw new Error('رقم الهاتف هذا مسجل مسبقاً');
-      }
-      throw error;
-  }
-  
+  if (error) throw error;
   if (!data.user) throw new Error("Registration failed");
 
-  const userId = data.user.id;
-
-  // إدراج البيانات الأساسية في جدول profiles فور التسجيل
+  // إضافة للملف الشخصي
   await supabase.from('profiles').upsert({
-      id: userId,
+      id: data.user.id,
       name: user.name,
       store_name: user.storeName,
       phone: sanitizedPhone,
@@ -50,123 +42,29 @@ export const registerUser = async (user: Omit<User, 'id' | 'createdAt' | 'email'
       is_admin: sanitizedPhone === '47071347'
   });
 
-  const methodsToInsert = SEED_PAYMENT_METHODS.map(pm => ({
-      user_id: userId,
-      name: pm.name,
-      type: pm.type,
-      provider: pm.provider,
-      balance: 0,
-      is_default: pm.isDefault
-  }));
-  await supabase.from('payment_methods').insert(methodsToInsert);
-
+  // البذور (Seeds)
+  await supabase.from('payment_methods').insert(SEED_PAYMENT_METHODS.map(pm => ({
+      user_id: data.user!.id, name: pm.name, type: pm.type, provider: pm.provider, balance: 0, is_default: pm.isDefault
+  })));
+  
   const seedExpCats = ['إيجار', 'رواتب', 'فواتير', 'صيانة', 'أخرى'];
   await supabase.from('expense_categories').insert(seedExpCats.map(c => ({ 
-      user_id: userId, name: c, is_default: c === 'رواتب' 
+      user_id: data.user!.id, name: c, is_default: c === 'رواتب' 
   })));
 
-  await supabase.from('clients').insert({
-      user_id: userId, name: 'عميل افتراضي', phone: '00000000', debt: 0, notes: 'للزبائن العابرين'
-  });
-  await supabase.from('suppliers').insert({
-      user_id: userId, name: 'مورد افتراضي', phone: '00000000', debt: 0
-  });
-
-  return { 
-    id: userId, 
-    ...user, 
-    email: pseudoEmail, 
-    createdAt: new Date().toISOString(),
-    subscriptionStatus: 'trial' as const,
-    subscriptionPlan: 'pro' as const,
-    trialEndDate: trialEndDate.toISOString(),
-    isAdmin: sanitizedPhone === '47071347'
-  };
+  return { id: data.user.id, ...user, email: pseudoEmail, createdAt: new Date().toISOString(), subscriptionStatus: 'trial' as const, subscriptionPlan: 'pro' as const, trialEndDate: trialEndDate.toISOString() };
 };
 
 export const loginUser = async (phone: string, password: string): Promise<User> => {
     const sanitizedPhone = phone.replace(/\D/g, '');
-    const pseudoEmail = `${sanitizedPhone}@bousla.app`;
-
     const { data, error } = await supabase.auth.signInWithPassword({
-        email: pseudoEmail,
+        email: `${sanitizedPhone}@bousla.app`,
         password
     });
-
-    if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-            throw new Error('رقم الهاتف أو كلمة المرور غير صحيحة');
-        }
-        throw error;
-    }
+    if (error) throw new Error('بيانات الدخول غير صحيحة');
     
-    if (!data.user) throw new Error("Login failed");
-
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
-
-    let subStatus: 'trial' | 'active' | 'expired' = profile?.subscription_status || data.user.user_metadata.subscriptionStatus || 'trial';
-    const subPlan: 'plus' | 'pro' = profile?.subscription_plan || data.user.user_metadata.subscriptionPlan || 'pro';
-    const trialEnd = profile?.trial_end_date || data.user.user_metadata.trialEndDate;
-    const subEnd = profile?.subscription_end_date;
-
-    // فحص انتهاء الاشتراك
-    if (subStatus === 'trial' && trialEnd && new Date(trialEnd) < new Date()) {
-        subStatus = 'expired';
-    } else if (subStatus === 'active' && subEnd && new Date(subEnd) < new Date()) {
-        subStatus = 'expired';
-    }
-
-    return {
-        id: data.user.id,
-        name: profile?.name || data.user.user_metadata.name,
-        email: data.user.email,
-        phone: profile?.phone || data.user.user_metadata.phone || sanitizedPhone,
-        storeName: profile?.store_name || data.user.user_metadata.storeName,
-        createdAt: data.user.created_at,
-        subscriptionStatus: subStatus,
-        subscriptionPlan: subPlan,
-        trialEndDate: trialEnd,
-        subscriptionEndDate: subEnd,
-        isAdmin: profile?.is_admin || data.user.user_metadata.isAdmin || sanitizedPhone === '47071347'
-    };
-};
-
-// --- PREPAID CODES ---
-export const generatePrepaidCode = async (days: number, plan: 'plus' | 'pro') => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("يجب تسجيل الدخول كمسؤول أولاً");
-
-    const code = `BSL-${plan.toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${days}`;
-    const { error } = await supabase.from('prepaid_codes').insert({
-        code,
-        days,
-        plan,
-        is_used: false,
-        created_by: user.id
-    });
-    
-    if (error) {
-        console.error("Supabase Insert Error:", error);
-        if (error.message.includes('relation "public.prepaid_codes" does not exist')) {
-            throw new Error("جدول الأكواد غير موجود في قاعدة البيانات. يرجى تنفيذه من الـ SQL Editor.");
-        }
-        throw new Error(error.message);
-    }
-    return code;
-};
-
-export const getUnusedCodes = async () => {
-    const { data, error } = await supabase
-        .from('prepaid_codes')
-        .select('*')
-        .eq('is_used', false)
-        .order('created_at', { ascending: false });
-    if (error) throw error;
-    return (data as any) || [];
+    // AuthContext سيتكفل بالباقي عبر fetchUserProfile
+    return {} as User; 
 };
 
 export const activateSubscription = async (userId: string, code: string) => {
@@ -178,36 +76,39 @@ export const activateSubscription = async (userId: string, code: string) => {
         .eq('is_used', false)
         .single();
 
-    if (codeError || !codeData) {
-        throw new Error("كود تفعيل غير صحيح أو تم استخدامه مسبقاً");
-    }
+    if (codeError || !codeData) throw new Error("كود تفعيل غير صحيح أو مستخدم");
 
-    const daysToAdd = (codeData as any).days;
-    const plan = (codeData as any).plan;
-    
-    // حساب تاريخ النهاية الجديد (من اليوم)
+    const daysToAdd = codeData.days;
+    const plan = codeData.plan;
     const newEndDate = new Date();
     newEndDate.setDate(newEndDate.getDate() + daysToAdd);
 
-    // 2. تحديث جدول البروفايل
+    // 2. تحديث البروفايل (القاعدة الجديدة)
     const { error: profileError } = await supabase.from('profiles').update({
         subscription_status: 'active',
         subscription_plan: plan,
         subscription_end_date: newEndDate.toISOString()
     }).eq('id', userId);
 
-    if (profileError) {
-        console.error("Profile Update Error:", profileError);
-        throw new Error("فشل تحديث ملف المستخدم. تأكد من تنفيذ كود SQL المخصص لإضافة الأعمدة.");
-    }
+    if (profileError) throw new Error("فشل تحديث الاشتراك");
 
-    // 3. حرق الكود (جعله مستخدماً)
-    await supabase.from('prepaid_codes').update({ is_used: true }).eq('id', (codeData as any).id);
+    // 3. حرق الكود
+    await supabase.from('prepaid_codes').update({ is_used: true }).eq('id', codeData.id);
 
     return { endDate: newEndDate.toISOString(), plan };
 };
 
-export const initDB = async () => { return true; };
+export const generatePrepaidCode = async (days: number, plan: 'plus' | 'pro') => {
+    const { data: { user } } = await supabase.auth.getUser();
+    const code = `BSL-${plan.toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${days}`;
+    await supabase.from('prepaid_codes').insert({ code, days, plan, is_used: false, created_by: user?.id });
+    return code;
+};
+
+export const getUnusedCodes = async () => {
+    const { data } = await supabase.from('prepaid_codes').select('*').eq('is_used', false).order('created_at', { ascending: false });
+    return data || [];
+};
 
 // --- Products ---
 export const getProducts = async (userId: string): Promise<Product[]> => {
@@ -308,7 +209,7 @@ export const getInvoices = async (userId: string): Promise<Invoice[]> => {
     return (data || []).map((d: any) => ({
         id: d.id,
         userId: d.user_id,
-        customerName: d.customer_name || 'عميل غير معروف',
+        customerName: d.customer_name || 'عميل افتراضي',
         date: d.date || new Date().toISOString(),
         total: d.total || 0,
         paidAmount: d.paid_amount || 0,
@@ -759,7 +660,7 @@ export const deleteFinancialTransaction = async (txId: string) => {
     const oldTx = oldTxRes as any;
     if (error || !oldTx) throw new Error("Transaction not found");
     if (oldTx.entity_id) { await adjustEntityBalance(oldTx.entity_type, oldTx.entity_id, oldTx.type as 'in' | 'out', -Number(oldTx.amount)); }
-    const { data: pmRes } = await supabase.from('payment_methods').select('balance').eq('id', oldTx.payment_method_id).single();
+    const { data: pmRes = { balance: 0 } } = await supabase.from('payment_methods').select('balance').eq('id', oldTx.payment_method_id).single();
     const pm = pmRes as any;
     if (pm) {
         const revertBal = oldTx.type === 'in' ? Number(pm.balance || 0) - Number(oldTx.amount) : Number(pm.balance || 0) + Number(oldTx.amount);
@@ -837,8 +738,10 @@ export const updateUserProfile = async (userId: string, data: { name: string, st
 };
 
 export const getAppSettings = (): AppSettings => {
-    const saved = localStorage.getItem('bousla_settings');
-    if (saved) return JSON.parse(saved);
+    try {
+        const saved = localStorage.getItem('bousla_settings');
+        if (saved) return JSON.parse(saved);
+    } catch (e) {}
     
     return {
       system: { language: 'ar', darkMode: false, dataView: 'detailed' },
