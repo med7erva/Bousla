@@ -1,12 +1,14 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Wallet, Plus, TrendingDown, Calendar, AlertTriangle, Trash2, LayoutList, Layers, User, AlertOctagon, MoreVertical, Edit2, Save, X, Loader2 } from 'lucide-react';
+import { Wallet, Plus, TrendingDown, Calendar, AlertTriangle, Trash2, LayoutList, Layers, User, AlertOctagon, MoreVertical, Edit2, Save, X, Loader2, FileDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getExpenses, addExpensesBatch, getSalesAnalytics, getPaymentMethods, ensurePaymentMethodsExist, getExpenseCategories, addExpenseCategory, deleteExpenseCategory, getEmployees, updateExpense, deleteExpense } from '../services/db';
 import { getExpenseInsights } from '../services/geminiService';
 import { Expense, PaymentMethod, ExpenseCategory, Employee } from '../types';
 import { CURRENCY } from '../constants';
 import AIInsightAlert from '../components/AIInsightAlert';
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
 
 interface ExpenseRow {
     id: string;
@@ -32,6 +34,7 @@ const Expenses: React.FC = () => {
     const [isEditExpenseModalOpen, setIsEditExpenseModalOpen] = useState(false);
     const [aiTips, setAiTips] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     
     // Batch Form State
     const [batchDate, setBatchDate] = useState(new Date().toISOString().split('T')[0]);
@@ -45,7 +48,7 @@ const Expenses: React.FC = () => {
 
     // Dropdown State
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-    const [menuPos, setMenuPos] = useState({ top: 0, left: 0 }); // Added position state
+    const [menuPos, setMenuPos] = useState({ top: 0, left: 0 }); 
     const menuRef = useRef<HTMLDivElement>(null);
 
     const loadData = async () => {
@@ -66,19 +69,16 @@ const Expenses: React.FC = () => {
         setPaymentMethods(pmData);
         setEmployees(empData);
 
-        // Default Payment Method
         const defaultPm = pmData.find(m => m.isDefault) || pmData[0];
         
         if (!batchPaymentMethodId && defaultPm) {
             setBatchPaymentMethodId(defaultPm.id);
         }
 
-        // Initialize rows with default category if empty
         if (catsData.length > 0 && expenseRows[0].categoryId === '') {
             setExpenseRows(rows => rows.map(r => ({ ...r, categoryId: catsData[0].id })));
         }
 
-        // Load AI Insights
         if (expData.length > 0 && aiTips.length === 0) {
             const tips = await getExpenseInsights(expData, salesData.totalSales);
             setAiTips(tips);
@@ -103,7 +103,24 @@ const Expenses: React.FC = () => {
         };
     }, [user]);
 
-    // --- Expense Row Management ---
+    const handleExportPDF = () => {
+        if (expenses.length === 0) return;
+        setIsExporting(true);
+        
+        const element = document.getElementById('expenses-history-section');
+        const opt = {
+            margin: 0.5,
+            filename: `سجل_المصاريف_${user?.storeName}_${new Date().toISOString().split('T')[0]}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            setIsExporting(false);
+        });
+    };
+
     const addRow = () => {
         setExpenseRows([...expenseRows, { 
             id: Date.now().toString(), 
@@ -115,7 +132,7 @@ const Expenses: React.FC = () => {
     };
 
     const removeRow = (id: string) => {
-        if (expenseRows.length === 1) return; // Keep at least one
+        if (expenseRows.length === 1) return; 
         setExpenseRows(expenseRows.filter(r => r.id !== id));
     };
 
@@ -131,7 +148,6 @@ const Expenses: React.FC = () => {
             .reduce((sum, e) => sum + e.amount, 0);
     };
 
-    // --- Actions ---
     const handleSaveBatch = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) return;
@@ -144,7 +160,6 @@ const Expenses: React.FC = () => {
 
         setIsSubmitting(true);
         try {
-            // Logic to auto-fill title if empty
             const processedRows = validRows.map(row => {
                 const category = categories.find(c => c.id === row.categoryId);
                 return {
@@ -182,7 +197,6 @@ const Expenses: React.FC = () => {
         
         setIsSubmitting(true);
         try {
-            // Also apply the title logic here
             const category = categories.find(c => c.id === editingExpense.categoryId);
             const finalTitle = editingExpense.title.trim() ? editingExpense.title : (category?.name || 'مصروف عام');
             
@@ -221,7 +235,6 @@ const Expenses: React.FC = () => {
         setActiveMenuId(null);
     };
 
-    // --- Category Actions ---
     const handleAddCategory = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user || !newCategoryName.trim()) return;
@@ -252,7 +265,6 @@ const Expenses: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <h1 className="text-2xl font-bold text-gray-800 dark:text-white">المصاريف</h1>
                 
-                {/* Tabs */}
                 <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-xl">
                     <button 
                         onClick={() => setActiveTab('expenses')}
@@ -271,7 +283,6 @@ const Expenses: React.FC = () => {
                 </div>
             </div>
 
-            {/* AI Insight (Collapsible) */}
             <AIInsightAlert 
                 title="تحليل المصاريف"
                 insight={aiTips}
@@ -279,10 +290,17 @@ const Expenses: React.FC = () => {
                 baseColor="rose"
             />
 
-            {/* --- EXPENSES TAB --- */}
             {activeTab === 'expenses' && (
                 <>
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-3">
+                        <button 
+                            onClick={handleExportPDF}
+                            disabled={isExporting || expenses.length === 0}
+                            className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 px-4 py-3 rounded-xl transition border border-slate-200 dark:border-slate-700 shadow-sm disabled:opacity-70 font-bold"
+                        >
+                            {isExporting ? <Loader2 size={20} className="animate-spin" /> : <FileDown size={20} />}
+                            <span>تصدير سجل PDF</span>
+                        </button>
                         <button 
                             onClick={() => setIsAddExpenseModalOpen(true)}
                             className="flex items-center gap-2 bg-emerald-600 text-white px-6 py-3 rounded-xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-200 dark:shadow-none font-bold"
@@ -292,7 +310,11 @@ const Expenses: React.FC = () => {
                         </button>
                     </div>
 
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                    <div id="expenses-history-section" className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                        <div className="hidden print:block mb-4 text-center border-b p-6">
+                            <h2 className="text-xl font-bold">{user?.storeName} - سجل المصاريف التشغيلية</h2>
+                            <p className="text-sm text-gray-500">تاريخ الطباعة: {new Date().toLocaleDateString('ar-MA')}</p>
+                        </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-right whitespace-nowrap min-w-[600px]">
                                 <thead className="bg-gray-50 dark:bg-slate-700/50 text-gray-500 dark:text-slate-400 text-xs uppercase font-semibold">
@@ -301,7 +323,7 @@ const Expenses: React.FC = () => {
                                         <th className="px-6 py-4">العنوان / البيان</th>
                                         <th className="px-6 py-4">التصنيف</th>
                                         <th className="px-6 py-4">المبلغ</th>
-                                        <th className="px-6 py-4">إجراءات</th>
+                                        <th className="px-6 py-4" data-html2canvas-ignore="true">إجراءات</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
@@ -310,13 +332,13 @@ const Expenses: React.FC = () => {
                                     ) : (
                                         expenses.map(exp => (
                                             <tr key={exp.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 group transition">
-                                                <td className="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">{new Date(exp.date).toLocaleDateString('ar-MA')}</td>
+                                                <td className="px-6 py-4 text-sm text-gray-500 dark:text-slate-400 font-mono">{new Date(exp.date).toLocaleDateString('ar-MA')}</td>
                                                 <td className="px-6 py-4 font-medium text-gray-800 dark:text-white">{exp.title}</td>
                                                 <td className="px-6 py-4">
                                                     <span className="bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 px-2 py-1 rounded text-xs font-bold">{exp.categoryName}</span>
                                                 </td>
                                                 <td className="px-6 py-4 font-bold text-red-600 dark:text-red-400">{exp.amount} {CURRENCY}</td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-6 py-4" data-html2canvas-ignore="true">
                                                     <button 
                                                         onClick={(e) => { 
                                                             e.stopPropagation(); 
@@ -339,7 +361,6 @@ const Expenses: React.FC = () => {
                 </>
             )}
 
-            {/* --- ACCOUNTS TAB --- */}
             {activeTab === 'accounts' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
@@ -388,7 +409,6 @@ const Expenses: React.FC = () => {
                 </div>
             )}
 
-            {/* Floating Action Menu */}
             {activeMenuId && activeExpense && (
                 <>
                     <div className="fixed inset-0 z-40" onClick={() => setActiveMenuId(null)}></div>
@@ -413,7 +433,6 @@ const Expenses: React.FC = () => {
                 </>
             )}
 
-            {/* Batch Expense Modal */}
             {isAddExpenseModalOpen && (
                 <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
                     <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
@@ -467,7 +486,6 @@ const Expenses: React.FC = () => {
                                                 </select>
                                             </div>
                                             
-                                            {/* Show Employee Dropdown ONLY if "Salaries" (رواتب) category is selected */}
                                             {categories.find(c => c.id === row.categoryId)?.name === 'رواتب' ? (
                                                 <div className="md:col-span-3">
                                                     <select 
@@ -540,7 +558,6 @@ const Expenses: React.FC = () => {
                 </div>
             )}
 
-            {/* Edit Modal */}
             {isEditExpenseModalOpen && editingExpense && (
                 <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
                     <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-6 shadow-xl animate-in zoom-in-95 duration-200">
@@ -598,7 +615,6 @@ const Expenses: React.FC = () => {
                 </div>
             )}
 
-            {/* Add Category Modal */}
             {isAddCategoryModalOpen && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white dark:bg-slate-800 rounded-xl w-full max-w-sm p-6 shadow-xl animate-in zoom-in-95 duration-200">

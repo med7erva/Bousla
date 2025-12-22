@@ -4,7 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import { getPaymentMethods, ensurePaymentMethodsExist, getTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction, getClients, getSuppliers, getEmployees, transferFunds } from '../services/db';
 import { PaymentMethod, FinancialTransaction, Client, Supplier, Employee } from '../types';
 import { CURRENCY } from '../constants';
-import { Landmark, Wallet, Smartphone, ArrowDownLeft, ArrowUpRight, ArrowRightLeft, User, Briefcase, Users, X, Edit2, Trash2, Loader2 } from 'lucide-react';
+import { Landmark, Wallet, Smartphone, ArrowDownLeft, ArrowUpRight, ArrowRightLeft, User, Briefcase, Users, X, Edit2, Trash2, Loader2, FileDown } from 'lucide-react';
+// @ts-ignore
+import html2pdf from 'html2pdf.js';
 
 const Finance: React.FC = () => {
   const { user } = useAuth();
@@ -18,10 +20,11 @@ const Finance: React.FC = () => {
 
   // Modal State
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
-  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false); // New Transfer Modal
-  const [txType, setTxType] = useState<'in' | 'out'>('in'); // 'in' = Receipt, 'out' = Payment
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false); 
+  const [txType, setTxType] = useState<'in' | 'out'>('in'); 
   const [editingTxId, setEditingTxId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -59,7 +62,6 @@ const Finance: React.FC = () => {
     setSuppliers(supData);
     setEmployees(empData);
     
-    // Default selection
     if (!formData.paymentMethodId && pmData.length > 0) {
          setFormData(prev => ({ ...prev, paymentMethodId: pmData.find(m => m.isDefault)?.id || pmData[0].id }));
     }
@@ -68,6 +70,24 @@ const Finance: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [user]);
+
+  const handleExportPDF = () => {
+    if (transactions.length === 0) return;
+    setIsExporting(true);
+    
+    const element = document.getElementById('finance-history-section');
+    const opt = {
+        margin: 0.5,
+        filename: `سجل_المالية_${user?.storeName}_${new Date().toISOString().split('T')[0]}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+    };
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        setIsExporting(false);
+    });
+  };
 
   const openTxModal = (type: 'in' | 'out', txToEdit?: FinancialTransaction) => {
       setTxType(type);
@@ -244,7 +264,6 @@ const Finance: React.FC = () => {
         </div>
       </div>
 
-      {/* Total Balance Card */}
       <div className="bg-slate-900 dark:bg-slate-950 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 p-32 bg-emerald-500 opacity-10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
         <div className="relative z-10">
@@ -258,7 +277,6 @@ const Finance: React.FC = () => {
         </div>
       </div>
 
-      {/* Payment Methods Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {methods.map(method => (
             <div key={method.id} className={`rounded-2xl p-6 shadow-lg transition hover:scale-[1.02] ${getProviderStyle(method.provider)}`}>
@@ -278,12 +296,27 @@ const Finance: React.FC = () => {
         ))}
       </div>
 
-      {/* Transaction History */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
-        <h3 className="font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
-            <Landmark size={20} />
-            سجل حركة الأموال (خارج المبيعات)
-        </h3>
+      <div id="finance-history-section" className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+        <div className="flex justify-between items-center mb-6">
+            <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <Landmark size={20} />
+                سجل حركة الأموال (خارج المبيعات)
+            </h3>
+            <button 
+                onClick={handleExportPDF}
+                disabled={isExporting || transactions.length === 0}
+                className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 px-3 py-2 rounded-lg transition border border-slate-200 dark:border-slate-600 disabled:opacity-70"
+                data-html2canvas-ignore="true"
+            >
+                {isExporting ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
+                تصدير PDF
+            </button>
+        </div>
+
+        <div className="hidden print:block mb-4 text-center border-b pb-4">
+            <h2 className="text-xl font-bold">{user?.storeName} - سجل حركة الأموال</h2>
+            <p className="text-sm text-gray-500">تاريخ التقرير: {new Date().toLocaleDateString('ar-MA')}</p>
+        </div>
         
         <div className="overflow-x-auto">
             <table className="w-full text-right">
@@ -295,7 +328,7 @@ const Finance: React.FC = () => {
                         <th className="px-6 py-4">الوصف</th>
                         <th className="px-6 py-4">الحساب المالي</th>
                         <th className="px-6 py-4">المبلغ</th>
-                        <th className="px-6 py-4">إجراءات</th>
+                        <th className="px-6 py-4" data-html2canvas-ignore="true">إجراءات</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
@@ -317,7 +350,7 @@ const Finance: React.FC = () => {
                                     )}
                                 </td>
                                 <td className="px-6 py-4 text-gray-800 dark:text-white font-medium">
-                                    <span className="text-xs text-gray-400 block mb-0.5">
+                                    <span className="text-xs text-gray-400 block mb-0.5" data-html2canvas-ignore="true">
                                         {tx.entityType === 'Client' ? 'عميل' : tx.entityType === 'Supplier' ? 'مورد' : tx.entityType === 'Employee' ? 'موظف' : 'آخر'}
                                     </span>
                                     {getEntityDisplayName(tx)}
@@ -327,7 +360,7 @@ const Finance: React.FC = () => {
                                 <td className={`px-6 py-4 font-bold ${tx.type === 'in' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                                     {tx.type === 'in' ? '+' : '-'}{tx.amount}
                                 </td>
-                                <td className="px-6 py-4">
+                                <td className="px-6 py-4" data-html2canvas-ignore="true">
                                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button 
                                             onClick={() => openTxModal(tx.type, tx)}
@@ -353,7 +386,6 @@ const Finance: React.FC = () => {
         </div>
       </div>
 
-      {/* Transaction Modal */}
       {isTxModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-6 shadow-xl animate-in zoom-in-95 duration-200">
@@ -370,8 +402,6 @@ const Finance: React.FC = () => {
                 </div>
 
                 <form onSubmit={handleTransactionSubmit} className="space-y-4">
-                    
-                    {/* Entity Type Selector */}
                     <div className="grid grid-cols-4 gap-2 bg-gray-50 dark:bg-slate-700 p-1 rounded-xl">
                         {['Client', 'Supplier', 'Employee', 'Other'].map((type) => (
                             <button
@@ -392,7 +422,6 @@ const Finance: React.FC = () => {
                         ))}
                     </div>
 
-                    {/* Specific Entity Select */}
                     {formData.entityType !== 'Other' && (
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
@@ -415,14 +444,6 @@ const Finance: React.FC = () => {
                                     <option key={e.id} value={e.id}>{e.name}</option>
                                 ))}
                             </select>
-                            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                                {txType === 'in' && formData.entityType === 'Client' && "سيتم خصم المبلغ من دين العميل."}
-                                {txType === 'out' && formData.entityType === 'Client' && "سيتم إضافة المبلغ كدين (سلفة) على العميل."}
-                                {txType === 'out' && formData.entityType === 'Supplier' && "سيتم خصم المبلغ من دين المورد."}
-                                {txType === 'in' && formData.entityType === 'Supplier' && "سيتم إضافة المبلغ كدين علينا للمورد."}
-                                {txType === 'out' && formData.entityType === 'Employee' && "سلفة للموظف (تسجل عليه)."}
-                                {txType === 'in' && formData.entityType === 'Employee' && "الموظف يسدد سلفة."}
-                            </p>
                         </div>
                     )}
 
@@ -495,7 +516,6 @@ const Finance: React.FC = () => {
         </div>
       )}
 
-      {/* Transfer Modal */}
       {isTransferModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
              <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-6 shadow-xl animate-in zoom-in-95 duration-200">
