@@ -166,7 +166,7 @@ export const getUnusedCodes = async () => {
         .eq('is_used', false)
         .order('created_at', { ascending: false });
     if (error) throw error;
-    return data || [];
+    return (data as any) || [];
 };
 
 export const activateSubscription = async (userId: string, code: string) => {
@@ -198,7 +198,7 @@ export const activateSubscription = async (userId: string, code: string) => {
 
     if (profileError) {
         console.error("Profile Update Error:", profileError);
-        throw new Error("فشل تحديث ملف المستخدم. تأكد من وجود الأعمدة في قاعدة البيانات.");
+        throw new Error("فشل تحديث ملف المستخدم. تأكد من تنفيذ كود SQL المخصص لإضافة الأعمدة.");
     }
 
     // 3. حرق الكود (جعله مستخدماً)
@@ -229,7 +229,7 @@ export const addProduct = async (product: Omit<Product, 'id'>) => {
         barcode: product.barcode || `BC-${Date.now()}`
     }).select().single();
     if (error) throw error;
-    return data;
+    return (data as any);
 };
 
 export const updateProduct = async (product: Product) => {
@@ -369,7 +369,7 @@ export const createInvoice = async (userId: string, items: SaleItem[], total: nu
         }
     }
 
-    return invoice;
+    return (invoice as any);
 };
 
 export const deleteInvoice = async (id: string) => {
@@ -550,7 +550,7 @@ export const createPurchase = async (userId: string, supplierId: string, supplie
             await supabase.from('payment_methods').update({ balance: Number(pm.balance || 0) - paidAmount }).eq('id', paymentMethodId);
         }
     }
-    return purchase;
+    return (purchase as any);
 };
 
 export const updatePurchase = async (purchase: Purchase) => {
@@ -604,7 +604,7 @@ export const getExpenses = async (userId: string): Promise<Expense[]> => {
     const { data: categories, error: catError } = await supabase.from('expense_categories').select('*').eq('user_id', userId);
     if (catError) throw catError;
     return (expenses || []).map((d: any) => ({
-        id: d.id, userId: d.user_id, title: d.title, amount: d.amount || 0, categoryId: d.category_id, categoryName: categories?.find((c: any) => c.id === d.category_id)?.name || 'غير مصنف', employeeId: d.employee_id, date: d.date || new Date().toISOString(), paymentMethodId: d.payment_method_id
+        id: d.id, userId: d.user_id, title: d.title, amount: d.amount || 0, categoryId: d.category_id, categoryName: (categories as any)?.find((c: any) => c.id === d.category_id)?.name || 'غير مصنف', employeeId: d.employee_id, date: d.date || new Date().toISOString(), paymentMethodId: d.payment_method_id
     }));
 };
 
@@ -686,7 +686,7 @@ export const addFinancialTransaction = async (txData: Omit<FinancialTransaction,
         const newBal = type === 'in' ? Number(pm.balance || 0) + Number(amount) : Number(pm.balance || 0) - Number(amount);
         await supabase.from('payment_methods').update({ balance: newBal }).eq('id', paymentMethodId);
     }
-    return tx;
+    return (tx as any);
 };
 
 export const transferFunds = async (userId: string, fromPmId: string, toPmId: string, amount: number, date: string, description: string) => {
@@ -696,7 +696,7 @@ export const transferFunds = async (userId: string, fromPmId: string, toPmId: st
     const toPm = toPmRes as any;
     if (!fromPm || !toPm) throw new Error("حساب الدفع غير موجود");
     await addFinancialTransaction({
-        userId, type: 'out', amount: Number(amount), date: date, paymentMethodId: fromPmId, entityType: 'Other', entityId: null, description: `تحويل إلى: ${fromPm.name} ${description ? `(${description})` : ''}`
+        userId, type: 'out', amount: Number(amount), date: date, paymentMethodId: fromPmId, entityType: 'Other', entityId: null, description: `تحويل إلى: ${toPm.name} ${description ? `(${description})` : ''}`
     });
     await addFinancialTransaction({
         userId, type: 'in', amount: Number(amount), date: date, paymentMethodId: toPmId, entityType: 'Other', entityId: null, description: `تحويل من: ${fromPm.name} ${description ? `(${description})` : ''}`
@@ -793,7 +793,7 @@ export const getReportData = async (userId: string, startDate?: string, endDate?
     const invoices = allInvoices.filter((inv: any) => !inv.items.some((i: any) => i.productId === 'opening-bal'));
     const categories = catsRes.data || [];
     const expenses = (expRes.data || []).map((d: any) => ({
-        id: d.id, userId: d.user_id, title: d.title, amount: d.amount || 0, categoryId: d.category_id, categoryName: categories.find((c: any) => c.id === d.category_id)?.name || 'غير مصنف', date: d.date
+        id: d.id, userId: d.user_id, title: d.title, amount: d.amount || 0, categoryId: d.category_id, categoryName: (categories as any).find((c: any) => c.id === d.category_id)?.name || 'غير مصنف', date: d.date
     }));
     const purchases = (purRes.data || []).map((d: any) => ({
         id: d.id, userId: d.user_id, date: d.date, totalCost: d.total_cost || 0, paidAmount: d.paid_amount || 0

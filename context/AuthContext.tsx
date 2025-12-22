@@ -19,48 +19,73 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const mapUser = (sessionUser: any): User => {
+  // دالة لجلب بيانات الملف الشخصي من قاعدة البيانات بدقة
+  const fetchUserProfile = async (sessionUser: any): Promise<User> => {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', sessionUser.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error("Error fetching profile:", error);
+    }
+
     const metadata = sessionUser.user_metadata || {};
-    const phone = metadata.phone || sessionUser.phone || '';
+    const phone = profile?.phone || metadata.phone || sessionUser.phone || '';
     const sanitizedPhone = phone.replace(/\D/g, '');
+    const isAdmin = sanitizedPhone === ADMIN_PHONE || profile?.is_admin === true;
 
-    // تحديد الخطة والحالة بناءً على الصلاحيات أو Metadata
-    const isAdmin = sanitizedPhone === ADMIN_PHONE;
+    // استخراج القيم من البروفايل (قاعدة البيانات) أولاً، ثم الميتاداتا كاحتياط
+    let status = profile?.subscription_status || metadata.subscriptionStatus || 'trial';
+    let plan = profile?.subscription_plan || metadata.subscriptionPlan || 'plus';
+    const trialEnd = profile?.trial_end_date || metadata.trialEndDate;
+    const subEnd = profile?.subscription_end_date || metadata.subscriptionEndDate;
 
-    // المسؤول دائماً لديه باقة Pro وتاريخ تجربة طويل لضمان ظهور العداد
-    const status = isAdmin ? 'active' : (metadata.subscriptionStatus || 'trial');
-    const plan = isAdmin ? 'pro' : (metadata.subscriptionPlan || 'plus');
+    // حساب التاريخ المستهدف للتحقق من الانتهاء
+    const targetDate = status === 'active' ? subEnd : trialEnd;
     
-    // تاريخ وهمي للمسؤول لضمان عمل العداد
-    const adminTrialEnd = new Date();
-    adminTrialEnd.setFullYear(adminTrialEnd.getFullYear() + 10);
+    // التحقق التلقائي من انتهاء الصلاحية
+    if (status !== 'expired' && targetDate && new Date(targetDate) < new Date()) {
+        if (!isAdmin) status = 'expired';
+    }
+
+    // إذا كان مسؤولاً، نعطيه صلاحيات كاملة دائماً
+    if (isAdmin) {
+        status = 'active';
+        plan = 'pro';
+    }
 
     return {
       id: sessionUser.id,
-      name: metadata.name || 'User',
+      name: profile?.name || metadata.name || 'User',
       phone: sanitizedPhone,
-      storeName: metadata.storeName || 'My Store',
+      storeName: profile?.store_name || metadata.storeName || 'My Store',
       email: sessionUser.email,
       createdAt: sessionUser.created_at,
-      subscriptionStatus: status,
-      subscriptionPlan: plan,
-      trialEndDate: isAdmin ? adminTrialEnd.toISOString() : (metadata.trialEndDate || new Date().toISOString()),
-      subscriptionEndDate: isAdmin ? adminTrialEnd.toISOString() : metadata.subscriptionEndDate,
-      isAdmin: isAdmin || metadata.isAdmin === true
+      subscriptionStatus: status as 'trial' | 'active' | 'expired',
+      subscriptionPlan: plan as 'plus' | 'pro',
+      trialEndDate: trialEnd || new Date().toISOString(),
+      subscriptionEndDate: subEnd,
+      isAdmin: isAdmin
     };
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // 1. عند تشغيل التطبيق أول مرة
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        setUser(mapUser(session.user));
+        const userData = await fetchUserProfile(session.user);
+        setUser(userData);
       }
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // 2. عند تغيير حالة تسجيل الدخول أو التحديث
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        setUser(mapUser(session.user));
+        const userData = await fetchUserProfile(session.user);
+        setUser(userData);
       } else {
         setUser(null);
       }
