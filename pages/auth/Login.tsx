@@ -14,7 +14,6 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // إذا كان المستخدم مسجلاً دخوله بالفعل، انقله للرئيسية فوراً
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/', { replace: true });
@@ -36,41 +35,44 @@ const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      // محاولة تسجيل الدخول مع مهلة زمنية قصوى (15 ثانية)
-      const loginPromise = loginUser(sanitizedPhone, password);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('تأخر الرد من السيرفر، يرجى المحاولة مرة أخرى')), 15000)
-      );
-
-      await Promise.race([loginPromise, timeoutPromise]);
+      // محاولة تسجيل الدخول
+      await loginUser(sanitizedPhone, password);
       
-      // لا نحتاج navigate هنا لأن AuthContext سيكتشف تغيير الحالة ويقوم بالتحويل
+      // ننتظر قليلاً ليعالج AuthContext التغيير، إذا لم يتغير شيء خلال 10 ثوانٍ نعطي خطأ
+      setTimeout(() => {
+          if (!isAuthenticated && loading) {
+              setError('تم الدخول بنجاح ولكن هناك تأخير في جلب البيانات. يرجى تحديث الصفحة.');
+              setLoading(false);
+          }
+      }, 10000);
+
     } catch (err: any) {
       console.error("Login Error:", err);
       let msg = 'بيانات الدخول غير صحيحة أو الحساب غير موجود';
       if (err.message?.includes('Network')) msg = 'خطأ في الاتصال، تأكد من جودة الإنترنت';
-      if (err.message?.includes('timeout')) msg = err.message;
+      if (err.message?.includes('Database')) msg = 'مشكلة في الوصول لقاعدة البيانات، جرب لاحقاً';
       setError(msg);
-      setLoading(false); // إعادة تفعيل الزر في حال الفشل
+      setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans" dir="rtl">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md px-4">
-        <div className="flex justify-center mb-8">
-            <BouslaLogo className="h-20 w-auto" />
+      <div className="sm:mx-auto sm:w-full sm:max-w-md px-4 text-center">
+        <div className="flex justify-center mb-6">
+            <BouslaLogo className="h-16 w-auto" />
         </div>
-        <h2 className="text-center text-3xl font-black text-slate-800 dark:text-white tracking-tight">
+        <h2 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">
           تسجيل الدخول
         </h2>
+        <p className="mt-2 text-slate-500 text-sm font-medium">مرحباً بك مجدداً في بوصلة</p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
         <div className="bg-white dark:bg-slate-800 py-8 px-6 shadow-xl rounded-3xl border border-slate-100 dark:border-slate-700">
           <form className="space-y-5" onSubmit={handleSubmit}>
             {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-2xl text-sm border border-red-100 dark:border-red-900/50 flex items-center gap-3 animate-in shake duration-300">
+                <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-2xl text-sm border border-red-100 dark:border-red-900/50 flex items-center gap-3">
                     <AlertCircle size={20} className="shrink-0" />
                     <span className="font-bold">{error}</span>
                 </div>
@@ -86,7 +88,7 @@ const Login: React.FC = () => {
                   type="tel"
                   required
                   disabled={loading}
-                  className="block w-full pl-20 text-right border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 p-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white transition-all disabled:opacity-50"
+                  className="block w-full pl-20 text-right border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 p-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white transition-all"
                   placeholder="47071347"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
@@ -107,7 +109,7 @@ const Login: React.FC = () => {
                   type="password"
                   required
                   disabled={loading}
-                  className="block w-full pr-12 border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 p-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white transition-all disabled:opacity-50"
+                  className="block w-full pr-12 border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 p-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white transition-all"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -119,7 +121,7 @@ const Login: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full flex justify-center py-4 px-4 rounded-2xl shadow-lg text-lg font-black text-white bg-emerald-600 hover:bg-emerald-700 transition-all transform active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed`}
+                className="w-full flex justify-center py-4 px-4 rounded-2xl shadow-lg text-lg font-black text-white bg-emerald-600 hover:bg-emerald-700 transition-all transform active:scale-[0.98] disabled:opacity-70"
               >
                 {loading ? (
                     <div className="flex items-center gap-3">
@@ -140,7 +142,6 @@ const Login: React.FC = () => {
                 <span className="px-4 bg-white dark:bg-slate-800 text-slate-500 font-medium">ليس لديك حساب؟</span>
               </div>
             </div>
-
             <div className="mt-6">
               <Link
                 to="/register"
