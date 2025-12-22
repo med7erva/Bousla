@@ -43,14 +43,14 @@ const Landing: React.FC = () => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            للمحلات التجارية في موريتانيا
+            مع بوصلة بوتيكك .. ف ايدك👋
           </span>
           <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight mb-8 leading-tight">
             أدر محلك بذكاء مع <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">نظام بوصلة المحاسبي</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">تطبيق بوصلة</span>
           </h1>
-          <p className="mt-4 max-w-2xl mx-auto text-xl text-slate-500 mb-10 leading-relaxed">
-            تطبيق ويب متكامل لإدارة المبيعات، المخزون، والعملاء. مصمم خصيصاً لتجار الملابس، يعمل بدون إنترنت، ويدعم الذكاء الاصطناعي لتحليل أرباحك.
+          <p className="mt-4 max-w-3xl mx-auto text-xl text-slate-500 mb-10 leading-relaxed">
+            تابع أرباحك يومًا بيوم، واحصل على تقارير مالية واضحة تساعدك على فهم أداء متجرك واتخاذ قرارات أدق؛ مع نظام ذكي تم تطويره خصيصا لمتاجر الملابس.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
              <Link 
@@ -69,7 +69,7 @@ const Landing: React.FC = () => {
           </div>
         </div>
         
-        {/* Abstract shapes (Restored) */}
+        {/* Abstract shapes */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 opacity-30 pointer-events-none">
             <div className="absolute top-10 left-10 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
             <div className="absolute top-10 right-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
@@ -115,7 +115,6 @@ const Landing: React.FC = () => {
       {/* Footer */}
       <footer className="bg-slate-900 py-12 text-center text-slate-400">
         <div className="flex items-center justify-center gap-2 mb-6 text-white">
-            {/* Increased size here */}
             <BouslaLogo isWhite={true} className="h-20 w-auto text-4xl" />
         </div>
         <p>© {new Date().getFullYear()} جميع الحقوق محفوظة. صُنع بفخر للمتاجر الموريتانية.</p>
