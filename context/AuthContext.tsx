@@ -19,77 +19,81 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const fetchUserProfile = async (sessionUser: any): Promise<User> => {
-    try {
-      // جلب البيانات من جدول profiles (الذي قمت بتحديثه الآن بـ SQL)
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', sessionUser.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.warn("Profile fetch warning:", error.message);
-      }
-
-      const metadata = sessionUser.user_metadata || {};
-      const phone = profile?.phone || metadata.phone || '';
-      const sanitizedPhone = phone.replace(/\D/g, '');
-      const isAdmin = sanitizedPhone === ADMIN_PHONE || profile?.is_admin === true;
-
-      // الاعتماد الكلي على قيم قاعدة البيانات الجديدة
-      let status = profile?.subscription_status || metadata.subscriptionStatus || 'trial';
-      let plan = profile?.subscription_plan || metadata.subscriptionPlan || 'plus';
-      const trialEnd = profile?.trial_end_date || metadata.trialEndDate;
-      const subEnd = profile?.subscription_end_date || metadata.subscriptionEndDate;
-
-      // فحص انتهاء الصلاحية
-      const targetDate = status === 'active' ? subEnd : trialEnd;
-      if (status !== 'expired' && targetDate && !isAdmin) {
-          if (new Date(targetDate) < new Date()) {
-              status = 'expired';
-          }
-      }
-
-      // صلاحيات المسؤول كاملة دائماً
-      if (isAdmin) {
-          status = 'active';
-          plan = 'pro';
-      }
-
-      return {
-        id: sessionUser.id,
-        name: profile?.name || metadata.name || 'User',
-        phone: sanitizedPhone,
-        storeName: profile?.store_name || metadata.storeName || 'My Store',
-        email: sessionUser.email,
-        createdAt: sessionUser.created_at,
-        subscriptionStatus: status as 'trial' | 'active' | 'expired',
-        subscriptionPlan: plan as 'plus' | 'pro',
-        trialEndDate: trialEnd,
-        subscriptionEndDate: subEnd,
-        isAdmin: isAdmin
-      };
-    } catch (err) {
-      // نظام أمان احتياطي في حال فشل الاتصال بالقاعدة
-      console.error("Auth fallback triggered");
-      const metadata = sessionUser.user_metadata || {};
-      return {
+    // جلب الميتاداتا كخيار احتياطي فوري
+    const metadata = sessionUser.user_metadata || {};
+    const fallbackUser: User = {
         id: sessionUser.id,
         name: metadata.name || 'User',
-        phone: metadata.phone || '',
+        phone: (metadata.phone || '').replace(/\D/g, ''),
         storeName: metadata.storeName || 'My Store',
         email: sessionUser.email,
         createdAt: sessionUser.created_at,
         subscriptionStatus: metadata.subscriptionStatus || 'trial',
         subscriptionPlan: metadata.subscriptionPlan || 'plus',
         trialEndDate: metadata.trialEndDate,
-        isAdmin: metadata.phone === ADMIN_PHONE
-      };
+        isAdmin: (metadata.phone || '') === ADMIN_PHONE
+    };
+
+    try {
+      // محاولة جلب البيانات الإضافية من الجدول
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', sessionUser.id)
+        .single();
+
+      if (error) {
+          console.warn("Profile table error (Safe fallback used):", error.message);
+          return fallbackUser;
+      }
+
+      if (profile) {
+          const phone = profile.phone || metadata.phone || '';
+          const sanitizedPhone = phone.replace(/\D/g, '');
+          const isAdmin = sanitizedPhone === ADMIN_PHONE || profile.is_admin === true;
+          
+          let status = profile.subscription_status || metadata.subscriptionStatus || 'trial';
+          let plan = profile.subscription_plan || metadata.subscriptionPlan || 'plus';
+          const trialEnd = profile.trial_end_date || metadata.trialEndDate;
+          const subEnd = profile.subscription_end_date || metadata.subscriptionEndDate;
+
+          const targetDate = status === 'active' ? subEnd : trialEnd;
+          if (status !== 'expired' && targetDate && !isAdmin) {
+              if (new Date(targetDate) < new Date()) {
+                  status = 'expired';
+              }
+          }
+
+          if (isAdmin) { status = 'active'; plan = 'pro'; }
+
+          return {
+            ...fallbackUser,
+            name: profile.name || fallbackUser.name,
+            phone: sanitizedPhone,
+            storeName: profile.store_name || fallbackUser.storeName,
+            subscriptionStatus: status as any,
+            subscriptionPlan: plan as any,
+            trialEndDate: trialEnd,
+            subscriptionEndDate: subEnd,
+            isAdmin: isAdmin
+          };
+      }
+      return fallbackUser;
+    } catch (err) {
+      return fallbackUser;
     }
   };
 
   useEffect(() => {
     let isMounted = true;
+
+    // صمام أمان: إذا استغرقت عملية التحميل أكثر من 6 ثوانٍ، أغلق شاشة التحميل مهما كانت النتيجة
+    const safetyTimeout = setTimeout(() => {
+        if (isMounted && loading) {
+            console.log("Auth safety timeout triggered");
+            setLoading(false);
+        }
+    }, 6000);
 
     const initAuth = async () => {
       try {
@@ -98,6 +102,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const userData = await fetchUserProfile(session.user);
           setUser(userData);
         }
+      } catch (e) {
+        console.error("Auth init error:", e);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -108,28 +114,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         const userData = await fetchUserProfile(session.user);
-        if (isMounted) setUser(userData);
+        if (isMounted) {
+            setUser(userData);
+            setLoading(false);
+        }
       } else {
-        if (isMounted) setUser(null);
+        if (isMounted) {
+            setUser(null);
+            setLoading(false);
+        }
       }
-      if (isMounted) setLoading(false);
     });
 
     return () => {
       isMounted = false;
+      clearTimeout(safetyTimeout);
       subscription.unsubscribe();
     };
   }, []);
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
+    try {
+        await supabase.auth.signOut();
+        setUser(null);
+    } catch (e) {
+        window.location.reload(); // في حال فشل الخروج برمجياً، أنعش الصفحة
+    }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-slate-400 text-sm animate-pulse">جاري تأمين الاتصال...</p>
       </div>
     );
   }

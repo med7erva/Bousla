@@ -17,11 +17,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
-        darkMode: 'class', // This is CRITICAL for the toggle to work
+        darkMode: 'class',
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Cairo', 'sans-serif'], // Set Cairo as default sans font
+              sans: ['Cairo', 'sans-serif'],
             },
             colors: {
               slate: {
@@ -44,42 +44,15 @@
       }
       body {
         font-family: var(--font-cairo);
-        background-color: #f8fafc; /* Slate-50 */
-        color: #1e293b; /* Slate-800 */
+        background-color: #f8fafc;
+        color: #1e293b;
         -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
         overscroll-behavior-y: none;
-        transition: background-color 0.3s ease, color 0.3s ease;
       }
-      
-      /* Dark Mode Global Overrides */
       .dark body {
-        background-color: #0f172a; /* Slate-900 */
-        color: #f1f5f9; /* Slate-100 */
+        background-color: #0f172a;
+        color: #f1f5f9;
       }
-
-      /* Modern Scrollbar */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1; 
-        border-radius: 10px;
-        border: 2px solid #f8fafc;
-      }
-      .dark ::-webkit-scrollbar-thumb {
-        background: #475569;
-        border-color: #0f172a;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8; 
-      }
-
-      /* Utilities */
       .glass-effect {
         background: rgba(255, 255, 255, 0.85);
         backdrop-filter: blur(12px);
@@ -87,25 +60,24 @@
       }
       .dark .glass-effect {
         background: rgba(15, 23, 42, 0.85);
-        border-bottom: 1px solid rgba(51, 65, 85, 0.5);
       }
     </style>
 <script type="importmap">
 {
   "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/": "https://esm.sh/react-dom@19.0.0/",
+    "react/": "https://esm.sh/react@19.0.0/",
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
-    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.10.1",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
-    "recharts": "https://aistudiocdn.com/recharts@^3.5.1",
-    "html2pdf.js": "https://aistudiocdn.com/html2pdf.js@^0.12.1",
-    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.86.2",
-    "vite": "https://aistudiocdn.com/vite@^7.2.6",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
-    "vite-plugin-pwa": "https://aistudiocdn.com/vite-plugin-pwa@^1.2.0",
-    "react-dom": "https://esm.sh/react-dom@^19.2.3"
+    "react-router-dom": "https://esm.sh/react-router-dom@7.1.1",
+    "lucide-react": "https://esm.sh/lucide-react@0.468.0",
+    "recharts": "https://esm.sh/recharts@2.15.0",
+    "html2pdf.js": "https://esm.sh/html2pdf.js@0.10.2",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.47.10",
+    "vite": "https://esm.sh/vite@^7.3.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "vite-plugin-pwa": "https://esm.sh/vite-plugin-pwa@^1.2.0"
   }
 }
 </script>
