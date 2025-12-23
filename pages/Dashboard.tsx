@@ -166,16 +166,17 @@ const Dashboard: React.FC = () => {
                أهلا بك في متجرك '{user?.storeName}' | {todayDate}
              </p>
          </div>
-         <div className="flex flex-wrap gap-3 w-full lg:w-auto">
-            <Link to="/sales" className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-emerald-600 text-white px-6 py-3.5 rounded-2xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-200 dark:shadow-none font-bold">
+         {/* Action Buttons Container - Horizontal Scroll on Mobile */}
+         <div className="flex overflow-x-auto gap-3 w-full lg:w-auto pb-4 lg:pb-0 scroll-smooth snap-x custom-scrollbar">
+            <Link to="/sales" className="shrink-0 snap-start flex items-center justify-center gap-2 bg-emerald-600 text-white px-8 py-3.5 rounded-2xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-200 dark:shadow-none font-bold min-w-[140px]">
                 <Plus size={20} />
                 <span>بيع جديد</span>
             </Link>
-            <Link to="/expenses" className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-rose-600 text-white px-6 py-3.5 rounded-2xl hover:bg-rose-700 transition shadow-lg shadow-rose-200 dark:shadow-none font-bold">
+            <Link to="/expenses" className="shrink-0 snap-start flex items-center justify-center gap-2 bg-indigo-600 text-white px-8 py-3.5 rounded-2xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 dark:shadow-none font-bold min-w-[140px]">
                 <Wallet size={20} />
                 <span>تسجيل مصروف</span>
             </Link>
-            <Link to="/inventory" className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-slate-900 dark:bg-slate-700 text-white px-6 py-3.5 rounded-2xl hover:bg-slate-800 transition shadow-lg shadow-slate-200 dark:shadow-none font-bold">
+            <Link to="/inventory" className="shrink-0 snap-start flex items-center justify-center gap-2 bg-slate-900 dark:bg-slate-700 text-white px-8 py-3.5 rounded-2xl hover:bg-slate-800 transition shadow-lg shadow-slate-200 dark:shadow-none font-bold min-w-[140px]">
                 <Package size={20} />
                 <span>منتج جديد</span>
             </Link>
