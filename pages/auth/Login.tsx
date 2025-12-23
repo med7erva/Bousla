@@ -88,8 +88,8 @@ const Login: React.FC = () => {
                   type="tel"
                   required
                   disabled={loading}
-                  className="block w-full pl-20 text-right border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 p-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white transition-all"
-                  placeholder="47071347"
+                  className="block w-full pl-20 text-right border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-emerald-50/10 focus:border-emerald-500 p-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white transition-all"
+                  placeholder="22334455"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                 />
@@ -109,7 +109,7 @@ const Login: React.FC = () => {
                   type="password"
                   required
                   disabled={loading}
-                  className="block w-full pr-12 border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 p-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white transition-all"
+                  className="block w-full pr-12 border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-emerald-50/10 focus:border-emerald-500 p-4 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white transition-all"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
