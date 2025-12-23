@@ -6,15 +6,12 @@ import {
   DollarSign, 
   ShoppingCart, 
   AlertTriangle, 
-  ArrowUpRight, 
-  ArrowDownRight, 
   Sparkles, 
   BarChart3, 
   Plus, 
   Wallet, 
   Package, 
-  Clock,
-  ArrowDownLeft
+  Clock
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -153,22 +150,34 @@ const Dashboard: React.FC = () => {
     },
   ];
 
+  const todayDate = new Date().toLocaleDateString('ar-MA', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long'
+  });
+
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
          <div className="animate-in fade-in slide-in-from-right-4 duration-500">
              <h2 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">لوحة التحكم</h2>
-             <p className="text-slate-500 dark:text-slate-400 mt-1 font-medium">مرحباً بك في بوصلة؛ متجرك بين يديك.</p>
+             <p className="text-slate-500 dark:text-slate-400 mt-1 font-bold">
+               أهلا بك في متجرك '{user?.storeName}' | {todayDate}
+             </p>
          </div>
-         <div className="flex gap-3 w-full lg:w-auto">
+         <div className="flex flex-wrap gap-3 w-full lg:w-auto">
             <Link to="/sales" className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-emerald-600 text-white px-6 py-3.5 rounded-2xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-200 dark:shadow-none font-bold">
                 <Plus size={20} />
                 <span>بيع جديد</span>
             </Link>
-            <Link to="/ai-chat" className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-indigo-600 text-white px-6 py-3.5 rounded-2xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 dark:shadow-none font-bold">
-                <Sparkles size={20} />
-                <span>اسأل بوصلة</span>
+            <Link to="/expenses" className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-rose-600 text-white px-6 py-3.5 rounded-2xl hover:bg-rose-700 transition shadow-lg shadow-rose-200 dark:shadow-none font-bold">
+                <Wallet size={20} />
+                <span>تسجيل مصروف</span>
+            </Link>
+            <Link to="/inventory" className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-slate-900 dark:bg-slate-700 text-white px-6 py-3.5 rounded-2xl hover:bg-slate-800 transition shadow-lg shadow-slate-200 dark:shadow-none font-bold">
+                <Package size={20} />
+                <span>منتج جديد</span>
             </Link>
          </div>
       </div>
