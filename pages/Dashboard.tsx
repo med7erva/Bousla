@@ -93,14 +93,15 @@ const Dashboard: React.FC = () => {
         topProducts: topSellingProducts
       });
 
-      if (validInvoices.length > 0) {
+      // استدعاء الذكاء الاصطناعي فقط إذا كانت هناك مبيعات
+      if (totalSales > 0) {
           setLoadingAi(true);
           const context: DashboardContext = {
               totalSales,
               totalExpenses,
               totalProfit: netIncome,
               netIncome,
-              lowStockItems: lowStockItems.slice(0, 10),
+              lowStockItems: lowStockItems.slice(0, 5),
               topSellingProducts,
               salesTrend: salesTrend as 'up' | 'down',
               expenseRatio
@@ -116,45 +117,13 @@ const Dashboard: React.FC = () => {
   }, [user]);
 
   const kpiCards = [
-    { 
-        label: 'المبيعات', 
-        value: stats.totalSales, 
-        icon: TrendingUp, 
-        color: 'text-emerald-600', 
-        bg: 'bg-emerald-50 dark:bg-emerald-900/20',
-        border: 'border-emerald-100 dark:border-emerald-800'
-    },
-    { 
-        label: 'صافي الربح', 
-        value: stats.netProfit, 
-        icon: DollarSign, 
-        color: stats.netProfit >= 0 ? 'text-blue-600' : 'text-red-600', 
-        bg: stats.netProfit >= 0 ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-red-50 dark:bg-red-900/20',
-        border: stats.netProfit >= 0 ? 'border-blue-100 dark:border-blue-800' : 'border-red-100 dark:border-red-800'
-    },
-    { 
-        label: 'الفواتير', 
-        value: stats.invoiceCount, 
-        icon: ShoppingCart, 
-        color: 'text-violet-600', 
-        bg: 'bg-violet-50 dark:bg-violet-900/20',
-        border: 'border-violet-100 dark:border-violet-800'
-    },
-    { 
-        label: 'النواقص', 
-        value: stats.lowStockCount, 
-        icon: AlertTriangle, 
-        color: 'text-amber-600', 
-        bg: 'bg-amber-50 dark:bg-amber-900/20',
-        border: 'border-amber-100 dark:border-amber-800'
-    },
+    { label: 'المبيعات', value: stats.totalSales, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-emerald-100 dark:border-emerald-800' },
+    { label: 'صافي الربح', value: stats.netProfit, icon: DollarSign, color: stats.netProfit >= 0 ? 'text-blue-600' : 'text-red-600', bg: stats.netProfit >= 0 ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-red-50 dark:bg-red-900/20', border: stats.netProfit >= 0 ? 'border-blue-100 dark:border-blue-800' : 'border-red-100 dark:border-red-800' },
+    { label: 'الفواتير', value: stats.invoiceCount, icon: ShoppingCart, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/20', border: 'border-violet-100 dark:border-violet-800' },
+    { label: 'النواقص', value: stats.lowStockCount, icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-100 dark:border-amber-800' },
   ];
 
-  const todayDate = new Date().toLocaleDateString('ar-MA', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long'
-  });
+  const todayDate = new Date().toLocaleDateString('ar-MA', { weekday: 'long', day: 'numeric', month: 'long' });
 
   return (
     <div className="space-y-8">
@@ -166,7 +135,6 @@ const Dashboard: React.FC = () => {
                أهلا بك في متجرك '{user?.storeName}' | {todayDate}
              </p>
          </div>
-         {/* Action Buttons Container - Horizontal Scroll on Mobile */}
          <div className="flex overflow-x-auto gap-3 w-full lg:w-auto pb-4 lg:pb-0 scroll-smooth snap-x custom-scrollbar">
             <Link to="/sales" className="shrink-0 snap-start flex items-center justify-center gap-2 bg-emerald-600 text-white px-8 py-3.5 rounded-2xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-200 dark:shadow-none font-bold min-w-[140px]">
                 <Plus size={20} />
@@ -192,17 +160,12 @@ const Dashboard: React.FC = () => {
                 <div className={`p-3 rounded-2xl ${stat.bg} ${stat.color} transition-transform group-hover:scale-110`}>
                     <stat.icon size={24} />
                 </div>
-                {stat.label === 'صافي الربح' && (
-                    <span className="text-[10px] font-black uppercase bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg text-slate-500 dark:text-slate-300">مباشر</span>
-                )}
             </div>
             <div>
                 <p className="text-slate-400 dark:text-slate-500 text-xs font-black uppercase tracking-widest mb-1">{stat.label}</p>
                 <h3 className="text-2xl font-black text-slate-800 dark:text-white">
                     {stat.value.toLocaleString()} 
-                    <span className="text-xs font-bold text-slate-400 mr-1">
-                        {stat.label.includes('المبيعات') || stat.label.includes('الربح') ? CURRENCY : 'وحدة'}
-                    </span>
+                    <span className="text-xs font-bold text-slate-400 mr-1">{CURRENCY}</span>
                 </h3>
             </div>
           </div>
@@ -216,13 +179,10 @@ const Dashboard: React.FC = () => {
                 <div>
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                         <BarChart3 size={20} className="text-emerald-500" />
-                        أداء المبيعات الأخير
+                        أداء المبيعات
                     </h3>
-                    <p className="text-xs text-slate-400 mt-1">مخطط المبيعات اليومي للأسبوع الحالي</p>
                 </div>
-                <div className="text-left">
-                    <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats.totalSales.toLocaleString()} <span className="text-xs">{CURRENCY}</span></p>
-                </div>
+                <div className="text-left font-black text-emerald-600">{stats.totalSales.toLocaleString()} <span className="text-xs">{CURRENCY}</span></div>
             </div>
             
             <div className="h-72 w-full" dir="ltr">
@@ -235,8 +195,8 @@ const Dashboard: React.FC = () => {
                             </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.5} />
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11, fontWeight: 700}} dy={15} />
-                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11}} dx={-10} />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 11}} dy={15} />
+                        <YAxis hide />
                         <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
                         <Area type="monotone" dataKey="sales" stroke="#10b981" strokeWidth={4} fillOpacity={1} fill="url(#chartGrad)" />
                     </AreaChart>
@@ -244,9 +204,8 @@ const Dashboard: React.FC = () => {
             </div>
         </div>
 
-        {/* AI & Top Products Sidebar */}
+        {/* AI Sidebar - 3 High Impact Insights */}
         <div className="space-y-8">
-            {/* AI Insight Card */}
             <div className="bg-indigo-600 dark:bg-indigo-900/50 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden border border-indigo-500">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
                 <div className="relative z-10">
@@ -254,24 +213,25 @@ const Dashboard: React.FC = () => {
                         <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center">
                             <Sparkles className="text-yellow-300" size={20} />
                         </div>
-                        <h3 className="font-black text-lg">تحليل بوصلة الذكي</h3>
+                        <h3 className="font-black text-lg">تحليل بوصلة (3 ومضات)</h3>
                     </div>
                     
                     <div className="space-y-4">
                         {loadingAi ? (
-                            <div className="space-y-2">
-                                <div className="h-3 bg-white/20 rounded-full w-full animate-pulse"></div>
-                                <div className="h-3 bg-white/20 rounded-full w-3/4 animate-pulse"></div>
+                            <div className="space-y-3">
+                                <div className="h-4 bg-white/20 rounded-lg w-full animate-pulse"></div>
+                                <div className="h-4 bg-white/20 rounded-lg w-5/6 animate-pulse"></div>
+                                <div className="h-4 bg-white/20 rounded-lg w-4/6 animate-pulse"></div>
                             </div>
                         ) : aiTips.length > 0 ? (
                             aiTips.map((tip, i) => (
-                                <div key={i} className="flex gap-3 text-sm font-bold bg-white/10 p-3 rounded-2xl hover:bg-white/20 transition cursor-default border border-white/5">
-                                    <span className="text-yellow-400">●</span>
+                                <div key={i} className="flex gap-3 text-sm font-bold bg-white/10 p-4 rounded-2xl border border-white/5 animate-in slide-in-from-left duration-300" style={{ animationDelay: `${i * 150}ms` }}>
+                                    <span className="text-yellow-400 shrink-0">●</span>
                                     <span>{tip.replace(/^- /, '')}</span>
                                 </div>
                             ))
                         ) : (
-                            <p className="text-indigo-200 text-sm font-medium">ابدأ بتسجيل عمليات البيع للحصول على تحليلات.</p>
+                            <p className="text-indigo-200 text-sm font-medium">سجل مبيعاتك اليوم للحصول على تحليلات ذكية.</p>
                         )}
                     </div>
                 </div>
@@ -286,19 +246,14 @@ const Dashboard: React.FC = () => {
                 <div className="space-y-4">
                     {stats.topProducts.map((prod, idx) => (
                         <div key={idx} className="flex items-center justify-between group">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700 flex items-center justify-center font-black text-[10px] text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition">
-                                    {idx + 1}
-                                </div>
-                                <div>
-                                    <p className="font-bold text-slate-700 dark:text-slate-200 text-sm truncate max-w-[140px]">{prod.name}</p>
-                                    <p className="text-[10px] text-slate-400 font-bold uppercase">{prod.qty} مباع</p>
-                                </div>
+                            <div className="flex items-center gap-3 text-sm">
+                                <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-slate-700 flex items-center justify-center font-black text-[10px] text-slate-400">{idx + 1}</div>
+                                <span className="font-bold text-slate-700 dark:text-slate-200 truncate max-w-[120px]">{prod.name}</span>
                             </div>
                             <span className="font-black text-slate-800 dark:text-white text-sm">{prod.revenue.toLocaleString()}</span>
                         </div>
                     ))}
-                    {stats.topProducts.length === 0 && <p className="text-center text-slate-400 text-xs py-4 font-bold">لا توجد بيانات كافية</p>}
+                    {stats.topProducts.length === 0 && <p className="text-center text-slate-400 text-xs py-4 font-bold">لا توجد مبيعات</p>}
                 </div>
             </div>
         </div>
@@ -309,31 +264,26 @@ const Dashboard: React.FC = () => {
           <div className="p-6 border-b border-slate-50 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-700/30">
               <h3 className="font-black text-slate-800 dark:text-white flex items-center gap-2">
                   <Clock size={18} className="text-slate-400" />
-                  آخر عمليات البيع
+                  آخر المبيعات
               </h3>
-              <Link to="/sales" className="text-xs font-black text-emerald-600 hover:text-emerald-700 uppercase tracking-widest">عرض السجل</Link>
+              <Link to="/sales" className="text-xs font-black text-emerald-600 hover:text-emerald-700">عرض الكل</Link>
           </div>
           <div className="divide-y divide-slate-50 dark:divide-slate-700">
               {stats.recentInvoices.map((inv) => (
                   <div key={inv.id} className="p-5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
                       <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-300">
-                              <ShoppingCart size={20} />
+                          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500">
+                              <ShoppingCart size={18} />
                           </div>
                           <div>
-                              <p className="font-bold text-slate-800 dark:text-white">{inv.customerName}</p>
-                              <p className="text-[10px] text-slate-400 font-black uppercase mt-0.5">{new Date(inv.date).toLocaleTimeString('ar-MA', {hour: '2-digit', minute:'2-digit'})} • {inv.items.length} قطع</p>
+                              <p className="font-bold text-slate-800 dark:text-white text-sm">{inv.customerName}</p>
+                              <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">{new Date(inv.date).toLocaleTimeString('ar-MA', {hour: '2-digit', minute:'2-digit'})}</p>
                           </div>
                       </div>
-                      <div className="text-left">
-                          <p className="font-black text-slate-800 dark:text-white">{inv.total} <span className="text-[10px]">{CURRENCY}</span></p>
-                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${inv.remainingAmount > 0 ? 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
-                              {inv.remainingAmount > 0 ? 'آجل' : 'مكتمل'}
-                          </span>
-                      </div>
+                      <p className="font-black text-slate-800 dark:text-white text-sm">{inv.total} {CURRENCY}</p>
                   </div>
               ))}
-              {stats.recentInvoices.length === 0 && <div className="p-12 text-center text-slate-400 font-bold">لا توجد مبيعات حديثة</div>}
+              {stats.recentInvoices.length === 0 && <div className="p-12 text-center text-slate-400 font-bold">لا توجد عمليات</div>}
           </div>
       </div>
     </div>

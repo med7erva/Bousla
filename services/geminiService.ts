@@ -2,7 +2,7 @@
 import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
 import { Product, Invoice, Client, Expense, Supplier } from "../types";
 
-// استخدام موديل Lite لضمان حدود استخدام أعلى واستجابة أسرع
+// استخدام موديل Lite لضمان استمرارية الخدمة طوال اليوم بحدود استخدام مرتفعة
 const MODEL_NAME = 'gemini-flash-lite-latest';
 
 export interface DashboardContext {
@@ -17,24 +17,21 @@ export interface DashboardContext {
 }
 
 const generateSystemContext = (data: any): string => {
-    if (!data) return "لا توجد بيانات متاحة.";
+    if (!data) return "لا توجد بيانات.";
     const { financials, inventory, metadata } = data;
-    return `أنت مساعد مالي ذكي لتطبيق "بوصلة" المحاسبي في موريتانيا. 
-متجر المستخدم: ${metadata.store_name}. 
-العملة: أوقية (MRU).
-البيانات الحالية:
-- إيرادات: ${financials.total_revenue}
-- مصاريف: ${financials.total_expenses}
-- سيولة: ${financials.cash_in_hand}
-- ديون زبائن: ${financials.outstanding_customer_debts}
-- ديون موردين: ${financials.debts_to_suppliers}
-- الأصناف: ${inventory.total_unique_items}
-القواعد: كن مختصراً جداً، قدم نصائح عملية لزيادة الربح، وتحدث بلهجة مهنية محببة.`;
+    return `أنت "بوصلة الذكي"، مستشار مالي خبير للمتاجر في موريتانيا.
+سياق المتجر: ${metadata.store_name}. العملة: MRU.
+البيانات الحالية: إيرادات (${financials.total_revenue})، مصاريف (${financials.total_expenses})، سيولة (${financials.cash_in_hand})، ديون زبائن (${financials.outstanding_customer_debts}).
+قواعد الرد:
+1. كن محللاً مالياً لا مجرد قارئ أرقام (استنتج الأنماط).
+2. الإجابة منسقة بنقاط واضحة.
+3. تجنب المقدمات الطويلة، ادخل في صلب النصيحة مباشرة.
+4. استخدم لغة مهنية ومبسطة.`;
 };
 
 export const getChatStream = async (history: { role: string, text: string }[], message: string, storeSnapshot: any) => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const systemInstruction = generateSystemContext(storeSnapshot);
+    const systemInstruction = generateSystemContext(storeSnapshot) + "\nقدم إجابة مركزة، منسقة، ولا تزيد عن 3 فقرات قصيرة إلا إذا طُلب منك تفصيل دقيق.";
 
     const cleanedHistory: any[] = [];
     let expectedRole = 'user';
@@ -62,7 +59,7 @@ export const getChatStream = async (history: { role: string, text: string }[], m
     return await ai.models.generateContentStream({
         model: MODEL_NAME,
         contents,
-        config: { systemInstruction, temperature: 0.7, topP: 0.8, topK: 40 }
+        config: { systemInstruction, temperature: 0.6, topP: 0.8 }
     });
 };
 
@@ -71,11 +68,12 @@ export const getDashboardInsights = async (context: DashboardContext): Promise<s
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({ 
         model: MODEL_NAME, 
-        contents: `حلل بيانات المتجر الموريتاني وقدم 3 نقاط سريعة (نصيحة أرباح، تنبيه مخزون، نصيحة ديون): ${JSON.stringify(context)}`,
+        contents: `بصفتك محلل بيانات، استنتج من هذه الأرقام 3 نقاط فقط (نقطة عن الأرباح، نقطة عن المخزون، ونقطة عن نمو المبيعات). كن مباشراً جداً وقدم أرقاماً إذا لزم الأمر: ${JSON.stringify(context)}`,
         config: { temperature: 0.4 }
     });
-    return (response.text || "").split('\n').filter(l => l.trim()).slice(0, 3);
-  } catch { return ["راجع مبيعاتك اليوم.", "تأكد من متابعة المخزون."]; }
+    // تنظيف المخرجات لضمان الحصول على 3 أسطر نظيفة
+    return (response.text || "").split('\n').filter(l => l.trim().length > 5).slice(0, 3);
+  } catch { return ["المبيعات مستقرة، راقب المصاريف.", "تأكد من توفر الأصناف الأكثر مبيعاً.", "تحقق من تحصيل ديون العملاء."]; }
 };
 
 export const getNotificationBriefing = async (sales: number, expenses: number, topProduct: string, debt: number) => {
@@ -83,7 +81,7 @@ export const getNotificationBriefing = async (sales: number, expenses: number, t
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const response = await ai.models.generateContent({ 
             model: MODEL_NAME, 
-            contents: `أنت نظام ذكاء اصطناعي للتحليل المالي. حلل: مبيعات اليوم ${sales}، مصاريف ${expenses}، المنتج الأفضل ${topProduct}، إجمالي الديون ${debt}. قدم 3 تنبيهات ذكية بصيغة JSON.`,
+            contents: `حلل بيانات اليوم: مبيعات ${sales}، مصاريف ${expenses}، المنتج الأفضل ${topProduct}، الديون ${debt}. قدم 3 تنبيهات تشغيلية ذكية ومختصرة جداً بصيغة JSON.`,
             config: { 
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -93,7 +91,7 @@ export const getNotificationBriefing = async (sales: number, expenses: number, t
                         properties: {
                             title: { type: Type.STRING },
                             text: { type: Type.STRING },
-                            type: { type: Type.STRING } // warning, insight, success
+                            type: { type: Type.STRING } 
                         },
                         required: ['title', 'text', 'type']
                     }
@@ -109,10 +107,10 @@ export const getInventoryInsights = async (products: Product[]) => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const res = await ai.models.generateContent({ 
             model: MODEL_NAME, 
-            contents: `حلل حالة المخزون لـ ${products.length} منتج بقيمة إجمالية ${products.reduce((s,p)=>s+(p.cost*p.stock),0)}. أعطِ ملخصاً في جملة واحدة مفيدة جداً.` 
+            contents: `حلل حالة المخزون (القيمة الإجمالية: ${products.reduce((s,p)=>s+(p.cost*p.stock),0)}) وأعطِ نصيحة واحدة ذكية جداً في سطر واحد.` 
         });
         return res.text || "";
-    } catch { return "المخزون يحتاج متابعة دقيقة."; }
+    } catch { return "المخزون يحتاج مراجعة دورية للأصناف الراكدة."; }
 };
 
 export const getClientInsights = async (clients: Client[]) => {
@@ -120,10 +118,10 @@ export const getClientInsights = async (clients: Client[]) => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const res = await ai.models.generateContent({ 
             model: MODEL_NAME, 
-            contents: `حلل ديون ${clients.length} عملاء بمبلغ إجمالي ${clients.reduce((s,c)=>s+c.debt, 0)}. اقترح استراتيجية تحصيل سريعة في جملة واحدة.` 
+            contents: `إجمالي ديون العملاء: ${clients.reduce((s,c)=>s+c.debt, 0)}. اقترح إجراءً واحداً للتحصيل في جملة قصيرة.` 
         });
         return res.text || "";
-    } catch { return "تابع تحصيل الديون المتأخرة."; }
+    } catch { return "ركز على تحصيل الديون القديمة أولاً."; }
 };
 
 export const getSupplierInsights = async (suppliers: Supplier[]) => {
@@ -131,10 +129,10 @@ export const getSupplierInsights = async (suppliers: Supplier[]) => {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const res = await ai.models.generateContent({ 
             model: MODEL_NAME, 
-            contents: `حلل الالتزامات للموردين ${suppliers.reduce((s,su)=>s+su.debt, 0)} أوقية. نصيحة واحدة للتعامل مع الموردين.` 
+            contents: `إجمالي التزامات الموردين: ${suppliers.reduce((s,su)=>s+su.debt, 0)}. قدم نصيحة واحدة للجدولة في سطر واحد.` 
         });
         return res.text || "";
-    } catch { return "راجع التزاماتك للموردين وجدول السداد."; }
+    } catch { return "راجع مواعيد سداد الموردين لتجنب ضغط السيولة."; }
 };
 
 export const getExpenseInsights = async (expenses: Expense[], totalSales: number) => {
@@ -142,8 +140,8 @@ export const getExpenseInsights = async (expenses: Expense[], totalSales: number
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const res = await ai.models.generateContent({ 
             model: MODEL_NAME, 
-            contents: `حلل نسبة المصاريف ${expenses.reduce((s,e)=>s+e.amount, 0)} مقابل مبيعات بقيمة ${totalSales}. هل النسبة جيدة؟ أعطِ نصيحة للتقليل.` 
+            contents: `المصاريف ${expenses.reduce((s,e)=>s+e.amount, 0)} مقابل مبيعات ${totalSales}. أعطِ استنتاجاً واحداً عن كفاءة الإنفاق في سطر واحد.` 
         });
         return [res.text || ""];
-    } catch { return ["راقب المصاريف التشغيلية بدقة."]; }
+    } catch { return ["راقب نسبة المصاريف التشغيلية مقارنة بالدخل."]; }
 };
