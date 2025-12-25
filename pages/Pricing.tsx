@@ -1,128 +1,140 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ArrowLeft, MessageCircle } from 'lucide-react';
+import { Check, ArrowLeft, MessageCircle, HelpCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import BouslaLogo from '../components/BouslaLogo';
 
 const Pricing: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   const plans = [
     {
       name: 'الخطة الشهرية',
       price: '200',
       period: 'شهر',
-      code: 'BSL-30',
-      features: ['إدارة المبيعات والمخزون', 'دعم فني واتساب', 'تقارير أساسية'],
+      features: ['إدارة المبيعات والمخزون', 'دعم فني واتساب', 'تقارير أساسية', 'مستخدم واحد'],
       recommended: false,
+      color: "bg-slate-50"
     },
     {
-      name: 'خطة الأعمال (الأكثر طلباً)',
+      name: 'خطة الأعمال (Pro)',
       price: '1,000',
       period: '6 أشهر',
-      code: 'BSL-180',
-      features: ['كل مميزات الخطة الشهرية', 'تحليل الذكاء الاصطناعي', 'إدارة الموظفين والرواتب', 'توفير 17%'],
+      features: ['كل مميزات الخطة الشهرية', 'تحليل الذكاء الاصطناعي', 'إدارة الموظفين والرواتب', 'توفير 17%', 'أولوية الدعم'],
       recommended: true,
+      color: "bg-emerald-600"
     },
     {
       name: 'الخطة السنوية',
       price: '1,800',
       period: 'سنة',
-      code: 'BSL-365',
-      features: ['كل مميزات خطة الأعمال', 'أولوية في الدعم الفني', 'تحديثات مجانية مستمرة', 'توفير 25%'],
+      features: ['كل مميزات خطة الأعمال', 'تحديثات مجانية مستمرة', 'توفير 25%', 'تدريب مجاني للطاقم'],
       recommended: false,
+      color: "bg-slate-50"
     },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-12 px-4 sm:px-6 lg:px-8 font-sans" dir="rtl">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
-            <Link to="/" className="inline-flex justify-center items-center gap-2 mb-8 hover:opacity-80 transition">
-                <BouslaLogo className="h-12 w-auto" />
-            </Link>
-            <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white mb-4">اختر الخطة المناسبة لنمو متجرك</h1>
-            <p className="text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
-                استمتع بكافة مميزات بوصلة المحاسبية. دفع سهل عبر تطبيقات التحويل البنكي وتفعيل فوري.
+    <div className="min-h-screen bg-slate-50 font-sans" dir="rtl">
+      {/* Simple Nav */}
+      <nav className="bg-white border-b border-slate-100 py-6">
+        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+            <Link to="/"><BouslaLogo className="h-10 w-auto" /></Link>
+            <div className="flex gap-6 items-center">
+                 <Link to="/features" className="text-slate-600 hover:text-emerald-600 font-bold text-sm">المميزات</Link>
+                 {!isAuthenticated && <Link to="/login" className="text-slate-600 hover:text-emerald-600 font-bold text-sm">دخول</Link>}
+            </div>
+        </div>
+      </nav>
+
+      <div className="max-w-7xl mx-auto py-20 px-6">
+        <div className="text-center mb-20 space-y-4">
+            <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">استثمر في تنظيم متجرك</h1>
+            <p className="text-lg text-slate-500 max-w-2xl mx-auto font-medium">
+                خطط اشتراك شفافة، بدون رسوم خفية. تفعيل فوري ودعم فني موريتاني 100%.
             </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24">
           {plans.map((plan) => (
             <div 
                 key={plan.name}
-                className={`relative bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-xl border-2 transition-transform hover:scale-[1.02] flex flex-col ${
-                    plan.recommended ? 'border-emerald-500 shadow-emerald-100 dark:shadow-none' : 'border-transparent'
+                className={`relative rounded-[3rem] p-10 shadow-xl border-2 transition-all hover:-translate-y-2 flex flex-col ${
+                    plan.recommended ? 'bg-slate-900 text-white border-emerald-500 scale-105 z-10' : 'bg-white text-slate-800 border-transparent'
                 }`}
             >
               {plan.recommended && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-emerald-500 text-white text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-wider">
-                  الأكثر مبيعاً
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-emerald-500 text-white text-[10px] font-black px-5 py-2 rounded-full uppercase tracking-widest shadow-lg">
+                  الأكثر طلباً
                 </span>
               )}
               
-              <div className="mb-8">
-                <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-4">{plan.name}</h3>
-                <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black text-slate-900 dark:text-white">{plan.price}</span>
-                    <span className="text-slate-500 font-bold">أوقية / {plan.period}</span>
+              <div className="mb-10 text-center">
+                <h3 className={`text-xl font-black mb-6 ${plan.recommended ? 'text-emerald-400' : 'text-slate-800'}`}>{plan.name}</h3>
+                <div className="flex items-baseline justify-center gap-2">
+                    <span className="text-5xl font-black tracking-tighter">{plan.price}</span>
+                    <span className={`text-sm font-bold ${plan.recommended ? 'text-slate-400' : 'text-slate-500'}`}>أوقية / {plan.period}</span>
                 </div>
               </div>
 
-              <ul className="space-y-4 mb-10 flex-1">
+              <ul className="space-y-5 mb-12 flex-1">
                 {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-3 text-slate-600 dark:text-slate-300 text-sm">
-                    <div className="shrink-0 w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                  <li key={feature} className="flex items-start gap-3 text-sm font-bold">
+                    <div className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${plan.recommended ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
                         <Check size={14} />
                     </div>
-                    {feature}
+                    <span className={plan.recommended ? 'text-slate-300' : 'text-slate-600'}>{feature}</span>
                   </li>
                 ))}
               </ul>
 
               <a 
-                href={`https://wa.me/22247071347?text=${encodeURIComponent(`أرغب في الاشتراك في ${plan.name}.\nالمبلغ: ${plan.price} أوقية.\nاسم المتجر: ${user?.storeName || 'غير مسجل'}`)}`}
+                href={`https://wa.me/22247071347?text=${encodeURIComponent(`أرغب في الاشتراك في ${plan.name}.\nالمبلغ: ${plan.price} أوقية.`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`w-full py-4 rounded-2xl font-black text-center transition flex items-center justify-center gap-2 ${
+                className={`w-full py-5 rounded-[2rem] font-black text-center transition flex items-center justify-center gap-3 text-lg ${
                     plan.recommended 
-                    ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-200 dark:shadow-none' 
-                    : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200'
+                    ? 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-xl shadow-emerald-900/40' 
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
-                <MessageCircle size={20} />
-                طلب الاشتراك
+                <MessageCircle size={22} />
+                اشترك الآن
               </a>
             </div>
           ))}
         </div>
 
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 text-center">
-            <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-4">كيف تعمل عملية الدفع؟</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">
-                <div className="space-y-3">
-                    <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center font-black text-xl mx-auto">1</div>
-                    <h4 className="font-bold text-slate-800 dark:text-white">اختر الخطة</h4>
-                    <p className="text-sm text-slate-500">اختر الخطة التي تناسب متجرك من الأعلى واضغط "طلب الاشتراك".</p>
+        {/* FAQ Section */}
+        <div className="max-w-4xl mx-auto bg-white rounded-[3rem] p-12 border border-slate-100 shadow-sm">
+            <h2 className="text-3xl font-black text-center mb-12 flex items-center justify-center gap-4">
+                <HelpCircle className="text-indigo-500" /> أسئلة شائعة
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-right">
+                <div>
+                    <h4 className="font-black text-slate-900 mb-2">كيف يتم التفعيل؟</h4>
+                    <p className="text-slate-500 text-sm font-medium">بعد التحويل، نرسل لك كود تفعيل تدخله في حسابك ويتم تفعيل الباقة فوراً.</p>
                 </div>
-                <div className="space-y-3">
-                    <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center font-black text-xl mx-auto">2</div>
-                    <h4 className="font-bold text-slate-800 dark:text-white">حوّل المبلغ</h4>
-                    <p className="text-sm text-slate-500">قم بتحويل المبلغ عبر (Bankily) أو (Masrvi) للرقم الذي سيظهر لك في الواتساب.</p>
+                <div>
+                    <h4 className="font-black text-slate-900 mb-2">هل يمكنني تغيير الباقة؟</h4>
+                    <p className="text-slate-500 text-sm font-medium">نعم، يمكنك ترقية حسابك من Essential إلى Pro في أي وقت بفع المبلغ المتبقي.</p>
                 </div>
-                <div className="space-y-3">
-                    <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center font-black text-xl mx-auto">3</div>
-                    <h4 className="font-bold text-slate-800 dark:text-white">فعّل حسابك</h4>
-                    <p className="text-sm text-slate-500">سنرسل لك "كود تفعيل"، قم بإدخاله في صفحة "الملف الشخصي" لتفعيل الاشتراك فوراً.</p>
+                <div>
+                    <h4 className="font-black text-slate-900 mb-2">ماذا يحدث عند انتهاء الاشتراك؟</h4>
+                    <p className="text-slate-500 text-sm font-medium">تبقى بياناتك محفوظة، ولكن لا يمكنك تسجيل عمليات جديدة حتى تجدد الاشتراك.</p>
+                </div>
+                <div>
+                    <h4 className="font-black text-slate-900 mb-2">هل أحتاج لإنترنت لاستخدام التطبيق؟</h4>
+                    <p className="text-slate-500 text-sm font-medium">نعم، التطبيق سحابي لضمان مزامنة البيانات بين الهاتف والكمبيوتر وحماية بياناتك.</p>
                 </div>
             </div>
-            <div className="mt-12">
-                <Link to="/" className="text-emerald-600 font-bold hover:underline flex items-center justify-center gap-2">
-                    <ArrowLeft size={18} />
-                    العودة للوحة التحكم
-                </Link>
-            </div>
+        </div>
+
+        <div className="mt-16 text-center">
+            <Link to="/" className="inline-flex items-center gap-2 text-emerald-600 font-black hover:gap-4 transition-all">
+                <ArrowRight className="rotate-180" /> العودة للرئيسية
+            </Link>
         </div>
       </div>
     </div>
