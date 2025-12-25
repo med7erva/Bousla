@@ -22,8 +22,8 @@ import {
   AlertTriangle,
   Activity,
   ArrowUpRight,
-  // Added missing X icon import
-  X
+  X,
+  MoreHorizontal
 } from 'lucide-react';
 import BouslaLogo from '../components/BouslaLogo';
 
@@ -35,7 +35,7 @@ const Landing: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden" dir="rtl">
+    <div className="min-h-screen bg-[#fcfdfe] font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden" dir="rtl">
       
       {/* Navigation */}
       <nav className="bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-[100]">
@@ -55,7 +55,7 @@ const Landing: React.FC = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-16 pb-24 lg:pt-24 lg:pb-40 overflow-hidden bg-white">
+      <section className="relative pt-16 pb-24 lg:pt-24 lg:pb-32 overflow-hidden bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16 space-y-6">
             <span className="inline-flex items-center gap-2 py-1.5 px-4 rounded-full bg-emerald-50 text-emerald-700 text-xs font-black mb-2 border border-emerald-100">
@@ -85,185 +85,198 @@ const Landing: React.FC = () => {
             </div>
           </div>
 
-          {/* Realistic iPad Mockup (Enhanced to match image) */}
+          {/* HIGH FIDELITY IPAD MOCKUP - REPLICATING THE IMAGE */}
           <div className={`relative max-w-5xl mx-auto transition-all duration-1000 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-                {/* Glow behind device */}
-                <div className="absolute inset-0 bg-emerald-500/10 blur-[120px] rounded-full scale-75 animate-pulse"></div>
+                {/* Real-world shadow */}
+                <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 w-[90%] h-12 bg-black/20 blur-[60px] rounded-full"></div>
                 
-                {/* Device Frame */}
-                <div className="relative mx-auto w-full max-w-[850px] aspect-[3/4] bg-slate-900 rounded-[3rem] p-2.5 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border-[10px] border-slate-800 ring-1 ring-slate-700 overflow-hidden transform hover:scale-[1.01] transition-transform">
-                    {/* Top Notch/Sensors */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-7 bg-slate-800 rounded-b-2xl z-20 flex items-center justify-center gap-3">
-                        <div className="w-1.5 h-1.5 rounded-full bg-slate-700"></div>
-                        <div className="w-8 h-1 rounded-full bg-slate-700"></div>
+                {/* iPad Pro Frame */}
+                <div className="relative mx-auto w-full max-w-[820px] aspect-[3/4.2] bg-[#0a0a0b] rounded-[3.5rem] p-3 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border-[1px] border-white/10 ring-1 ring-black overflow-hidden transform hover:scale-[1.005] transition-transform">
+                    {/* Screen Glass Reflection Layer */}
+                    <div className="absolute inset-0 z-30 pointer-events-none bg-gradient-to-tr from-white/5 via-transparent to-white/10 opacity-30"></div>
+                    
+                    {/* Top Notch / Camera Sensors */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-8 bg-[#0a0a0b] rounded-b-[1.5rem] z-40 flex items-center justify-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-[#1a1a1c]"></div>
+                        <div className="w-10 h-1.5 rounded-full bg-[#1a1a1c]"></div>
                     </div>
                     
-                    {/* Content Area - THE DASHBOARD UI FROM IMAGE */}
-                    <div className="w-full h-full bg-[#f8fafb] rounded-[2.2rem] overflow-hidden relative flex flex-col font-sans">
+                    {/* SCREEN CONTENT - THE ACTUAL DASHBOARD UI */}
+                    <div className="w-full h-full bg-[#f8fafb] rounded-[2.8rem] overflow-hidden relative flex flex-col font-sans">
                         
-                        {/* 1. Header Bar */}
-                        <div className="h-16 px-6 bg-white border-b border-slate-100 flex items-center justify-between shrink-0">
+                        {/* 1. APP HEADER */}
+                        <header className="h-20 px-8 bg-white border-b border-slate-100 flex items-center justify-between shrink-0">
+                            <div className="flex items-center gap-5">
+                                <Menu size={24} className="text-slate-400" />
+                                <span className="font-black text-xl text-slate-800">التقارير</span>
+                            </div>
                             <div className="flex items-center gap-4">
-                                <Menu size={22} className="text-slate-500" />
-                                <span className="font-bold text-slate-800">التقارير</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-lg text-xs font-bold">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                    موارد
+                                <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-1.5 rounded-xl text-xs font-black">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                    مـوارد
                                 </div>
-                                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
-                                    <span className="text-emerald-600 font-bold">P</span>
+                                <div className="w-11 h-11 rounded-2xl bg-slate-100 flex items-center justify-center border border-slate-200">
+                                    <span className="text-emerald-600 font-black text-lg">P</span>
                                 </div>
                             </div>
-                        </div>
+                        </header>
 
-                        {/* 2. Sub-header (Export & Date) */}
-                        <div className="px-6 py-4 flex justify-between items-center bg-white">
-                             <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
-                                <Calendar size={14} className="text-slate-400 mr-2" />
-                                <span className="text-[10px] font-bold text-slate-500">2025/11/23</span>
-                                <ArrowRight size={10} className="text-slate-300" />
-                                <span className="text-[10px] font-bold text-slate-500">2025/11/30</span>
-                                <div className="w-px h-3 bg-slate-200 mx-1"></div>
-                                <X size={12} className="text-slate-400" />
+                        {/* 2. TOOLBAR (Export & Date Filter) */}
+                        <div className="px-8 py-5 flex justify-between items-center bg-white">
+                             <div className="flex items-center gap-2 bg-[#f1f3f5] p-2 rounded-2xl border border-slate-100">
+                                <Calendar size={16} className="text-slate-400 mr-2" />
+                                <span className="text-xs font-bold text-slate-500">2025/11/23</span>
+                                <ArrowRight size={12} className="text-slate-300 mx-1" />
+                                <span className="text-xs font-bold text-slate-500">2025/11/30</span>
+                                <div className="w-px h-4 bg-slate-200 mx-2"></div>
+                                <X size={14} className="text-slate-400 ml-1" />
                              </div>
                              <div className="flex items-center gap-4">
-                                <h2 className="text-lg font-black text-slate-800">التقارير المالية</h2>
-                                <button className="bg-slate-900 text-white px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2">
-                                    تصدير <Download size={12} />
+                                <div className="text-right">
+                                    <h2 className="text-xl font-black text-slate-900">التقارير المالية</h2>
+                                    <p className="text-[10px] text-slate-400 font-bold">تقارير العمليات الشاملة في المتجر</p>
+                                </div>
+                                <button className="bg-[#111111] text-white px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 shadow-lg shadow-black/10">
+                                    تصدير <Download size={14} />
                                 </button>
                              </div>
                         </div>
 
-                        {/* 3. Main Dashboard Scroll Area */}
-                        <div className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
+                        {/* 3. DASHBOARD MAIN AREA */}
+                        <div className="flex-1 overflow-y-auto p-8 space-y-6">
                             
-                            {/* KPI Cards Row */}
-                            <div className="grid grid-cols-2 gap-4">
-                                {/* Sales */}
-                                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm relative group overflow-hidden">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center">
-                                            <TrendingUp size={20} />
-                                        </div>
+                            {/* KPI Grid */}
+                            <div className="grid grid-cols-2 gap-6">
+                                {/* Total Sales */}
+                                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                                    <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center mb-6">
+                                        <Activity size={24} />
                                     </div>
                                     <div className="text-left">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase">إجمالي المبيعات</p>
-                                        <h3 className="text-2xl font-black text-slate-800">78,530 <span className="text-[10px]">أوقية</span></h3>
-                                        <p className="text-[9px] text-slate-400 mt-1">الإيرادات قبل خصم التكاليف</p>
+                                        <p className="text-xs font-black text-slate-400 uppercase mb-1">إجمالي المبيعات</p>
+                                        <h3 className="text-3xl font-black text-slate-900 tracking-tighter">78,530 <span className="text-xs font-bold text-slate-400">أوقية</span></h3>
+                                        <p className="text-[10px] text-slate-400 mt-2 font-medium">الإيرادات قبل خصم التكاليف</p>
                                     </div>
                                 </div>
 
-                                {/* Profit */}
-                                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center">
-                                            <DollarSign size={20} />
-                                        </div>
-                                        <span className="text-[9px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">%20 هامش</span>
+                                {/* Net Profit */}
+                                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden">
+                                    <div className="absolute top-6 right-6">
+                                        <span className="text-[10px] bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-black">%20 هامش</span>
+                                    </div>
+                                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center mb-6">
+                                        <DollarSign size={24} />
                                     </div>
                                     <div className="text-left">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase">صافي الربح</p>
-                                        <h3 className="text-2xl font-black text-emerald-600">15,677 <span className="text-[10px]">أوقية</span></h3>
+                                        <p className="text-xs font-black text-slate-400 uppercase mb-1">صافي الربح</p>
+                                        <h3 className="text-3xl font-black text-emerald-600 tracking-tighter">15,677 <span className="text-xs font-bold text-emerald-400">أوقية</span></h3>
                                     </div>
                                 </div>
 
-                                {/* Stock */}
-                                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm relative">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-500 flex items-center justify-center">
-                                            <Package size={20} />
-                                        </div>
+                                {/* Stock Value */}
+                                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                                    <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-500 flex items-center justify-center mb-6">
+                                        <Package size={24} />
                                     </div>
                                     <div className="text-left">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase">قيمة المخزون</p>
-                                        <h3 className="text-2xl font-black text-slate-800">200,979 <span className="text-[10px]">أوقية</span></h3>
-                                        <p className="text-[9px] text-slate-400 mt-1">محسوبة بسعر التكلفة</p>
+                                        <p className="text-xs font-black text-slate-400 uppercase mb-1">قيمة المخزون</p>
+                                        <h3 className="text-3xl font-black text-slate-900 tracking-tighter">200,979 <span className="text-xs font-bold text-slate-400">أوقية</span></h3>
+                                        <p className="text-[10px] text-slate-400 mt-2 font-medium">محسوبة بسعر التكلفة</p>
                                     </div>
                                 </div>
 
                                 {/* Expenses */}
-                                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm relative">
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center">
-                                            <TrendingDown size={20} />
-                                        </div>
+                                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                                    <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center mb-6">
+                                        <TrendingDown size={24} />
                                     </div>
                                     <div className="text-left">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase">المصاريف</p>
-                                        <h3 className="text-2xl font-black text-slate-800">5,600 <span className="text-[10px]">أوقية</span></h3>
-                                        <p className="text-[9px] text-slate-400 mt-1">مصاريف تشغيلية ورواتب</p>
+                                        <p className="text-xs font-black text-slate-400 uppercase mb-1">المصاريف</p>
+                                        <h3 className="text-3xl font-black text-slate-900 tracking-tighter">5,600 <span className="text-xs font-bold text-slate-400">أوقية</span></h3>
+                                        <p className="text-[10px] text-slate-400 mt-2 font-medium">مصاريف تشغيلية ورواتب</p>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Chart Area */}
-                            <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                                <div className="flex justify-between items-center mb-10">
-                                    <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
-                                        <Activity size={16} className="text-emerald-500" /> اتجاه المبيعات (يومي)
+                            <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
+                                <div className="flex justify-between items-center mb-12">
+                                    <h3 className="text-lg font-black text-slate-800 flex items-center gap-3">
+                                        <Activity size={20} className="text-emerald-500" /> اتجاه المبيعات (يومي)
                                     </h3>
-                                    <div className="w-32 h-2 bg-slate-50 rounded-full"></div>
+                                    <div className="flex gap-1">
+                                        {[1,2,3].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full bg-slate-100"></div>)}
+                                    </div>
                                 </div>
-                                <div className="h-44 w-full flex items-end justify-between px-4 gap-3 relative">
-                                    {/* Mock SVG Path for Line Chart */}
+                                <div className="h-56 w-full flex items-end justify-between px-2 relative">
+                                    {/* Line Chart Path (Jagged as in image) */}
                                     <svg className="absolute inset-0 w-full h-full px-4" preserveAspectRatio="none" viewBox="0 0 100 100">
-                                        <path d="M0,80 Q10,75 20,40 T40,60 T60,20 T80,70 T100,65" fill="none" stroke="#10b981" strokeWidth="4" strokeLinecap="round" />
-                                        <path d="M0,80 Q10,75 20,40 T40,60 T60,20 T80,70 T100,65 L100,100 L0,100 Z" fill="url(#grad)" opacity="0.1" />
+                                        <path d="M0,85 L10,80 L20,45 L30,82 L40,84 L50,60 L60,88 L70,30 L80,75 L90,40 L100,85" fill="none" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path d="M0,85 L10,80 L20,45 L30,82 L40,84 L50,60 L60,88 L70,30 L80,75 L90,40 L100,85 L100,100 L0,100 Z" fill="url(#heroGrad)" opacity="0.1" />
                                         <defs>
-                                            <linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                            <linearGradient id="heroGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                                                 <stop offset="0%" stopColor="#10b981" />
                                                 <stop offset="100%" stopColor="#fff" />
                                             </linearGradient>
                                         </defs>
                                     </svg>
-                                    {/* X Axis Labels */}
-                                    <div className="absolute -bottom-6 left-0 right-0 flex justify-between text-[8px] text-slate-300 font-bold">
+                                    {/* X-Axis labels */}
+                                    <div className="absolute -bottom-8 left-0 right-0 flex justify-between text-[10px] text-slate-300 font-black tracking-widest px-4">
                                         <span>23/11</span><span>25/11</span><span>27/11</span><span>29/11</span><span>31/11</span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Bottom Widgets Row */}
-                            <div className="grid grid-cols-2 gap-4">
+                            {/* Widgets Row */}
+                            <div className="grid grid-cols-2 gap-6">
                                 {/* Low Stock Widget */}
-                                <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm">
-                                    <h4 className="text-[10px] font-black text-slate-800 mb-4 flex items-center gap-1.5">
-                                        <AlertTriangle size={12} className="text-rose-500" /> على وشك النفاد
-                                    </h4>
-                                    <div className="space-y-3">
+                                <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h4 className="text-xs font-black text-slate-800 flex items-center gap-2">
+                                            <AlertTriangle size={14} className="text-rose-500" /> على وشك النفاد
+                                        </h4>
+                                        <MoreHorizontal size={14} className="text-slate-300" />
+                                    </div>
+                                    <div className="space-y-4">
                                         {[
-                                            { name: 'فستان صيفي', val: '4 باقي' },
-                                            { name: 'دراعة فاخرة', val: '2 باقي' },
-                                            { name: 'حذاء جلدي', val: '3 باقي' }
+                                            { name: 'فستان صيفي مطرز', val: '4 باقي' },
+                                            { name: 'ملحفة قطن أصلية', val: '2 باقي' },
+                                            { name: 'دراعة فاخرة (سوبر)', val: '1 باقي' }
                                         ].map((item, i) => (
                                             <div key={i} className="flex justify-between items-center">
-                                                <span className="text-[9px] font-bold text-slate-600">{item.name}</span>
-                                                <span className="text-[8px] font-black text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full">{item.val}</span>
+                                                <span className="text-xs font-bold text-slate-600">{item.name}</span>
+                                                <span className="text-[10px] font-black text-rose-500 bg-rose-50 px-3 py-1 rounded-full">{item.val}</span>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
 
-                                {/* Expense Donut Widget */}
-                                <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-col items-center">
-                                    <h4 className="text-[10px] font-black text-slate-800 mb-4 self-start">توزيع المصاريف</h4>
-                                    <div className="relative w-20 h-20">
-                                        {/* Donut Simulation */}
-                                        <div className="absolute inset-0 rounded-full border-[10px] border-emerald-500"></div>
-                                        <div className="absolute inset-0 rounded-full border-[10px] border-rose-500 border-l-transparent border-t-transparent border-r-transparent rotate-45"></div>
-                                        <div className="absolute inset-0 rounded-full border-[10px] border-amber-400 border-l-transparent border-b-transparent border-r-transparent -rotate-12"></div>
+                                {/* Expense Breakdown Widget */}
+                                <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm flex flex-col items-center">
+                                    <div className="flex justify-between items-center w-full mb-8">
+                                        <h4 className="text-xs font-black text-slate-800">توزيع المصاريف</h4>
+                                        <TrendingDown size={14} className="text-rose-400" />
+                                    </div>
+                                    <div className="relative w-28 h-28">
+                                        {/* Donut Chart Simulation with nested circles */}
+                                        <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
+                                            <circle cx="18" cy="18" r="15.9" fill="transparent" stroke="#f1f3f5" strokeWidth="4"></circle>
+                                            <circle cx="18" cy="18" r="15.9" fill="transparent" stroke="#10b981" strokeWidth="4" strokeDasharray="60 100"></circle>
+                                            <circle cx="18" cy="18" r="15.9" fill="transparent" stroke="#f59e0b" strokeWidth="4" strokeDasharray="25 100" strokeDashoffset="-60"></circle>
+                                            <circle cx="18" cy="18" r="15.9" fill="transparent" stroke="#ef4444" strokeWidth="4" strokeDasharray="15 100" strokeDashoffset="-85"></circle>
+                                        </svg>
                                         <div className="absolute inset-0 flex items-center justify-center">
                                             <div className="text-center">
-                                                <p className="text-[8px] font-black text-slate-800">5,600</p>
-                                                <p className="text-[6px] text-slate-400">الإجمالي</p>
+                                                <p className="text-sm font-black text-slate-800">5,600</p>
+                                                <p className="text-[8px] text-slate-400 font-bold uppercase">الإجمالي</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-1 w-full">
-                                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div><span className="text-[7px] text-slate-500">رواتب</span></div>
-                                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div><span className="text-[7px] text-slate-500">غذاء</span></div>
+                                    <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-2 w-full">
+                                        <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-rose-500"></div><span className="text-[9px] text-slate-500 font-bold">رواتب</span></div>
+                                        <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-400"></div><span className="text-[9px] text-slate-500 font-bold">غداء</span></div>
+                                        <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div><span className="text-[9px] text-slate-500 font-bold">كهرباء</span></div>
+                                        <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-slate-200"></div><span className="text-[9px] text-slate-500 font-bold">صيانة</span></div>
                                     </div>
                                 </div>
                             </div>
@@ -271,14 +284,14 @@ const Landing: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Floating Growth Badge */}
-                <div className="absolute -top-6 -right-6 md:-top-10 md:-right-10 bg-white p-5 rounded-3xl shadow-2xl border border-emerald-100 flex items-center gap-4 animate-bounce duration-[4000ms] hidden md:flex">
-                    <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
-                        <ArrowUpRight size={24} />
+                {/* Floating Growth Badge (Visual extra) */}
+                <div className="absolute -top-10 -right-10 bg-white p-6 rounded-[2rem] shadow-2xl border border-emerald-50 flex items-center gap-5 animate-bounce duration-[5000ms] hidden md:flex">
+                    <div className="w-14 h-14 bg-emerald-500 rounded-[1.2rem] flex items-center justify-center text-white shadow-xl shadow-emerald-200">
+                        <ArrowUpRight size={28} />
                     </div>
                     <div>
-                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">نسبة النمو</p>
-                        <p className="text-lg font-black text-slate-800">+24% هذا الشهر</p>
+                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">نسبة النمو</p>
+                        <p className="text-xl font-black text-slate-900">+24.5% <span className="text-xs text-slate-400">هذا الشهر</span></p>
                     </div>
                 </div>
           </div>
@@ -402,8 +415,8 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-slate-900 text-white py-12">
+      {/* Footer - Updated Compact & Dark */}
+      <footer className="bg-slate-950 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10 items-start">
                 <div className="md:col-span-2 space-y-4">
