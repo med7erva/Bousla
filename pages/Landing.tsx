@@ -5,17 +5,12 @@ import {
   ArrowRight, 
   CheckCircle, 
   MessageCircle, 
-  Mail, 
-  Phone, 
   Shield, 
   LayoutDashboard,
   Package,
-  DollarSign,
   TrendingUp,
   Zap,
   Star,
-  Quote,
-  ChevronLeft,
   Facebook,
   Twitter,
   Instagram
@@ -80,15 +75,13 @@ const Landing: React.FC = () => {
             </div>
           </div>
 
-          {/* iPad Mockup - Coded with CSS */}
+          {/* iPad Mockup */}
           <div className={`relative max-w-5xl mx-auto transition-all duration-1000 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
                 <div className="absolute inset-0 bg-emerald-500/10 blur-[120px] rounded-full scale-75"></div>
                 
-                {/* iPad Frame */}
                 <div className="relative mx-auto w-full aspect-[4/3] bg-slate-950 rounded-[3rem] p-3 shadow-2xl border-[10px] border-slate-900 ring-1 ring-slate-800 overflow-hidden transform hover:scale-[1.01] transition-transform">
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-2xl z-20"></div>
                     
-                    {/* Screen Content (Mock Dashboard) */}
                     <div className="w-full h-full bg-slate-50 rounded-[2rem] overflow-hidden relative p-4 md:p-8 flex flex-col gap-6">
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
@@ -176,7 +169,6 @@ const Landing: React.FC = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {/* Testimonial 1 */}
                 <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 hover:-translate-y-2 transition-transform duration-300">
                     <div className="flex gap-1 mb-6">
                         {[1, 2, 3, 4, 5].map(s => <Star key={s} size={16} className="fill-yellow-400 text-yellow-400" />)}
@@ -195,7 +187,6 @@ const Landing: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Testimonial 2 */}
                 <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 hover:-translate-y-2 transition-transform duration-300">
                     <div className="flex gap-1 mb-6">
                         {[1, 2, 3, 4, 5].map(s => <Star key={s} size={16} className="fill-yellow-400 text-yellow-400" />)}
@@ -214,7 +205,6 @@ const Landing: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Testimonial 3 */}
                 <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 hover:-translate-y-2 transition-transform duration-300">
                     <div className="flex gap-1 mb-6">
                         {[1, 2, 3, 4, 5].map(s => <Star key={s} size={16} className="fill-yellow-400 text-yellow-400" />)}
@@ -243,7 +233,7 @@ const Landing: React.FC = () => {
             <div className="relative z-10">
                 <h2 className="text-3xl md:text-5xl font-black mb-6">جاهز لرقمنة متجرك؟</h2>
                 <p className="text-slate-400 mb-10 max-w-xl mx-auto font-medium">ابدأ الآن تجربتك المجانية لمدة 30 يوماً واكتشف الفرق الذي سيحدثه "بوصلة" في إدارة عملك.</p>
-                <Link to="/register" className="inline-flex items-center gap-3 bg-emerald-600 hover:bg-emerald-500 text-white px-12 py-5 rounded-2xl font-black text-xl transition-all shadow-xl shadow-emerald-900/20">
+                <Link to="/register" className="inline-flex items-center gap-3 bg-emerald-600 hover:bg-emerald-50 text-white px-12 py-5 rounded-2xl font-black text-xl transition-all shadow-xl shadow-emerald-900/20">
                     ابدأ الآن مجاناً
                     <ArrowRight size={24} />
                 </Link>
@@ -251,65 +241,53 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* Footer - Updated Design */}
-      <footer className="bg-slate-950 text-white pt-20 pb-10 overflow-hidden">
+      {/* Footer - Redesigned Compact & Dark */}
+      <footer className="bg-slate-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-                <div className="col-span-1 md:col-span-2 space-y-8">
-                    <BouslaLogo className="h-14 w-auto" isWhite={true} />
-                    <p className="text-slate-400 max-w-sm leading-relaxed font-bold text-lg">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10 items-start">
+                <div className="md:col-span-2 space-y-4">
+                    <BouslaLogo className="h-10 w-auto" isWhite={true} />
+                    <p className="text-slate-400 max-w-sm text-sm leading-relaxed font-bold">
                         تطبيق بوصلة هو الشريك التقني الأفضل لمتاجر الملابس.
                     </p>
-                    {/* Social Icons */}
-                    <div className="flex gap-4">
-                         <a href="#" className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-300 hover:bg-blue-600 hover:text-white transition-all transform hover:-translate-y-1">
-                            <Facebook size={24} />
-                         </a>
-                         <a href="#" className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-300 hover:bg-slate-800 hover:text-white transition-all transform hover:-translate-y-1">
-                            <Twitter size={24} />
-                         </a>
-                         <a href="#" className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-300 hover:bg-pink-600 hover:text-white transition-all transform hover:-translate-y-1">
-                            <Instagram size={24} />
-                         </a>
-                         <a href="https://wa.me/22247071347" className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-300 hover:bg-emerald-600 hover:text-white transition-all transform hover:-translate-y-1">
-                            <MessageCircle size={24} />
-                         </a>
+                    <div className="flex gap-3">
+                         <a href="#" className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center text-slate-300 hover:bg-emerald-600 transition-colors"><Facebook size={18} /></a>
+                         <a href="#" className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center text-slate-300 hover:bg-emerald-600 transition-colors"><Twitter size={18} /></a>
+                         <a href="#" className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center text-slate-300 hover:bg-emerald-600 transition-colors"><Instagram size={18} /></a>
+                         <a href="https://wa.me/22247071347" className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center text-slate-300 hover:bg-emerald-600 transition-colors"><MessageCircle size={18} /></a>
                     </div>
                 </div>
                 <div>
-                    <h4 className="font-black text-emerald-500 mb-8 uppercase tracking-widest text-xs">روابط سريعة</h4>
-                    <ul className="space-y-4 text-sm font-bold text-slate-400">
-                        <li><Link to="/pricing" className="hover:text-white transition-colors">التسعير</Link></li>
-                        <li><a href="#features" className="hover:text-white transition-colors">المميزات</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">الأسئلة الشائعة</a></li>
+                    <h4 className="font-black text-emerald-500 mb-4 text-xs uppercase">روابط سريعة</h4>
+                    <ul className="space-y-2 text-sm text-slate-400 font-bold">
+                        <li><Link to="/pricing" className="hover:text-white">التسعير</Link></li>
+                        <li><a href="#features" className="hover:text-white">المميزات</a></li>
+                        <li><a href="#" className="hover:text-white">الأسئلة الشائعة</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h4 className="font-black text-emerald-500 mb-8 uppercase tracking-widest text-xs">قانوني</h4>
-                    <ul className="space-y-4 text-sm font-bold text-slate-400">
-                        <li><a href="#" className="hover:text-white transition-colors">سياسة الخصوصية</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">شروط الاستخدام</a></li>
-                        <li className="pt-4">
-                            <p className="text-xs text-slate-500 font-bold">الهاتف: <span dir="ltr">+222 47071347</span></p>
-                        </li>
+                    <h4 className="font-black text-emerald-500 mb-4 text-xs uppercase">قانوني</h4>
+                    <ul className="space-y-2 text-sm text-slate-400 font-bold">
+                        <li><a href="#" className="hover:text-white">سياسة الخصوصية</a></li>
+                        <li><a href="#" className="hover:text-white">شروط الاستخدام</a></li>
+                        <li className="text-xs text-slate-500 pt-2" dir="ltr">+222 47071347</li>
                     </ul>
                 </div>
             </div>
             
-            <div className="border-t border-white/5 pt-10 text-center md:flex justify-between items-center">
-                <p className="text-slate-500 text-sm font-bold">© 2025 بوصلة. جميع الحقوق محفوظة.</p>
-                <div className="flex gap-8 mt-6 md:mt-0 justify-center">
-                    <span className="flex items-center gap-2 text-slate-400 text-xs font-black">
-                        <Shield size={16} className="text-emerald-500" /> حماية بيانات كاملة
+            <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p className="text-slate-500 text-xs font-bold">© 2025 بوصلة. جميع الحقوق محفوظة.</p>
+                <div className="flex gap-6">
+                    <span className="flex items-center gap-1.5 text-slate-500 text-[10px] font-black uppercase">
+                        <Shield size={14} className="text-emerald-500" /> حماية بيانات كاملة
                     </span>
-                    <span className="flex items-center gap-2 text-slate-400 text-xs font-black">
-                        <CheckCircle size={16} className="text-emerald-500" /> فواتير معتمدة
+                    <span className="flex items-center gap-1.5 text-slate-500 text-[10px] font-black uppercase">
+                        <CheckCircle size={14} className="text-emerald-500" /> فواتير معتمدة
                     </span>
                 </div>
             </div>
         </div>
       </footer>
-
     </div>
   );
 };
