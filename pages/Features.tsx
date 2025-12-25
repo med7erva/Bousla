@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+// Fix: Added missing icons DollarSign and Activity to the imports from lucide-react
 import { 
   ArrowRight, 
   Package, 
@@ -12,42 +13,42 @@ import {
   Database,
   BarChart3,
   Users,
-  LayoutDashboard
+  LayoutDashboard,
+  ShoppingCart,
+  Layers,
+  Sparkles,
+  DollarSign,
+  Activity
 } from 'lucide-react';
 import BouslaLogo from '../components/BouslaLogo';
 
-const Features: React.FC = () => {
-  const featureList = [
-    {
-      title: "إدارة المخزون المتقدمة",
-      desc: "تتبع كل قطعة بدقة، من لحظة دخولها كمادة خام أو مشتريات وحتى وصولها ليد العميل. نظام تنبيهات ذكي للنواقص.",
-      icon: Package,
-      color: "bg-blue-500",
-      details: ["باركود لكل منتج", "تتبع المواد الخام", "تنبيهات تلقائية"]
-    },
-    {
-      title: "المساعد المالي الذكي (AI)",
-      desc: "مدعوم بتقنيات Gemini لتحليل مبيعاتك وتقديم نصائح يومية لزيادة الأرباح وتقليل المصاريف التشغيلية.",
-      icon: Zap,
-      color: "bg-purple-500",
-      details: ["تحليل الاتجاهات", "توقعات المبيعات", "نصائح مخصصة"]
-    },
-    {
-      title: "نظام مبيعات سريع",
-      desc: "واجهة POS (نقطة بيع) سهلة الاستخدام تدعم اللمس، الباركود، والمبيعات الآجلة مع ربط فوري بحساب العميل.",
-      icon: ShoppingCart,
-      color: "bg-emerald-500",
-      details: ["فواتير احترافية", "دعم الديون", "طرق دفع متعددة"]
-    },
-    {
-      title: "تقارير مالية تفصيلية",
-      desc: "لوحات معلومات حية تعرض لك الربح الصافي، قيمة المخزون، وتدفقات السيولة في خزائنك (Bankily, Masrvi, Cash).",
-      icon: BarChart3,
-      color: "bg-indigo-500",
-      details: ["قائمة الدخل P&L", "كشوفات حساب العملاء", "توزيع المصاريف"]
-    }
-  ];
+const FeatureCard = ({ title, desc, icon: Icon, color, imagePath }: any) => (
+  <div className="bg-white rounded-[3rem] border border-slate-100 overflow-hidden shadow-sm hover:shadow-2xl transition-all group flex flex-col">
+    <div className="p-10 flex-1">
+      <div className={`w-16 h-16 ${color} text-white rounded-2xl flex items-center justify-center mb-8 shadow-lg group-hover:scale-110 transition-transform`}>
+        <Icon size={32} />
+      </div>
+      <h3 className="text-2xl font-black text-slate-900 mb-4">{title}</h3>
+      <p className="text-slate-500 leading-relaxed font-bold text-lg">{desc}</p>
+    </div>
+    {/* Image Placeholder Frame - Looks for /assets/images/[imagePath] */}
+    <div className="px-10 pb-10">
+        <div className="aspect-video bg-slate-50 rounded-[2rem] border border-slate-100 overflow-hidden relative group-hover:border-emerald-100 transition-colors">
+            <img 
+                src={`/assets/images/${imagePath}`} 
+                alt={title}
+                className="w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity absolute inset-0"
+                onError={(e) => (e.currentTarget.style.display = 'none')}
+            />
+            <div className="absolute inset-0 flex items-center justify-center text-slate-200">
+                <Sparkles size={48} className="opacity-20" />
+            </div>
+        </div>
+    </div>
+  </div>
+);
 
+const Features: React.FC = () => {
   return (
     <div className="min-h-screen bg-white font-sans" dir="rtl">
       {/* Simple Nav */}
@@ -65,95 +66,81 @@ const Features: React.FC = () => {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="py-20 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 leading-tight">
-                أدوات ذكية مصممة <br/> <span className="text-emerald-600">لنمو تجارتك</span>
+      <section className="py-24 bg-gradient-to-b from-slate-50 to-white overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-emerald-100/30 blur-[120px] rounded-full -z-10"></div>
+            <h1 className="text-5xl md:text-7xl font-black text-slate-900 mb-8 leading-tight tracking-tight">
+                قوة المحاسبة <br/> <span className="text-emerald-600">في جيبك</span>
             </h1>
-            <p className="text-xl text-slate-500 max-w-2xl mx-auto font-medium">
-                اكتشف كيف يساعدك نظام بوصلة في التحول من الإدارة التقليدية إلى الاحترافية الرقمية الكاملة.
+            <p className="text-xl text-slate-500 max-w-3xl mx-auto font-bold leading-relaxed">
+                كل ميزة في بوصلة مصممة بعناية فائقة لتجعل إدارة بوتيكك أو مشغل الخياطة الخاص بك أسهل مما تتخيل.
             </p>
         </div>
       </section>
 
-      {/* Detailed Features Grid */}
       <section className="py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                {featureList.map((f, i) => (
-                    <div key={i} className="flex flex-col md:flex-row gap-6 p-8 rounded-[3rem] border border-slate-100 bg-white hover:shadow-xl transition-all group">
-                        <div className={`w-16 h-16 shrink-0 ${f.color} text-white rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
-                            <f.icon size={32} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <FeatureCard 
+                    title="إدارة المخزون المتقدمة"
+                    desc="تتبع كل قطعة من أقمشة وخياطة وملابس جاهزة. نظام باركود ذكي مع تنبيهات فورية للنواقص."
+                    icon={Package}
+                    color="bg-blue-500"
+                    imagePath="inventory-feature.png"
+                />
+                <FeatureCard 
+                    title="المساعد المالي (Gemini AI)"
+                    desc="أول تطبيق موريتاني يحلل مبيعاتك ويقدم لك نصائح يومية دقيقة لزيادة الأرباح بناءً على أرقامك الحقيقية."
+                    icon={Sparkles}
+                    color="bg-purple-600"
+                    imagePath="ai-feature.png"
+                />
+                <FeatureCard 
+                    title="نقطة بيع (POS) سريعة"
+                    desc="أتمم عمليات البيع في ثوانٍ. دعم كامل للمبيعات النقدية، بنكيلي، مصرفي، والديون الآجلة للعملاء."
+                    icon={ShoppingCart}
+                    color="bg-emerald-500"
+                    imagePath="pos-feature.png"
+                />
+                <FeatureCard 
+                    title="تقارير مالية حية"
+                    desc="اعرف أرباحك الصافية يومياً. تقارير مفصلة للمبيعات، المشتريات، والمصاريف التشغيلية بلمسة زر."
+                    icon={BarChart3}
+                    color="bg-indigo-600"
+                    imagePath="reports-feature.png"
+                />
+            </div>
+        </div>
+      </section>
+
+      {/* Additional Features Grid */}
+      <section className="py-24 bg-slate-900 text-white rounded-[4rem] mx-4 mb-24 overflow-hidden relative">
+         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/10 blur-[100px] rounded-full"></div>
+         <div className="max-w-7xl mx-auto px-8 lg:px-16">
+            <div className="text-center mb-20">
+                <h2 className="text-4xl font-black mb-6">وأكثر من ذلك بكثير...</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                {[
+                    { t: "مزامنة سحابية", d: "بياناتك محفوظة دائماً وتعمل على كافة أجهزتك فوراً.", i: Cloud },
+                    { t: "إدارة الموظفين", d: "تتبع رواتب وسلف الموظفين وكفاءة مبيعاتهم.", i: Users },
+                    { t: "أمان عالي", d: "تشفير كامل لكافة بياناتك المالية والعملاء.", i: ShieldCheck },
+                    { t: "دعم مالي متكامل", d: "إدارة الديون وتحصيل المبالغ من العملاء بذكاء.", i: DollarSign },
+                    { t: "تصميم عصري", d: "واجهة عربية سهلة وجميلة تريح عينك أثناء العمل.", i: Smartphone },
+                    { t: "تحديثات دورية", d: "نحن في تطور مستمر لإضافة ميزات تهمك كتـاجر.", i: Activity }
+                ].map((item, idx) => (
+                    <div key={idx} className="flex gap-5">
+                        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center shrink-0 text-emerald-400 border border-white/5">
+                            <item.i size={24} />
                         </div>
                         <div>
-                            <h3 className="text-2xl font-black text-slate-900 mb-4">{f.title}</h3>
-                            <p className="text-slate-500 leading-relaxed mb-6 font-medium">{f.desc}</p>
-                            <ul className="grid grid-cols-2 gap-2">
-                                {f.details.map((d, j) => (
-                                    <li key={j} className="flex items-center gap-2 text-sm font-bold text-slate-700">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                        {d}
-                                    </li>
-                                ))}
-                            </ul>
+                            <h4 className="text-xl font-black mb-2">{item.t}</h4>
+                            <p className="text-slate-400 leading-relaxed font-bold">{item.d}</p>
                         </div>
                     </div>
                 ))}
             </div>
-        </div>
-      </section>
-
-      {/* Trust & Security Section */}
-      <section className="py-24 bg-slate-900 text-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                <div>
-                    <h2 className="text-3xl md:text-4xl font-black mb-8">بياناتك هي أثمن ما تملك، ونحن نحميها.</h2>
-                    <div className="space-y-6">
-                        <div className="flex gap-4">
-                            <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center shrink-0"><ShieldCheck className="text-emerald-400" /></div>
-                            <div>
-                                <h4 className="font-bold text-lg">تشفير كامل</h4>
-                                <p className="text-slate-400 text-sm">بياناتك مشفرة ومحفوظة على خوادم سحابية آمنة (Supabase).</p>
-                            </div>
-                        </div>
-                        <div className="flex gap-4">
-                            <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center shrink-0"><Cloud className="text-blue-400" /></div>
-                            <div>
-                                <h4 className="font-bold text-lg">مزامنة فورية</h4>
-                                <p className="text-slate-400 text-sm">ادخل على حسابك من أي مكان، بياناتك دائماً محدثة ولحظية.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div className="relative">
-                    <div className="absolute inset-0 bg-emerald-500/20 blur-[100px] rounded-full"></div>
-                    <div className="relative bg-slate-800 p-8 rounded-[2.5rem] border border-white/10 shadow-2xl">
-                        <div className="flex items-center gap-3 mb-6">
-                            <Database className="text-emerald-400" />
-                            <span className="font-black uppercase tracking-widest text-xs">حالة الخوادم: نشطة</span>
-                        </div>
-                        <div className="space-y-4">
-                            {[1, 2, 3].map(i => (
-                                <div key={i} className="h-2 bg-white/5 rounded-full overflow-hidden">
-                                    <div className="h-full bg-emerald-500 w-[98%] animate-pulse"></div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="py-24 text-center">
-          <h2 className="text-3xl font-black text-slate-900 mb-8">هل أنت مستعد لتجربة هذه المميزات؟</h2>
-          <Link to="/register" className="inline-flex items-center gap-3 bg-emerald-600 text-white px-12 py-5 rounded-2xl font-black text-xl hover:bg-emerald-700 transition shadow-xl shadow-emerald-200">
-              ابدأ تجربتك المجانية
-              <ArrowRight size={24} />
-          </Link>
+         </div>
       </section>
 
       {/* Footer Reuse */}
@@ -166,10 +153,5 @@ const Features: React.FC = () => {
     </div>
   );
 };
-
-// Internal icon shim
-const ShoppingCart = (props: any) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-);
 
 export default Features;
