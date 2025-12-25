@@ -15,7 +15,10 @@ import {
   Zap,
   Star,
   Quote,
-  ChevronLeft
+  ChevronLeft,
+  Facebook,
+  Twitter,
+  Instagram
 } from 'lucide-react';
 import BouslaLogo from '../components/BouslaLogo';
 
@@ -248,64 +251,65 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-slate-100 pt-20 pb-10">
+      {/* Footer - Updated Design */}
+      <footer className="bg-slate-950 text-white pt-20 pb-10 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-                <div className="col-span-1 md:col-span-2 space-y-6">
-                    <BouslaLogo className="h-12 w-auto" />
-                    <p className="text-slate-500 max-w-sm leading-relaxed font-medium">
-                        تطبيق بوصلة هو الشريك التقني الأول لمتاجر الملابس والخياطة في موريتانيا، صُمم بأيادٍ وطنية لخدمة الاقتصاد المحلي.
+                <div className="col-span-1 md:col-span-2 space-y-8">
+                    <BouslaLogo className="h-14 w-auto" isWhite={true} />
+                    <p className="text-slate-400 max-w-sm leading-relaxed font-bold text-lg">
+                        تطبيق بوصلة هو الشريك التقني الأفضل لمتاجر الملابس.
                     </p>
+                    {/* Social Icons */}
+                    <div className="flex gap-4">
+                         <a href="#" className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-300 hover:bg-blue-600 hover:text-white transition-all transform hover:-translate-y-1">
+                            <Facebook size={24} />
+                         </a>
+                         <a href="#" className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-300 hover:bg-slate-800 hover:text-white transition-all transform hover:-translate-y-1">
+                            <Twitter size={24} />
+                         </a>
+                         <a href="#" className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-300 hover:bg-pink-600 hover:text-white transition-all transform hover:-translate-y-1">
+                            <Instagram size={24} />
+                         </a>
+                         <a href="https://wa.me/22247071347" className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-slate-300 hover:bg-emerald-600 hover:text-white transition-all transform hover:-translate-y-1">
+                            <MessageCircle size={24} />
+                         </a>
+                    </div>
                 </div>
                 <div>
-                    <h4 className="font-black text-slate-900 mb-6 uppercase tracking-widest text-xs">روابط سريعة</h4>
-                    <ul className="space-y-4 text-sm font-bold">
-                        <li><Link to="/pricing" className="text-slate-500 hover:text-emerald-600 transition">التسعير</Link></li>
-                        <li><a href="#features" className="text-slate-500 hover:text-emerald-600 transition">المميزات</a></li>
-                        <li><a href="#" className="text-slate-500 hover:text-emerald-600 transition">الأسئلة الشائعة</a></li>
+                    <h4 className="font-black text-emerald-500 mb-8 uppercase tracking-widest text-xs">روابط سريعة</h4>
+                    <ul className="space-y-4 text-sm font-bold text-slate-400">
+                        <li><Link to="/pricing" className="hover:text-white transition-colors">التسعير</Link></li>
+                        <li><a href="#features" className="hover:text-white transition-colors">المميزات</a></li>
+                        <li><a href="#" className="hover:text-white transition-colors">الأسئلة الشائعة</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h4 className="font-black text-slate-900 mb-6 uppercase tracking-widest text-xs">قانوني</h4>
-                    <ul className="space-y-4 text-sm font-bold">
-                        <li><a href="#" className="text-slate-500 hover:text-emerald-600 transition">سياسة الخصوصية</a></li>
-                        <li><a href="#" className="text-slate-500 hover:text-emerald-600 transition">شروط الاستخدام</a></li>
-                        <li className="pt-2">
-                            <p className="text-xs text-slate-400 font-medium">الهاتف: 22247071347+</p>
+                    <h4 className="font-black text-emerald-500 mb-8 uppercase tracking-widest text-xs">قانوني</h4>
+                    <ul className="space-y-4 text-sm font-bold text-slate-400">
+                        <li><a href="#" className="hover:text-white transition-colors">سياسة الخصوصية</a></li>
+                        <li><a href="#" className="hover:text-white transition-colors">شروط الاستخدام</a></li>
+                        <li className="pt-4">
+                            <p className="text-xs text-slate-500 font-bold">الهاتف: <span dir="ltr">+222 47071347</span></p>
                         </li>
                     </ul>
                 </div>
             </div>
-            <div className="border-t border-slate-50 pt-8 text-center md:flex justify-between items-center">
-                <p className="text-slate-400 text-sm font-medium">© 2025 بوصلة. جميع الحقوق محفوظة.</p>
-                <div className="flex gap-6 mt-4 md:mt-0 justify-center">
-                    <span className="flex items-center gap-2 text-slate-400 text-xs font-bold">
-                        <Shield size={14} /> حماية بيانات كاملة
+            
+            <div className="border-t border-white/5 pt-10 text-center md:flex justify-between items-center">
+                <p className="text-slate-500 text-sm font-bold">© 2025 بوصلة. جميع الحقوق محفوظة.</p>
+                <div className="flex gap-8 mt-6 md:mt-0 justify-center">
+                    <span className="flex items-center gap-2 text-slate-400 text-xs font-black">
+                        <Shield size={16} className="text-emerald-500" /> حماية بيانات كاملة
                     </span>
-                    <span className="flex items-center gap-2 text-slate-400 text-xs font-bold">
-                        <CheckCircle size={14} /> فواتير معتمدة
+                    <span className="flex items-center gap-2 text-slate-400 text-xs font-black">
+                        <CheckCircle size={16} className="text-emerald-500" /> فواتير معتمدة
                     </span>
                 </div>
             </div>
         </div>
       </footer>
 
-      {/* Floating WhatsApp Button */}
-      <a 
-        href="https://wa.me/22247071347" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-[100] group flex items-center gap-3 bg-white p-2 pr-6 rounded-full shadow-2xl border border-emerald-100 hover:scale-105 transition-all active:scale-95"
-      >
-          <div className="relative">
-              <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-25"></div>
-              <div className="relative w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-lg">
-                <MessageCircle size={28} />
-              </div>
-          </div>
-          <span className="font-black text-emerald-700 text-sm whitespace-nowrap">تواصل عبر واتساب</span>
-      </a>
     </div>
   );
 };
