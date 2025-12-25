@@ -19,7 +19,9 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Profile from './pages/Profile';
 import Pricing from './pages/Pricing';
-import Admin from './pages/Admin'; // New Admin Page
+import Admin from './pages/Admin';
+import PrivacyPolicy from './pages/PrivacyPolicy'; // New Import
+import TermsOfService from './pages/TermsOfService'; // New Import
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
 import { Wrench, AlertTriangle, ArrowRight, Lock } from 'lucide-react';
@@ -44,7 +46,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     return <Navigate to="/login" replace />;
   }
 
-  // Subscription Guard (Expired status)
   if (user?.subscriptionStatus === 'expired') {
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4 font-sans" dir="rtl">
@@ -123,6 +124,10 @@ const AppRoutes: React.FC = () => {
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
             <Route path="/pricing" element={isAuthenticated ? <Pricing /> : <Navigate to="/login" />} />
+            
+            {/* Public Pages */}
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
 
             <Route path="/" element={isAuthenticated ? (
                 user?.subscriptionStatus === 'expired' ? <Navigate to="/pricing" /> : <Layout><Dashboard /></Layout>
