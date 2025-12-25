@@ -236,20 +236,20 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-950 text-white pt-24 pb-12">
+      <footer className="bg-white border-t border-slate-100 pt-20 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
             {/* Brand Column */}
             <div className="col-span-1 lg:col-span-1 space-y-6">
-                <BouslaLogo className="h-10 w-auto" isWhite={true} />
-                <p className="text-slate-400 text-sm leading-relaxed font-medium">
+                <BouslaLogo className="h-10 w-auto" />
+                <p className="text-slate-500 text-sm leading-relaxed font-medium">
                     المنصة المحاسبية الأولى في موريتانيا، صُممت خصيصاً لخدمة المحلات والمؤسسات التجارية الصغيرة والمتوسطة بأحدث التقنيات.
                 </p>
                 <div className="flex gap-3">
-                    <a href="https://wa.me/22247071347" className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-emerald-600 transition-colors">
+                    <a href="https://wa.me/22247071347" className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-600 hover:bg-emerald-600 hover:text-white transition-colors">
                         <MessageCircle size={20} />
                     </a>
-                    <a href="mailto:support@bousla.com" className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-blue-600 transition-colors">
+                    <a href="mailto:support@bousla.com" className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-600 hover:bg-blue-600 hover:text-white transition-colors">
                         <Mail size={20} />
                     </a>
                 </div>
@@ -257,34 +257,34 @@ const Landing: React.FC = () => {
 
             {/* Quick Links */}
             <div>
-                <h4 className="text-sm font-black uppercase tracking-widest text-emerald-500 mb-8">روابط سريعة</h4>
-                <ul className="space-y-4 text-slate-400 font-bold text-sm">
-                    <li><Link to="/pricing" className="hover:text-white transition">خطط التسعير</Link></li>
-                    <li><a href="#" className="hover:text-white transition">المميزات</a></li>
-                    <li><a href="#" className="hover:text-white transition">قصص النجاح</a></li>
-                    <li><a href="#" className="hover:text-white transition">الأسئلة الشائعة</a></li>
+                <h4 className="text-sm font-black uppercase tracking-widest text-emerald-600 mb-8">روابط سريعة</h4>
+                <ul className="space-y-4 text-slate-500 font-bold text-sm">
+                    <li><Link to="/pricing" className="hover:text-emerald-600 transition">خطط التسعير</Link></li>
+                    <li><a href="#" className="hover:text-emerald-600 transition">المميزات</a></li>
+                    <li><a href="#" className="hover:text-emerald-600 transition">قصص النجاح</a></li>
+                    <li><a href="#" className="hover:text-emerald-600 transition">الأسئلة الشائعة</a></li>
                 </ul>
             </div>
 
             {/* Legal */}
             <div>
-                <h4 className="text-sm font-black uppercase tracking-widest text-emerald-500 mb-8">قانوني</h4>
-                <ul className="space-y-4 text-slate-400 font-bold text-sm">
-                    <li><a href="#" className="hover:text-white transition">سياسة الخصوصية</a></li>
-                    <li><a href="#" className="hover:text-white transition">شروط الاستخدام</a></li>
-                    <li><a href="#" className="hover:text-white transition">اتفاقية الاشتراك</a></li>
+                <h4 className="text-sm font-black uppercase tracking-widest text-emerald-600 mb-8">قانوني</h4>
+                <ul className="space-y-4 text-slate-500 font-bold text-sm">
+                    <li><a href="#" className="hover:text-emerald-600 transition">سياسة الخصوصية</a></li>
+                    <li><a href="#" className="hover:text-emerald-600 transition">شروط الاستخدام</a></li>
+                    <li><a href="#" className="hover:text-emerald-600 transition">اتفاقية الاشتراك</a></li>
                 </ul>
             </div>
 
             {/* Contact */}
             <div>
-                <h4 className="text-sm font-black uppercase tracking-widest text-emerald-500 mb-8">تواصل معنا</h4>
+                <h4 className="text-sm font-black uppercase tracking-widest text-emerald-600 mb-8">تواصل معنا</h4>
                 <div className="space-y-4">
-                    <div className="flex items-center gap-3 text-slate-400 font-bold text-sm">
+                    <div className="flex items-center gap-3 text-slate-600 font-bold text-sm">
                         <Phone size={18} className="text-emerald-600" />
                         <span dir="ltr">+222 47071347</span>
                     </div>
-                    <div className="flex items-center gap-3 text-slate-400 font-bold text-sm">
+                    <div className="flex items-center gap-3 text-slate-600 font-bold text-sm">
                         <Mail size={18} className="text-emerald-600" />
                         <span>support@bousla.com</span>
                     </div>
@@ -301,12 +301,12 @@ const Landing: React.FC = () => {
             </div>
           </div>
 
-          <div className="border-t border-white/5 pt-10 flex flex-col md:flex-row justify-between items-center gap-6">
-            <p className="text-slate-500 text-xs font-bold">
+          <div className="border-t border-slate-100 pt-10 flex flex-col md:flex-row justify-between items-center gap-6">
+            <p className="text-slate-400 text-xs font-bold">
                 © {new Date().getFullYear()} بوصلة المحاسبي. جميع الحقوق محفوظة.
             </p>
             <div className="flex items-center gap-8">
-                <span className="flex items-center gap-2 text-slate-500 text-xs font-bold italic">
+                <span className="flex items-center gap-2 text-slate-400 text-xs font-bold italic">
                     <Shield size={14} className="text-emerald-500" />
                     بياناتك محمية ومشفرة بالكامل
                 </span>
