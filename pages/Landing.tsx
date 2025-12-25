@@ -66,7 +66,7 @@ const Landing: React.FC = () => {
                 <span className="text-transparent bg-clip-text bg-gradient-to-l from-emerald-600 to-teal-500">بذكاء واحترافية</span>
             </h1>
             <p className="text-lg md:text-xl text-slate-500 mb-10 leading-relaxed max-w-3xl mx-auto font-medium">
-                انسَ الدفاتر والتعقيد. بوصلة يوفر لك نظاماً متكاملاً لإدارة المبيعات، المخزون، والتقارير المالية مدعوماً بالذكاء الاصطناعي.
+                بوصلة يوفر لك نظاماً متكاملاً لإدارة المبيعات، المخزون، والتقارير المالية بدقة متناهية وسهولة تامة.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link 
@@ -85,213 +85,182 @@ const Landing: React.FC = () => {
             </div>
           </div>
 
-          {/* HIGH FIDELITY IPAD MOCKUP - REPLICATING THE IMAGE */}
+          {/* THE REALISTIC IPAD MOCKUP SECTION */}
           <div className={`relative max-w-5xl mx-auto transition-all duration-1000 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-                {/* Real-world shadow */}
-                <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 w-[90%] h-12 bg-black/20 blur-[60px] rounded-full"></div>
                 
-                {/* iPad Pro Frame */}
-                <div className="relative mx-auto w-full max-w-[820px] aspect-[3/4.2] bg-[#0a0a0b] rounded-[3.5rem] p-3 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border-[1px] border-white/10 ring-1 ring-black overflow-hidden transform hover:scale-[1.005] transition-transform">
-                    {/* Screen Glass Reflection Layer */}
-                    <div className="absolute inset-0 z-30 pointer-events-none bg-gradient-to-tr from-white/5 via-transparent to-white/10 opacity-30"></div>
+                {/* Device Shadow & Floor Reflection effect */}
+                <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-[85%] h-20 bg-black/10 blur-[80px] rounded-full"></div>
+                
+                {/* iPad Pro Frame (Portrait) */}
+                <div className="relative mx-auto w-full max-w-[760px] aspect-[1/1.4] bg-[#080808] rounded-[3.5rem] p-[10px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.4)] border-[1px] border-white/5 ring-1 ring-black overflow-hidden">
                     
-                    {/* Top Notch / Camera Sensors */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-8 bg-[#0a0a0b] rounded-b-[1.5rem] z-40 flex items-center justify-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-[#1a1a1c]"></div>
-                        <div className="w-10 h-1.5 rounded-full bg-[#1a1a1c]"></div>
+                    {/* Bezel */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-7 bg-[#080808] rounded-b-2xl z-40 flex items-center justify-center gap-3">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#1a1a1a]"></div>
+                        <div className="w-8 h-1 rounded-full bg-[#1a1a1a]"></div>
                     </div>
-                    
-                    {/* SCREEN CONTENT - THE ACTUAL DASHBOARD UI */}
+
+                    {/* Screen Container */}
                     <div className="w-full h-full bg-[#f8fafb] rounded-[2.8rem] overflow-hidden relative flex flex-col font-sans">
                         
-                        {/* 1. APP HEADER */}
-                        <header className="h-20 px-8 bg-white border-b border-slate-100 flex items-center justify-between shrink-0">
-                            <div className="flex items-center gap-5">
-                                <Menu size={24} className="text-slate-400" />
-                                <span className="font-black text-xl text-slate-800">التقارير</span>
-                            </div>
+                        {/* 1. Dashboard Header */}
+                        <header className="h-16 px-6 bg-white border-b border-slate-100 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-4 py-1.5 rounded-xl text-xs font-black">
-                                    <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                <Menu size={22} className="text-slate-400" />
+                                <span className="font-black text-lg text-slate-800">التقارير</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 bg-slate-50 text-slate-600 px-3 py-1.5 rounded-xl text-[10px] font-black">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                                     مـوارد
                                 </div>
-                                <div className="w-11 h-11 rounded-2xl bg-slate-100 flex items-center justify-center border border-slate-200">
+                                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center border border-slate-200">
                                     <span className="text-emerald-600 font-black text-lg">P</span>
                                 </div>
                             </div>
                         </header>
 
-                        {/* 2. TOOLBAR (Export & Date Filter) */}
-                        <div className="px-8 py-5 flex justify-between items-center bg-white">
-                             <div className="flex items-center gap-2 bg-[#f1f3f5] p-2 rounded-2xl border border-slate-100">
-                                <Calendar size={16} className="text-slate-400 mr-2" />
-                                <span className="text-xs font-bold text-slate-500">2025/11/23</span>
-                                <ArrowRight size={12} className="text-slate-300 mx-1" />
-                                <span className="text-xs font-bold text-slate-500">2025/11/30</span>
-                                <div className="w-px h-4 bg-slate-200 mx-2"></div>
-                                <X size={14} className="text-slate-400 ml-1" />
+                        {/* 2. Control Toolbar */}
+                        <div className="px-6 py-4 flex justify-between items-center bg-white shadow-sm z-10">
+                             <div className="flex items-center gap-2 bg-[#f1f3f5] p-1.5 rounded-xl border border-slate-100">
+                                <Calendar size={14} className="text-slate-400 mr-1" />
+                                <span className="text-[10px] font-bold text-slate-500 tracking-tighter">2025/11/23</span>
+                                <span className="text-slate-300 text-[10px] mx-0.5">{'>'}</span>
+                                <span className="text-[10px] font-bold text-slate-500 tracking-tighter">2025/11/30</span>
+                                <div className="w-px h-3 bg-slate-200 mx-1"></div>
+                                <X size={12} className="text-slate-400" />
                              </div>
-                             <div className="flex items-center gap-4">
-                                <div className="text-right">
-                                    <h2 className="text-xl font-black text-slate-900">التقارير المالية</h2>
-                                    <p className="text-[10px] text-slate-400 font-bold">تقارير العمليات الشاملة في المتجر</p>
+                             <div className="flex items-center gap-3">
+                                <div className="text-right hidden sm:block">
+                                    <h2 className="text-sm font-black text-slate-900 leading-none">التقارير المالية</h2>
+                                    <p className="text-[8px] text-slate-400 font-bold mt-1">نظرة شاملة على أداء المتجر</p>
                                 </div>
-                                <button className="bg-[#111111] text-white px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-3 shadow-lg shadow-black/10">
-                                    تصدير <Download size={14} />
+                                <button className="bg-[#111] text-white px-4 py-2 rounded-xl text-[10px] font-bold flex items-center gap-2 shadow-lg">
+                                    تصدير <Download size={12} />
                                 </button>
                              </div>
                         </div>
 
-                        {/* 3. DASHBOARD MAIN AREA */}
-                        <div className="flex-1 overflow-y-auto p-8 space-y-6">
+                        {/* 3. Scrollable Content Area */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar bg-[#f8fafb]">
                             
-                            {/* KPI Grid */}
-                            <div className="grid grid-cols-2 gap-6">
+                            {/* KPI Grid (Top Row) */}
+                            <div className="grid grid-cols-2 gap-4">
                                 {/* Total Sales */}
-                                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                                    <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center mb-6">
-                                        <Activity size={24} />
+                                <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm">
+                                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center mb-4">
+                                        <Activity size={18} />
                                     </div>
-                                    <div className="text-left">
-                                        <p className="text-xs font-black text-slate-400 uppercase mb-1">إجمالي المبيعات</p>
-                                        <h3 className="text-3xl font-black text-slate-900 tracking-tighter">78,530 <span className="text-xs font-bold text-slate-400">أوقية</span></h3>
-                                        <p className="text-[10px] text-slate-400 mt-2 font-medium">الإيرادات قبل خصم التكاليف</p>
-                                    </div>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">إجمالي المبيعات</p>
+                                    <h3 className="text-xl font-black text-slate-900">78,530 <span className="text-[10px] text-slate-400 font-bold">أوقية</span></h3>
+                                    <p className="text-[8px] text-slate-400 mt-2">الإيرادات قبل خصم التكاليف</p>
                                 </div>
 
                                 {/* Net Profit */}
-                                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden">
-                                    <div className="absolute top-6 right-6">
-                                        <span className="text-[10px] bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-black">%20 هامش</span>
+                                <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden">
+                                    <div className="absolute top-4 right-4">
+                                        <span className="text-[8px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-black">%20 هامش</span>
                                     </div>
-                                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center mb-6">
-                                        <DollarSign size={24} />
+                                    <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center mb-4">
+                                        <DollarSign size={18} />
                                     </div>
-                                    <div className="text-left">
-                                        <p className="text-xs font-black text-slate-400 uppercase mb-1">صافي الربح</p>
-                                        <h3 className="text-3xl font-black text-emerald-600 tracking-tighter">15,677 <span className="text-xs font-bold text-emerald-400">أوقية</span></h3>
-                                    </div>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">صافي الربح</p>
+                                    <h3 className="text-xl font-black text-emerald-600">15,677 <span className="text-[10px] text-emerald-400 font-bold">أوقية</span></h3>
                                 </div>
 
                                 {/* Stock Value */}
-                                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                                    <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-500 flex items-center justify-center mb-6">
-                                        <Package size={24} />
+                                <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm">
+                                    <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center mb-4">
+                                        <Package size={18} />
                                     </div>
-                                    <div className="text-left">
-                                        <p className="text-xs font-black text-slate-400 uppercase mb-1">قيمة المخزون</p>
-                                        <h3 className="text-3xl font-black text-slate-900 tracking-tighter">200,979 <span className="text-xs font-bold text-slate-400">أوقية</span></h3>
-                                        <p className="text-[10px] text-slate-400 mt-2 font-medium">محسوبة بسعر التكلفة</p>
-                                    </div>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">قيمة المخزون</p>
+                                    <h3 className="text-xl font-black text-slate-900">200,979 <span className="text-[10px] text-slate-400 font-bold">أوقية</span></h3>
+                                    <p className="text-[8px] text-slate-400 mt-2">محسوبة بسعر التكلفة</p>
                                 </div>
 
                                 {/* Expenses */}
-                                <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
-                                    <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center mb-6">
-                                        <TrendingDown size={24} />
+                                <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm">
+                                    <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center mb-4">
+                                        <TrendingDown size={18} />
                                     </div>
-                                    <div className="text-left">
-                                        <p className="text-xs font-black text-slate-400 uppercase mb-1">المصاريف</p>
-                                        <h3 className="text-3xl font-black text-slate-900 tracking-tighter">5,600 <span className="text-xs font-bold text-slate-400">أوقية</span></h3>
-                                        <p className="text-[10px] text-slate-400 mt-2 font-medium">مصاريف تشغيلية ورواتب</p>
-                                    </div>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase mb-1">المصاريف</p>
+                                    <h3 className="text-xl font-black text-slate-900">5,600 <span className="text-[10px] text-slate-400 font-bold">أوقية</span></h3>
+                                    <p className="text-[8px] text-slate-400 mt-2">مصاريف تشغيلية ورواتب</p>
                                 </div>
                             </div>
 
-                            {/* Chart Area */}
-                            <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
-                                <div className="flex justify-between items-center mb-12">
-                                    <h3 className="text-lg font-black text-slate-800 flex items-center gap-3">
-                                        <Activity size={20} className="text-emerald-500" /> اتجاه المبيعات (يومي)
+                            {/* Main Chart Card */}
+                            <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                                <div className="flex justify-between items-center mb-8">
+                                    <h3 className="text-xs font-black text-slate-800 flex items-center gap-2">
+                                        <TrendingUp size={14} className="text-emerald-500" /> اتجاه المبيعات (يومي)
                                     </h3>
-                                    <div className="flex gap-1">
-                                        {[1,2,3].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full bg-slate-100"></div>)}
-                                    </div>
+                                    <div className="w-16 h-1.5 bg-slate-50 rounded-full"></div>
                                 </div>
-                                <div className="h-56 w-full flex items-end justify-between px-2 relative">
-                                    {/* Line Chart Path (Jagged as in image) */}
-                                    <svg className="absolute inset-0 w-full h-full px-4" preserveAspectRatio="none" viewBox="0 0 100 100">
-                                        <path d="M0,85 L10,80 L20,45 L30,82 L40,84 L50,60 L60,88 L70,30 L80,75 L90,40 L100,85" fill="none" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                                        <path d="M0,85 L10,80 L20,45 L30,82 L40,84 L50,60 L60,88 L70,30 L80,75 L90,40 L100,85 L100,100 L0,100 Z" fill="url(#heroGrad)" opacity="0.1" />
+                                <div className="h-40 w-full relative">
+                                    {/* Jagged Green SVG Path */}
+                                    <svg className="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+                                        <path d="M0,85 L10,82 L20,40 L30,78 L40,80 L50,55 L60,85 L70,25 L80,70 L90,35 L100,85" fill="none" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path d="M0,85 L10,82 L20,40 L30,78 L40,80 L50,55 L60,85 L70,25 L80,70 L90,35 L100,85 L100,100 L0,100 Z" fill="url(#mainChartGrad)" opacity="0.1" />
                                         <defs>
-                                            <linearGradient id="heroGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                            <linearGradient id="mainChartGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                                                 <stop offset="0%" stopColor="#10b981" />
                                                 <stop offset="100%" stopColor="#fff" />
                                             </linearGradient>
                                         </defs>
                                     </svg>
-                                    {/* X-Axis labels */}
-                                    <div className="absolute -bottom-8 left-0 right-0 flex justify-between text-[10px] text-slate-300 font-black tracking-widest px-4">
+                                    <div className="absolute -bottom-6 left-0 right-0 flex justify-between px-2 text-[8px] text-slate-300 font-black">
                                         <span>23/11</span><span>25/11</span><span>27/11</span><span>29/11</span><span>31/11</span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Widgets Row */}
-                            <div className="grid grid-cols-2 gap-6">
+                            {/* Bottom Grid (Widgets) */}
+                            <div className="grid grid-cols-2 gap-4 pb-4">
                                 {/* Low Stock Widget */}
-                                <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h4 className="text-xs font-black text-slate-800 flex items-center gap-2">
-                                            <AlertTriangle size={14} className="text-rose-500" /> على وشك النفاد
-                                        </h4>
-                                        <MoreHorizontal size={14} className="text-slate-300" />
-                                    </div>
-                                    <div className="space-y-4">
+                                <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm">
+                                    <h4 className="text-[10px] font-black text-slate-800 mb-4 flex items-center gap-1.5">
+                                        <AlertTriangle size={12} className="text-rose-500" /> على وشك النفاد
+                                    </h4>
+                                    <div className="space-y-3">
                                         {[
                                             { name: 'فستان صيفي مطرز', val: '4 باقي' },
                                             { name: 'ملحفة قطن أصلية', val: '2 باقي' },
                                             { name: 'دراعة فاخرة (سوبر)', val: '1 باقي' }
                                         ].map((item, i) => (
                                             <div key={i} className="flex justify-between items-center">
-                                                <span className="text-xs font-bold text-slate-600">{item.name}</span>
-                                                <span className="text-[10px] font-black text-rose-500 bg-rose-50 px-3 py-1 rounded-full">{item.val}</span>
+                                                <span className="text-[8px] font-bold text-slate-600 truncate max-w-[60px]">{item.name}</span>
+                                                <span className="text-[7px] font-black text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full">{item.val}</span>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
 
-                                {/* Expense Breakdown Widget */}
-                                <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm flex flex-col items-center">
-                                    <div className="flex justify-between items-center w-full mb-8">
-                                        <h4 className="text-xs font-black text-slate-800">توزيع المصاريف</h4>
-                                        <TrendingDown size={14} className="text-rose-400" />
+                                {/* Expense Breakdown Donut */}
+                                <div className="bg-white rounded-[2rem] p-5 border border-slate-100 shadow-sm flex flex-col items-center">
+                                    <div className="w-full flex justify-between items-center mb-3">
+                                        <h4 className="text-[10px] font-black text-slate-800">توزيع المصاريف</h4>
+                                        <TrendingDown size={12} className="text-rose-400" />
                                     </div>
-                                    <div className="relative w-28 h-28">
-                                        {/* Donut Chart Simulation with nested circles */}
+                                    <div className="relative w-20 h-20">
                                         <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
                                             <circle cx="18" cy="18" r="15.9" fill="transparent" stroke="#f1f3f5" strokeWidth="4"></circle>
                                             <circle cx="18" cy="18" r="15.9" fill="transparent" stroke="#10b981" strokeWidth="4" strokeDasharray="60 100"></circle>
                                             <circle cx="18" cy="18" r="15.9" fill="transparent" stroke="#f59e0b" strokeWidth="4" strokeDasharray="25 100" strokeDashoffset="-60"></circle>
                                             <circle cx="18" cy="18" r="15.9" fill="transparent" stroke="#ef4444" strokeWidth="4" strokeDasharray="15 100" strokeDashoffset="-85"></circle>
                                         </svg>
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            <div className="text-center">
-                                                <p className="text-sm font-black text-slate-800">5,600</p>
-                                                <p className="text-[8px] text-slate-400 font-bold uppercase">الإجمالي</p>
-                                            </div>
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                            <p className="text-[10px] font-black text-slate-800 leading-none">5,600</p>
+                                            <p className="text-[6px] text-slate-400 font-bold mt-0.5 uppercase">الإجمالي</p>
                                         </div>
                                     </div>
-                                    <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-2 w-full">
-                                        <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-rose-500"></div><span className="text-[9px] text-slate-500 font-bold">رواتب</span></div>
-                                        <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-400"></div><span className="text-[9px] text-slate-500 font-bold">غداء</span></div>
-                                        <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div><span className="text-[9px] text-slate-500 font-bold">كهرباء</span></div>
-                                        <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-slate-200"></div><span className="text-[9px] text-slate-500 font-bold">صيانة</span></div>
+                                    <div className="mt-4 grid grid-cols-2 gap-x-2 gap-y-1 w-full">
+                                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div><span className="text-[7px] text-slate-500 font-bold">رواتب</span></div>
+                                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div><span className="text-[7px] text-slate-500 font-bold">غداء</span></div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                {/* Floating Growth Badge (Visual extra) */}
-                <div className="absolute -top-10 -right-10 bg-white p-6 rounded-[2rem] shadow-2xl border border-emerald-50 flex items-center gap-5 animate-bounce duration-[5000ms] hidden md:flex">
-                    <div className="w-14 h-14 bg-emerald-500 rounded-[1.2rem] flex items-center justify-center text-white shadow-xl shadow-emerald-200">
-                        <ArrowUpRight size={28} />
-                    </div>
-                    <div>
-                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">نسبة النمو</p>
-                        <p className="text-xl font-black text-slate-900">+24.5% <span className="text-xs text-slate-400">هذا الشهر</span></p>
                     </div>
                 </div>
           </div>
@@ -331,91 +300,7 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section id="testimonials" className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16 space-y-4">
-                <h2 className="text-3xl md:text-4xl font-black text-slate-900">ماذا يقولون عنا؟</h2>
-                <p className="text-slate-500 font-medium">نفتخر بدعم مئات المتاجر في رحلة نجاحهم الرقمي.</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {/* Testimonial 1 */}
-                <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 hover:-translate-y-2 transition-transform duration-300">
-                    <div className="flex gap-1 mb-6">
-                        {[1, 2, 3, 4, 5].map(s => <Star key={s} size={16} className="fill-yellow-400 text-yellow-400" />)}
-                    </div>
-                    <p className="text-slate-700 font-medium leading-relaxed mb-8 italic">
-                        “قبل بوصلة كنت أعرف المبيعات، لكن لا أعرف الربح الحقيقي. الآن أرى المبيعات والمصاريف بشكل واضح وسريع.”
-                    </p>
-                    <div className="flex items-center gap-4 border-t border-slate-200 pt-6">
-                        <div className="w-12 h-12 rounded-full bg-emerald-600 flex items-center justify-center font-black text-white shadow-md">
-                            ع
-                        </div>
-                        <div>
-                            <h4 className="font-bold text-slate-900">عبد الرحمن</h4>
-                            <p className="text-xs text-slate-500 font-bold uppercase">محل ألبسة رجالية</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Testimonial 2 */}
-                <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 hover:-translate-y-2 transition-transform duration-300">
-                    <div className="flex gap-1 mb-6">
-                        {[1, 2, 3, 4, 5].map(s => <Star key={s} size={16} className="fill-yellow-400 text-yellow-400" />)}
-                    </div>
-                    <p className="text-slate-700 font-medium leading-relaxed mb-8 italic">
-                        “أكثر شيء عجبني هو تنبيهات المخزون. التطبيق ينبهني قبل ما يخلص الصنف، وهذا وفر علي الكثير من الوقت.”
-                    </p>
-                    <div className="flex items-center gap-4 border-t border-slate-200 pt-6">
-                        <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center font-black text-white shadow-md">
-                            ا
-                        </div>
-                        <div>
-                            <h4 className="font-bold text-slate-900">الحسن</h4>
-                            <p className="text-xs text-slate-500 font-bold uppercase">تاجر تجزئة</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Testimonial 3 */}
-                <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 hover:-translate-y-2 transition-transform duration-300">
-                    <div className="flex gap-1 mb-6">
-                        {[1, 2, 3, 4, 5].map(s => <Star key={s} size={16} className="fill-yellow-400 text-yellow-400" />)}
-                    </div>
-                    <p className="text-slate-700 font-medium leading-relaxed mb-8 italic">
-                        “ميزة بند الخياطة والتصنيع ممتازة، أخيرًا وجدت حلاً يناسب طبيعة عملنا وليس مجرد محاسبة عامة.”
-                    </p>
-                    <div className="flex items-center gap-4 border-t border-slate-200 pt-6">
-                        <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center font-black text-white shadow-md">
-                            ع
-                        </div>
-                        <div>
-                            <h4 className="font-bold text-slate-900">عمر</h4>
-                            <p className="text-xs text-slate-500 font-bold uppercase">صاحب محل خياطة</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-      </section>
-
-      {/* Call to Action */}
-      <section className="py-20 px-4 bg-white">
-        <div className="max-w-5xl mx-auto bg-slate-900 rounded-[3rem] p-12 text-center text-white relative overflow-hidden shadow-2xl">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
-            <div className="relative z-10">
-                <h2 className="text-3xl md:text-5xl font-black mb-6">جاهز لرقمنة متجرك؟</h2>
-                <p className="text-slate-400 mb-10 max-w-xl mx-auto font-medium">ابدأ الآن تجربتك المجانية لمدة 30 يوماً واكتشف الفرق الذي سيحدثه "بوصلة" في إدارة عملك.</p>
-                <Link to="/register" className="inline-flex items-center gap-3 bg-emerald-600 hover:bg-emerald-50 text-white px-12 py-5 rounded-2xl font-black text-xl transition-all shadow-xl shadow-emerald-900/20">
-                    ابدأ الآن مجاناً
-                    <ArrowRight size={24} />
-                </Link>
-            </div>
-        </div>
-      </section>
-
-      {/* Footer - Updated Compact & Dark */}
+      {/* Footer */}
       <footer className="bg-slate-950 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10 items-start">
@@ -436,7 +321,6 @@ const Landing: React.FC = () => {
                     <ul className="space-y-2 text-sm text-slate-400 font-bold">
                         <li><Link to="/pricing" className="hover:text-white">التسعير</Link></li>
                         <li><a href="#features" className="hover:text-white">المميزات</a></li>
-                        <li><a href="#" className="hover:text-white">الأسئلة الشائعة</a></li>
                     </ul>
                 </div>
                 <div>
