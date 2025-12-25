@@ -14,7 +14,8 @@ import {
   TrendingUp,
   Zap,
   Star,
-  Quote
+  Quote,
+  ChevronLeft
 } from 'lucide-react';
 import BouslaLogo from '../components/BouslaLogo';
 
@@ -25,293 +26,268 @@ const Landing: React.FC = () => {
     setIsVisible(true);
   }, []);
 
-  const testimonials = [
-    {
-      name: "عبد الرحمن",
-      business: "محل ألبسة رجالية",
-      quote: "قبل بوصلة كنت أعرف البيع، لكن لا أعرف الربح الحقيقي. الآن أرى المبيعات والمصاريف بشكل واضح وسريع.",
-      initial: "ع"
-    },
-    {
-      name: "الحسن",
-      business: "تاجر تجزئة",
-      quote: "أكثر شيء عجبني هو تنبيهات المخزون. التطبيق ينبهني قبل ما يخلص الصنف.",
-      initial: "ح"
-    },
-    {
-      name: "عمر",
-      business: "صاحب محل خياطة",
-      quote: "ميزة بند الخياطة ممتازة، أخيرًا حل يناسب عملنا ليس مجرد محاسبة عامة.",
-      initial: "ع"
-    }
-  ];
-
   return (
-    <div className="min-h-screen bg-white font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden" dir="rtl">
+    <div className="min-h-screen bg-slate-50 font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-x-hidden" dir="rtl">
       
       {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-xl border-b border-slate-100 sticky top-0 z-[100]">
+      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-[100]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex-shrink-0">
                 <BouslaLogo className="h-10 w-auto text-2xl" />
             </div>
-            <div className="hidden md:flex items-center gap-10">
-              <a href="#features" className="text-slate-600 hover:text-emerald-600 font-bold text-sm transition">المميزات</a>
-              <a href="#testimonials" className="text-slate-600 hover:text-emerald-600 font-bold text-sm transition">ماذا يقولون عنا</a>
-              <Link to="/login" className="text-slate-600 hover:text-emerald-600 font-bold text-sm transition">تسجيل الدخول</Link>
-            </div>
             <Link 
               to="/register" 
-              className="bg-emerald-600 text-white px-8 py-3 rounded-2xl font-black text-sm hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 active:scale-95"
+              className="bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-emerald-700 transition shadow-lg shadow-emerald-200"
             >
-              ابدأ تجربتك المجانية
+              ابدأ الآن مجاناً
             </Link>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-20 pb-32 overflow-hidden bg-gradient-to-b from-slate-50 to-white">
+      <section className="relative pt-16 pb-24 lg:pt-24 lg:pb-32 overflow-hidden bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16 space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-            <span className="inline-flex items-center gap-2 py-2 px-5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-black border border-emerald-100 shadow-sm">
-                <Zap size={14} className="fill-emerald-500" />
-                الجيل القادم من أنظمة المحاسبة في موريتانيا
+          <div className="text-center mb-16 space-y-6">
+            <span className="inline-flex items-center gap-2 py-1.5 px-4 rounded-full bg-emerald-50 text-emerald-700 text-xs font-black mb-2 border border-emerald-100">
+                تطبيق المحاسبة رقم 1 في موريتانيا 🇲🇷
             </span>
-            <h1 className="text-5xl md:text-7xl font-black text-slate-900 leading-tight tracking-tighter">
-                بساطة في التصميم <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-l from-emerald-600 to-teal-500">قوة في الإدارة المباشرة</span>
+            <h1 className="text-5xl md:text-7xl font-black text-slate-900 leading-tight tracking-tight">
+                أدر بوتيكك <br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-l from-emerald-600 to-teal-500">بذكاء واحترافية</span>
             </h1>
-            <p className="text-xl text-slate-500 max-w-3xl mx-auto font-medium leading-relaxed">
-                حول متجرك من التقليدي إلى الرقمي في دقائق. بوصلة هو الحل المتكامل لإدارة المخزون والمبيعات والتحليلات الذكية.
+            <p className="text-lg md:text-xl text-slate-500 mb-10 leading-relaxed max-w-3xl mx-auto font-medium">
+                انسَ الدفاتر والتعقيد. بوصلة يوفر لك نظاماً متكاملاً لإدارة المبيعات، المخزون، والتقارير المالية مدعوماً بالذكاء الاصطناعي.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                <Link to="/register" className="bg-slate-900 text-white px-12 py-5 rounded-2xl text-xl font-black hover:bg-slate-800 transition shadow-2xl flex items-center justify-center gap-3 group">
-                    اشترك الآن
-                    <ArrowRight size={24} className="group-hover:translate-x-[-4px] transition-transform" />
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link 
+                  to="/register" 
+                  className="bg-slate-900 text-white px-10 py-4 rounded-2xl text-lg font-black hover:bg-slate-800 transition shadow-2xl flex items-center justify-center gap-2"
+                >
+                  اشترك الآن
+                  <ArrowRight size={20} />
                 </Link>
-                <Link to="/login" className="bg-white text-slate-700 border-2 border-slate-200 px-12 py-5 rounded-2xl text-xl font-black hover:bg-slate-50 transition shadow-sm">
-                    مشاهدة العرض
+                <Link 
+                  to="/login"
+                  className="bg-white text-slate-700 border-2 border-slate-100 px-10 py-4 rounded-2xl text-lg font-bold hover:bg-slate-50 transition"
+                >
+                  تجربة العرض المباشر
                 </Link>
             </div>
           </div>
 
-          {/* Interactive iPad Mockup */}
+          {/* iPad Mockup - Coded with CSS */}
           <div className={`relative max-w-5xl mx-auto transition-all duration-1000 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-            <div className="absolute inset-0 bg-emerald-500/20 blur-[120px] rounded-full scale-75 animate-pulse"></div>
-            
-            {/* iPad Frame */}
-            <div className="relative mx-auto w-full aspect-[4/3] bg-slate-900 rounded-[3rem] p-3 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] border-[10px] border-slate-800 ring-1 ring-slate-700 overflow-hidden transform hover:scale-[1.01] transition-transform">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-800 rounded-b-2xl z-20"></div>
+                <div className="absolute inset-0 bg-emerald-500/10 blur-[120px] rounded-full scale-75"></div>
                 
-                {/* Screen Content */}
-                <div className="w-full h-full bg-slate-50 rounded-[2rem] overflow-hidden relative p-4 md:p-8 flex flex-col gap-6">
-                    {/* Mock Header */}
-                    <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-2xl bg-emerald-100"></div>
-                            <div className="space-y-2">
-                                <div className="w-32 h-4 bg-slate-200 rounded-full"></div>
-                                <div className="w-20 h-3 bg-slate-100 rounded-full"></div>
+                {/* iPad Frame */}
+                <div className="relative mx-auto w-full aspect-[4/3] bg-slate-950 rounded-[3rem] p-3 shadow-2xl border-[10px] border-slate-900 ring-1 ring-slate-800 overflow-hidden transform hover:scale-[1.01] transition-transform">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-2xl z-20"></div>
+                    
+                    {/* Screen Content (Mock Dashboard) */}
+                    <div className="w-full h-full bg-slate-50 rounded-[2rem] overflow-hidden relative p-4 md:p-8 flex flex-col gap-6">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-lg">
+                                    <TrendingUp size={20} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <div className="w-24 h-3 bg-slate-200 rounded-full"></div>
+                                    <div className="w-16 h-2 bg-slate-100 rounded-full"></div>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-white border border-slate-100"></div>
+                                <div className="w-8 h-8 rounded-lg bg-white border border-slate-100"></div>
                             </div>
                         </div>
-                        <div className="flex gap-2">
-                            <div className="w-10 h-10 rounded-xl bg-white border border-slate-100"></div>
-                            <div className="w-10 h-10 rounded-xl bg-white border border-slate-100"></div>
-                        </div>
-                    </div>
 
-                    {/* Mock Cards */}
-                    <div className="grid grid-cols-3 gap-4">
-                        {[
-                            { color: 'bg-emerald-500', label: 'المبيعات', val: '45,200' },
-                            { color: 'bg-blue-500', label: 'السيولة', val: '12,800' },
-                            { color: 'bg-orange-500', label: 'المخزون', val: '1,420' }
-                        ].map((card, i) => (
-                            <div key={i} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-2">
-                                <div className={`w-8 h-8 rounded-lg ${card.color} opacity-20`}></div>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase">{card.label}</p>
-                                <p className="text-xl font-black text-slate-800">{card.val}</p>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Mock Chart & Table */}
-                    <div className="flex-1 flex gap-6 min-h-0">
-                        <div className="flex-[2] bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col">
-                            <div className="w-40 h-4 bg-slate-100 rounded-full mb-8"></div>
-                            <div className="flex-1 flex items-end justify-between gap-4 px-4">
-                                {[60, 40, 90, 70, 50, 80, 100, 65].map((h, i) => (
-                                    <div key={i} className="flex-1 bg-gradient-to-t from-emerald-500 to-emerald-400 rounded-t-xl transition-all duration-1000 delay-300" style={{ height: `${h}%` }}></div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="flex-1 bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm hidden md:flex flex-col gap-4">
-                            <div className="w-full h-4 bg-slate-100 rounded-full"></div>
-                            {[1, 2, 3, 4].map(i => (
-                                <div key={i} className="flex justify-between items-center py-2 border-b border-slate-50">
-                                    <div className="w-8 h-8 rounded-lg bg-slate-50"></div>
-                                    <div className="w-20 h-3 bg-slate-50 rounded-full"></div>
-                                    <div className="w-12 h-3 bg-emerald-50 rounded-full"></div>
+                        <div className="grid grid-cols-3 gap-4">
+                            {[
+                                { label: 'المبيعات', val: '4,500', color: 'bg-emerald-500' },
+                                { label: 'المصاريف', val: '1,200', color: 'bg-rose-500' },
+                                { label: 'الربح', val: '3,300', color: 'bg-blue-500' }
+                            ].map((card, i) => (
+                                <div key={i} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                                    <div className={`w-6 h-6 rounded-lg ${card.color} opacity-20 mb-3`}></div>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase">{card.label}</p>
+                                    <p className="text-lg font-black text-slate-800">{card.val} <span className="text-[10px]">MRU</span></p>
                                 </div>
                             ))}
                         </div>
+
+                        <div className="flex-1 bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm flex flex-col justify-end gap-4 overflow-hidden">
+                             <div className="w-32 h-3 bg-slate-50 rounded-full mb-4"></div>
+                             <div className="flex items-end justify-between gap-4 h-full px-2">
+                                {[40, 70, 45, 90, 65, 80, 50, 95, 60, 85].map((h, i) => (
+                                    <div key={i} className="flex-1 bg-gradient-to-t from-emerald-500 to-emerald-400 rounded-t-lg transition-all duration-1000" style={{ height: `${h}%` }}></div>
+                                ))}
+                             </div>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            {/* Floating Badges */}
-            <div className="absolute -top-6 -right-6 md:-top-12 md:-right-12 bg-white p-5 rounded-3xl shadow-2xl border border-emerald-100 flex items-center gap-4 animate-bounce duration-[3000ms]">
-                <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
-                    <TrendingUp size={24} />
-                </div>
-                <div>
-                    <p className="text-xs text-slate-400 font-bold">نسبة النمو</p>
-                    <p className="text-lg font-black text-slate-800">+24% هذا الشهر</p>
-                </div>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section id="features" className="py-24 bg-white">
+      {/* Features Section */}
+      <section id="features" className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
-                <div className="space-y-4">
-                    <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                        <LayoutDashboard size={40} />
+            <div className="text-center mb-16">
+                <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-4">بساطة في التصميم، قوة في الأداء</h2>
+                <p className="text-slate-500 max-w-2xl mx-auto">كل ما يحتاجه صاحب عمل للتحكم الكامل في تجارته بضغطة زر واحدة.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
+                    <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+                        <LayoutDashboard size={32} />
                     </div>
-                    <h3 className="text-2xl font-black text-slate-900">سهولة مطلقة</h3>
-                    <p className="text-slate-500 font-medium">واجهة عربية بالكامل صُممت لتناسب سرعة العمل داخل المتاجر والمحلات.</p>
+                    <h3 className="text-xl font-bold text-slate-900 mb-4">لوحة تحكم فورية</h3>
+                    <p className="text-slate-500 leading-relaxed">شاشة واحدة تعرض لك المبيعات، المصاريف، وصافي الأرباح بدقة اللحظة الحالية.</p>
                 </div>
-                <div className="space-y-4">
-                    <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                        <Shield size={40} />
+                <div className="p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
+                    <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+                        <Package size={32} />
                     </div>
-                    <h3 className="text-2xl font-black text-slate-900">أمان كامل</h3>
-                    <p className="text-slate-500 font-medium">بياناتك مشفرة ومحفوظة سحابياً، مع إمكانية الوصول إليها من أي مكان وفي أي وقت.</p>
+                    <h3 className="text-xl font-bold text-slate-900 mb-4">إدارة المخزون الذكية</h3>
+                    <p className="text-slate-500 leading-relaxed">تنبيهات فورية عند انخفاض كمية أي صنف، مع تقارير حول المنتجات الأكثر طلباً.</p>
                 </div>
-                <div className="space-y-4">
-                    <div className="w-20 h-20 bg-purple-50 text-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                        <Package size={40} />
+                <div className="p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
+                    <div className="w-16 h-16 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+                        <Zap size={32} />
                     </div>
-                    <h3 className="text-2xl font-black text-slate-900">إدارة ذكية</h3>
-                    <p className="text-slate-500 font-medium">تتبع مخزونك بدقة، وتلقَ تنبيهات فورية قبل نفاد أي منتج لتجنب ضياع الفرص.</p>
+                    <h3 className="text-xl font-bold text-slate-900 mb-4">ذكاء اصطناعي مدمج</h3>
+                    <p className="text-slate-500 leading-relaxed">مساعد "بوصلة" الذكي يحلل بياناتك ويقترح عليك خطوات لزيادة مبيعاتك.</p>
                 </div>
             </div>
         </div>
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-32 bg-slate-50 relative overflow-hidden">
-        <div className="absolute top-0 left-0 p-32 bg-emerald-500/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-20 space-y-4">
-            <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">ماذا يقولون عنا؟</h2>
-            <p className="text-slate-500 text-lg font-medium">نحن فخورون بشراكتنا مع مئات التجار في موريتانيا</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((t, idx) => (
-              <div key={idx} className="bg-white/80 backdrop-blur-sm p-10 rounded-[2.5rem] border border-white shadow-xl hover:-translate-y-2 transition-all group">
-                <Quote className="text-emerald-500 opacity-20 mb-6 group-hover:scale-110 transition-transform" size={48} />
-                <p className="text-slate-700 text-lg font-bold leading-relaxed mb-10 min-h-[100px]">
-                    "{t.quote}"
-                </p>
-                <div className="flex items-center gap-4 border-t border-slate-50 pt-8">
-                    <div className="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center text-white text-xl font-black shadow-lg shadow-emerald-200">
-                        {t.initial}
+      <section id="testimonials" className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16 space-y-4">
+                <h2 className="text-3xl md:text-4xl font-black text-slate-900">ماذا يقولون عنا؟</h2>
+                <p className="text-slate-500 font-medium">نفتخر بدعم مئات المتاجر في رحلة نجاحهم الرقمي.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* Testimonial 1 */}
+                <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 hover:-translate-y-2 transition-transform duration-300">
+                    <div className="flex gap-1 mb-6">
+                        {[1, 2, 3, 4, 5].map(s => <Star key={s} size={16} className="fill-yellow-400 text-yellow-400" />)}
                     </div>
-                    <div>
-                        <h4 className="font-black text-slate-900">{t.name}</h4>
-                        <p className="text-sm text-slate-400 font-bold">{t.business}</p>
+                    <p className="text-slate-700 font-medium leading-relaxed mb-8 italic">
+                        “قبل بوصلة كنت أعرف المبيعات، لكن لا أعرف الربح الحقيقي. الآن أرى المبيعات والمصاريف بشكل واضح وسريع.”
+                    </p>
+                    <div className="flex items-center gap-4 border-t border-slate-200 pt-6">
+                        <div className="w-12 h-12 rounded-full bg-emerald-600 flex items-center justify-center font-black text-white shadow-md">
+                            ع
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-slate-900">عبد الرحمن</h4>
+                            <p className="text-xs text-slate-500 font-bold uppercase">محل ألبسة رجالية</p>
+                        </div>
                     </div>
                 </div>
-              </div>
-            ))}
-          </div>
+
+                {/* Testimonial 2 */}
+                <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 hover:-translate-y-2 transition-transform duration-300">
+                    <div className="flex gap-1 mb-6">
+                        {[1, 2, 3, 4, 5].map(s => <Star key={s} size={16} className="fill-yellow-400 text-yellow-400" />)}
+                    </div>
+                    <p className="text-slate-700 font-medium leading-relaxed mb-8 italic">
+                        “أكثر شيء عجبني هو تنبيهات المخزون. التطبيق ينبهني قبل ما يخلص الصنف، وهذا وفر علي الكثير من الوقت.”
+                    </p>
+                    <div className="flex items-center gap-4 border-t border-slate-200 pt-6">
+                        <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center font-black text-white shadow-md">
+                            ا
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-slate-900">الحسن</h4>
+                            <p className="text-xs text-slate-500 font-bold uppercase">تاجر تجزئة</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Testimonial 3 */}
+                <div className="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 hover:-translate-y-2 transition-transform duration-300">
+                    <div className="flex gap-1 mb-6">
+                        {[1, 2, 3, 4, 5].map(s => <Star key={s} size={16} className="fill-yellow-400 text-yellow-400" />)}
+                    </div>
+                    <p className="text-slate-700 font-medium leading-relaxed mb-8 italic">
+                        “ميزة بند الخياطة والتصنيع ممتازة، أخيرًا وجدت حلاً يناسب طبيعة عملنا وليس مجرد محاسبة عامة.”
+                    </p>
+                    <div className="flex items-center gap-4 border-t border-slate-200 pt-6">
+                        <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center font-black text-white shadow-md">
+                            ع
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-slate-900">عمر</h4>
+                            <p className="text-xs text-slate-500 font-bold uppercase">صاحب محل خياطة</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </section>
+
+      {/* Call to Action */}
+      <section className="py-20 px-4 bg-white">
+        <div className="max-w-5xl mx-auto bg-slate-900 rounded-[3rem] p-12 text-center text-white relative overflow-hidden shadow-2xl">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+            <div className="relative z-10">
+                <h2 className="text-3xl md:text-5xl font-black mb-6">جاهز لرقمنة متجرك؟</h2>
+                <p className="text-slate-400 mb-10 max-w-xl mx-auto font-medium">ابدأ الآن تجربتك المجانية لمدة 30 يوماً واكتشف الفرق الذي سيحدثه "بوصلة" في إدارة عملك.</p>
+                <Link to="/register" className="inline-flex items-center gap-3 bg-emerald-600 hover:bg-emerald-500 text-white px-12 py-5 rounded-2xl font-black text-xl transition-all shadow-xl shadow-emerald-900/20">
+                    ابدأ الآن مجاناً
+                    <ArrowRight size={24} />
+                </Link>
+            </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-100 pt-20 pb-12">
+      <footer className="bg-white border-t border-slate-100 pt-20 pb-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
-            {/* Brand Column */}
-            <div className="col-span-1 lg:col-span-1 space-y-6">
-                <BouslaLogo className="h-10 w-auto" />
-                <p className="text-slate-500 text-sm leading-relaxed font-medium">
-                    المنصة المحاسبية الأولى في موريتانيا، صُممت خصيصاً لخدمة المحلات والمؤسسات التجارية الصغيرة والمتوسطة بأحدث التقنيات.
-                </p>
-                <div className="flex gap-3">
-                    <a href="https://wa.me/22247071347" className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-600 hover:bg-emerald-600 hover:text-white transition-colors">
-                        <MessageCircle size={20} />
-                    </a>
-                    <a href="mailto:support@bousla.com" className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-600 hover:bg-blue-600 hover:text-white transition-colors">
-                        <Mail size={20} />
-                    </a>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+                <div className="col-span-1 md:col-span-2 space-y-6">
+                    <BouslaLogo className="h-12 w-auto" />
+                    <p className="text-slate-500 max-w-sm leading-relaxed font-medium">
+                        تطبيق بوصلة هو الشريك التقني الأول لمتاجر الملابس والخياطة في موريتانيا، صُمم بأيادٍ وطنية لخدمة الاقتصاد المحلي.
+                    </p>
+                </div>
+                <div>
+                    <h4 className="font-black text-slate-900 mb-6 uppercase tracking-widest text-xs">روابط سريعة</h4>
+                    <ul className="space-y-4 text-sm font-bold">
+                        <li><Link to="/pricing" className="text-slate-500 hover:text-emerald-600 transition">التسعير</Link></li>
+                        <li><a href="#features" className="text-slate-500 hover:text-emerald-600 transition">المميزات</a></li>
+                        <li><a href="#" className="text-slate-500 hover:text-emerald-600 transition">الأسئلة الشائعة</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 className="font-black text-slate-900 mb-6 uppercase tracking-widest text-xs">قانوني</h4>
+                    <ul className="space-y-4 text-sm font-bold">
+                        <li><a href="#" className="text-slate-500 hover:text-emerald-600 transition">سياسة الخصوصية</a></li>
+                        <li><a href="#" className="text-slate-500 hover:text-emerald-600 transition">شروط الاستخدام</a></li>
+                        <li className="pt-2">
+                            <p className="text-xs text-slate-400 font-medium">الهاتف: 22247071347+</p>
+                        </li>
+                    </ul>
                 </div>
             </div>
-
-            {/* Quick Links */}
-            <div>
-                <h4 className="text-sm font-black uppercase tracking-widest text-emerald-600 mb-8">روابط سريعة</h4>
-                <ul className="space-y-4 text-slate-500 font-bold text-sm">
-                    <li><Link to="/pricing" className="hover:text-emerald-600 transition">خطط التسعير</Link></li>
-                    <li><a href="#" className="hover:text-emerald-600 transition">المميزات</a></li>
-                    <li><a href="#" className="hover:text-emerald-600 transition">قصص النجاح</a></li>
-                    <li><a href="#" className="hover:text-emerald-600 transition">الأسئلة الشائعة</a></li>
-                </ul>
-            </div>
-
-            {/* Legal */}
-            <div>
-                <h4 className="text-sm font-black uppercase tracking-widest text-emerald-600 mb-8">قانوني</h4>
-                <ul className="space-y-4 text-slate-500 font-bold text-sm">
-                    <li><a href="#" className="hover:text-emerald-600 transition">سياسة الخصوصية</a></li>
-                    <li><a href="#" className="hover:text-emerald-600 transition">شروط الاستخدام</a></li>
-                    <li><a href="#" className="hover:text-emerald-600 transition">اتفاقية الاشتراك</a></li>
-                </ul>
-            </div>
-
-            {/* Contact */}
-            <div>
-                <h4 className="text-sm font-black uppercase tracking-widest text-emerald-600 mb-8">تواصل معنا</h4>
-                <div className="space-y-4">
-                    <div className="flex items-center gap-3 text-slate-600 font-bold text-sm">
-                        <Phone size={18} className="text-emerald-600" />
-                        <span dir="ltr">+222 47071347</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-slate-600 font-bold text-sm">
-                        <Mail size={18} className="text-emerald-600" />
-                        <span>support@bousla.com</span>
-                    </div>
-                    <div className="pt-4">
-                        <a 
-                            href="https://wa.me/22247071347" 
-                            className="inline-flex items-center gap-2 bg-emerald-600 text-white px-5 py-3 rounded-xl font-black text-xs hover:bg-emerald-700 transition"
-                        >
-                            <MessageCircle size={16} />
-                            واتساب المبيعات
-                        </a>
-                    </div>
+            <div className="border-t border-slate-50 pt-8 text-center md:flex justify-between items-center">
+                <p className="text-slate-400 text-sm font-medium">© 2025 بوصلة. جميع الحقوق محفوظة.</p>
+                <div className="flex gap-6 mt-4 md:mt-0 justify-center">
+                    <span className="flex items-center gap-2 text-slate-400 text-xs font-bold">
+                        <Shield size={14} /> حماية بيانات كاملة
+                    </span>
+                    <span className="flex items-center gap-2 text-slate-400 text-xs font-bold">
+                        <CheckCircle size={14} /> فواتير معتمدة
+                    </span>
                 </div>
             </div>
-          </div>
-
-          <div className="border-t border-slate-100 pt-10 flex flex-col md:flex-row justify-between items-center gap-6">
-            <p className="text-slate-400 text-xs font-bold">
-                © {new Date().getFullYear()} بوصلة المحاسبي. جميع الحقوق محفوظة.
-            </p>
-            <div className="flex items-center gap-8">
-                <span className="flex items-center gap-2 text-slate-400 text-xs font-bold italic">
-                    <Shield size={14} className="text-emerald-500" />
-                    بياناتك محمية ومشفرة بالكامل
-                </span>
-            </div>
-          </div>
         </div>
       </footer>
 
@@ -320,17 +296,16 @@ const Landing: React.FC = () => {
         href="https://wa.me/22247071347" 
         target="_blank" 
         rel="noopener noreferrer"
-        className="fixed bottom-8 right-8 z-[200] group flex items-center gap-3 bg-emerald-600 text-white p-2 pr-6 rounded-full shadow-[0_20px_50px_rgba(16,185,129,0.3)] hover:scale-105 active:scale-95 transition-all"
+        className="fixed bottom-6 right-6 z-[100] group flex items-center gap-3 bg-white p-2 pr-6 rounded-full shadow-2xl border border-emerald-100 hover:scale-105 transition-all active:scale-95"
       >
           <div className="relative">
-              <div className="absolute inset-0 bg-white rounded-full animate-ping opacity-25"></div>
-              <div className="relative w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center shadow-inner">
+              <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-25"></div>
+              <div className="relative w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-lg">
                 <MessageCircle size={28} />
               </div>
           </div>
-          <span className="font-black text-sm whitespace-nowrap">تواصل عبر واتساب</span>
+          <span className="font-black text-emerald-700 text-sm whitespace-nowrap">تواصل عبر واتساب</span>
       </a>
-
     </div>
   );
 };
