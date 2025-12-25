@@ -14,7 +14,6 @@ import {
   MessageSquare, 
   Menu, 
   X,
-  LogOut,
   ChevronLeft,
   Landmark, 
   Briefcase, 
@@ -32,7 +31,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
@@ -49,9 +48,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { label: 'التقارير', icon: FileText, path: '/reports' },
     { label: 'الإعدادات', icon: Settings, path: '/settings' },
   ];
-
-  // Subscription Warning Banner for Sidebar
-  const isTrial = user?.subscriptionStatus === 'trial';
 
   return (
     <div className="h-[100dvh] flex bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans selection:bg-emerald-100 selection:text-emerald-900 overflow-hidden transition-colors duration-300">
@@ -121,21 +117,26 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           <div className="p-4 bg-slate-950/30 dark:bg-slate-900/50 border-t border-slate-800/50 shrink-0">
              
-             {/* Plan Badge */}
-             <div className={`mb-4 p-3 rounded-xl flex items-center gap-3 border ${user?.subscriptionPlan === 'pro' ? 'bg-indigo-900/30 border-indigo-700/50' : 'bg-emerald-900/30 border-emerald-700/50'}`}>
+             {/* Plan Button - Navigates to Profile */}
+             <Link 
+                to="/profile"
+                onClick={() => setIsSidebarOpen(false)}
+                className={`mb-4 p-3 rounded-xl flex items-center gap-3 border transition-all hover:scale-[1.02] active:scale-95 ${user?.subscriptionPlan === 'pro' ? 'bg-indigo-900/30 border-indigo-700/50' : 'bg-emerald-900/30 border-emerald-700/50'}`}
+             >
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${user?.subscriptionPlan === 'pro' ? 'bg-indigo-600' : 'bg-emerald-600'}`}>
                     <ShieldCheck size={16} />
                 </div>
-                <div>
+                <div className="flex-1">
                     <p className="text-[10px] text-slate-400 font-bold uppercase">الخطة الحالية</p>
                     <p className="text-xs font-black uppercase">{user?.subscriptionPlan === 'pro' ? 'Business Pro' : 'Essential Plus'}</p>
                 </div>
-             </div>
+                <ChevronLeft size={14} className="text-slate-500" />
+             </Link>
 
              <Link
               to="/ai-chat"
               onClick={() => setIsSidebarOpen(false)}
-              className="group relative flex items-center gap-3 px-4 py-3.5 rounded-xl mb-4 overflow-hidden transition-all hover:shadow-lg hover:shadow-indigo-900/30"
+              className="group relative flex items-center gap-3 px-4 py-3.5 rounded-xl overflow-hidden transition-all hover:shadow-lg hover:shadow-indigo-900/30"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-violet-600 transition-all group-hover:scale-105"></div>
               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
@@ -146,14 +147,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
               <div className="absolute top-2 left-2 w-2 h-2 bg-green-400 rounded-full animate-pulse z-10"></div>
             </Link>
-
-            <button 
-                onClick={logout}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors text-sm font-medium"
-            >
-              <LogOut size={18} />
-              <span>تسجيل خروج</span>
-            </button>
           </div>
         </div>
       </aside>
@@ -196,7 +189,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Scrollable Page Content */}
         <div className="flex-1 overflow-y-auto p-4 lg:p-8 custom-scrollbar relative">
           
-          {/* Subscription Warning Overlay (Visual only, Logic in App.tsx) */}
+          {/* Subscription Warning Overlay */}
           {user?.subscriptionStatus === 'expired' && (
               <div className="absolute inset-0 bg-red-900/10 backdrop-blur-[1px] z-50 pointer-events-none"></div>
           )}

@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User as UserIcon, Store, Phone, Calendar, ShieldCheck, Ticket, ExternalLink, Loader2, CheckCircle, AlertTriangle, Clock, Zap } from 'lucide-react';
+import { User as UserIcon, Store, Phone, Calendar, ShieldCheck, Ticket, ExternalLink, Loader2, CheckCircle, AlertTriangle, Clock, Zap, LogOut } from 'lucide-react';
 import { activateSubscription } from '../services/db';
 import { CURRENCY } from '../constants';
 
 const Profile: React.FC = () => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const [activationCode, setActivationCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ text: '', type: '' });
@@ -22,7 +22,6 @@ const Profile: React.FC = () => {
             const { endDate } = await activateSubscription(user.id, activationCode);
             setMessage({ text: `تم تفعيل الاشتراك بنجاح حتى ${new Date(endDate).toLocaleDateString('ar-MA')}`, type: 'success' });
             setActivationCode('');
-            // سيتم تحديث الصفحة تلقائياً عبر AuthContext إذا كانت هناك مزامنة، أو نطلب ريفريش
             window.location.reload();
         } catch (error: any) {
             setMessage({ text: error.message || "كود التفعيل غير صالح", type: 'error' });
@@ -33,7 +32,6 @@ const Profile: React.FC = () => {
 
     const isExpired = user.subscriptionStatus === 'expired';
     
-    // حساب التاريخ المستهدف (نهاية التجربة أو نهاية الاشتراك)
     const targetDate = user.subscriptionStatus === 'active' && user.subscriptionEndDate 
         ? user.subscriptionEndDate 
         : user.trialEndDate;
@@ -60,7 +58,7 @@ const Profile: React.FC = () => {
                             <div>
                                 <h2 className="text-2xl font-bold text-slate-800 dark:text-white">{user.name}</h2>
                                 <div className="flex flex-wrap items-center gap-2 mt-2">
-                                    <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${user.subscriptionPlan === 'pro' ? 'bg-indigo-600 text-white' : 'bg-emerald-500 text-white'}`}>
+                                    <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest ${user.subscriptionPlan === 'pro' ? 'bg-indigo-600 text-white' : 'bg-emerald-50 text-white'}`}>
                                         باقة {user.subscriptionPlan === 'pro' ? 'BUSINESS PRO' : 'ESSENTIAL PLUS'}
                                     </span>
                                     {user.isAdmin && (
@@ -152,6 +150,15 @@ const Profile: React.FC = () => {
                             </div>
                         )}
                     </div>
+
+                    {/* Logout Button */}
+                    <button 
+                        onClick={logout}
+                        className="w-full flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-white dark:bg-slate-800 text-red-600 border border-red-100 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all font-black text-lg shadow-sm"
+                    >
+                        <LogOut size={24} />
+                        <span>تسجيل الخروج من النظام</span>
+                    </button>
                 </div>
 
                 {/* Sidebar Support */}

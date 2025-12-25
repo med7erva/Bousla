@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { getPaymentMethods, ensurePaymentMethodsExist, getTransactions, addFinancialTransaction, updateFinancialTransaction, deleteFinancialTransaction, getClients, getSuppliers, getEmployees, transferFunds } from '../services/db';
 import { PaymentMethod, FinancialTransaction, Client, Supplier, Employee } from '../types';
 import { CURRENCY } from '../constants';
-import { Landmark, Wallet, Smartphone, ArrowDownLeft, ArrowUpRight, ArrowRightLeft, User, Briefcase, Users, X, Edit2, Trash2, Loader2, FileDown } from 'lucide-react';
+import { Landmark, Wallet, Smartphone, ArrowDownLeft, ArrowUpRight, ArrowRightLeft, User, Briefcase, Users, X, Edit2, Trash2, Loader2, FileDown, Calendar } from 'lucide-react';
 // @ts-ignore
 import html2pdf from 'html2pdf.js';
 
@@ -13,12 +13,10 @@ const Finance: React.FC = () => {
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
   
-  // Entities Data for Modal
   const [clients, setClients] = useState<Client[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
 
-  // Modal State
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false); 
   const [txType, setTxType] = useState<'in' | 'out'>('in'); 
@@ -26,7 +24,6 @@ const Finance: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
-  // Form State
   const [formData, setFormData] = useState({
       amount: 0,
       entityType: 'Client' as 'Client' | 'Supplier' | 'Employee' | 'Other',
@@ -36,7 +33,6 @@ const Finance: React.FC = () => {
       description: '',
   });
 
-  // Transfer Form State
   const [transferData, setTransferData] = useState({
       fromId: '',
       toId: '',
@@ -108,7 +104,8 @@ const Finance: React.FC = () => {
               amount: 0, 
               description: '', 
               entityType: 'Client', 
-              entityId: '' 
+              entityId: '',
+              date: new Date().toISOString().split('T')[0]
           }));
       }
       setIsTxModalOpen(true);
@@ -473,11 +470,13 @@ const Finance: React.FC = () => {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">التاريخ</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1 flex items-center gap-2">
+                                <Calendar size={14} className="text-gray-400" /> التاريخ
+                            </label>
                             <input 
                                 required 
                                 type="date" 
-                                className="w-full p-2.5 border dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 dark:text-white"
+                                className="w-full p-2.5 border dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                                 value={formData.date}
                                 onChange={(e) => setFormData({...formData, date: e.target.value})}
                             />
@@ -573,11 +572,13 @@ const Finance: React.FC = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">التاريخ</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1 flex items-center gap-2">
+                            <Calendar size={14} className="text-gray-400" /> تاريخ التحويل
+                        </label>
                         <input 
                             required 
                             type="date" 
-                            className="w-full p-2.5 border dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 dark:text-white"
+                            className="w-full p-2.5 border dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
                             value={transferData.date}
                             onChange={(e) => setTransferData({...transferData, date: e.target.value})}
                         />

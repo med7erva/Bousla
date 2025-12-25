@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Truck, Plus, Trash2, Save, ShoppingCart, Search, AlertCircle, Loader2, MoreVertical, Edit2, X, Package, Calendar, DollarSign, Filter } from 'lucide-react';
+import { Truck, Plus, Trash2, Save, ShoppingCart, Search, AlertCircle, Loader2, MoreVertical, Edit2, X, Package, Calendar, DollarSign, Filter, Printer, FileText, CheckCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getSuppliers, getProducts, createPurchase, getPurchases, getPaymentMethods, ensurePaymentMethodsExist, deletePurchase, updatePurchase } from '../services/db';
 import { Supplier, Product, PurchaseItem, Purchase, PaymentMethod } from '../types';
@@ -30,11 +30,12 @@ const Purchases: React.FC = () => {
     // Temp item input
     const [tempProduct, setTempProduct] = useState({ id: '', qty: 1, cost: 0 });
 
-    // Dropdown & Edit State
+    // Dropdown & Edit & Detail State
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
     const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingPurchase, setEditingPurchase] = useState<Purchase | null>(null);
+    const [viewDetailsPurchase, setViewDetailsPurchase] = useState<Purchase | null>(null);
 
     useEffect(() => {
         if(user) {
@@ -90,7 +91,7 @@ const Purchases: React.FC = () => {
 
     const handleSavePurchase = async () => {
         if(!user || !selectedSupplierId || cartItems.length === 0) return;
-        if(isSubmitting) return; // Prevent double click
+        if(isSubmitting) return; 
         
         const supplier = suppliers.find(s => s.id === selectedSupplierId);
         if(!supplier) return;
@@ -108,12 +109,11 @@ const Purchases: React.FC = () => {
                 selectedPaymentMethodId
             );
             
-            // Reset and go back to list
             setCartItems([]);
             setPaidAmount('');
             setSelectedSupplierId('');
             setView('list');
-            loadInitialData(); // Refresh list immediately
+            loadInitialData(); 
         } catch (error) {
             alert("حدث خطأ أثناء حفظ الفاتورة");
         } finally {
@@ -144,7 +144,6 @@ const Purchases: React.FC = () => {
         e.preventDefault();
         if(!editingPurchase) return;
         
-        // Find supplier name if changed
         const supplier = suppliers.find(s => s.id === editingPurchase.supplierId);
         const updatedPurchase = {
             ...editingPurchase,
@@ -161,13 +160,11 @@ const Purchases: React.FC = () => {
         }
     };
 
-    // Filter Logic
     const filteredPurchases = purchases.filter(p => 
         p.supplierName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.id.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Render Logic for Product Column
     const renderProductSummary = (items: PurchaseItem[]) => {
         if (!items || items.length === 0) return <span className="text-gray-400 text-xs">لا توجد أصناف</span>;
         
@@ -175,18 +172,13 @@ const Purchases: React.FC = () => {
         const remainingCount = items.length - 1;
         
         return (
-            <div className="flex flex-col max-w-[200px]" title={items.map(i => `${i.productName} (${i.quantity})`).join('\n')}>
+            <div className="flex flex-col max-w-[200px]">
                 <span className="font-bold text-gray-800 dark:text-white text-sm truncate block">
                     {firstItem.productName}
                 </span>
                 {remainingCount > 0 && (
                     <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 px-1.5 py-0.5 rounded-full w-fit mt-1 flex items-center gap-1">
                         <Package size={10} /> +{remainingCount} أصناف أخرى
-                    </span>
-                )}
-                {remainingCount === 0 && (
-                    <span className="text-[10px] text-gray-400 mt-0.5">
-                        الكمية: {firstItem.quantity}
                     </span>
                 )}
             </div>
@@ -213,9 +205,7 @@ const Purchases: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                    {/* Main Form */}
                     <div className="lg:col-span-2 space-y-6">
-                        {/* Supplier & Date */}
                         <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 dark:text-slate-300 mb-2 flex items-center gap-2">
@@ -243,7 +233,6 @@ const Purchases: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Add Items */}
                         <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700">
                             <h3 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
                                 <ShoppingCart size={18} className="text-emerald-600 dark:text-emerald-400" />
@@ -292,7 +281,6 @@ const Purchases: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Cart List */}
                             <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
                                 {cartItems.map((item, idx) => (
                                     <div key={idx} className="flex justify-between items-center p-3 border border-gray-100 dark:border-slate-700 rounded-xl hover:bg-emerald-50/50 dark:hover:bg-slate-700/50 transition group">
@@ -325,7 +313,6 @@ const Purchases: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Sidebar Summary (Sticky) */}
                     <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 lg:sticky lg:top-24">
                         <h3 className="font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
                             <DollarSign size={20} className="text-emerald-600 dark:text-emerald-400" />
@@ -397,10 +384,8 @@ const Purchases: React.FC = () => {
         );
     }
 
-    // LIST VIEW
     return (
         <div className="space-y-6" onClick={() => setActiveMenuId(null)}>
-            {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-black text-gray-800 dark:text-white tracking-tight">سجل المشتريات</h1>
@@ -415,7 +400,6 @@ const Purchases: React.FC = () => {
                 </button>
             </div>
 
-            {/* Search Bar */}
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex items-center gap-3">
                 <div className="relative flex-1">
                     <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -432,7 +416,6 @@ const Purchases: React.FC = () => {
                 </div>
             </div>
 
-            {/* Table */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden min-h-[400px]">
                 <div className="overflow-x-auto">
                     <table className="w-full text-right min-w-[800px]">
@@ -453,7 +436,11 @@ const Purchases: React.FC = () => {
                                 <tr><td colSpan={8} className="p-12 text-center text-gray-400 dark:text-slate-500">لا توجد فواتير مطابقة للبحث</td></tr>
                             ) : (
                                 filteredPurchases.map(p => (
-                                    <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition group">
+                                    <tr 
+                                        key={p.id} 
+                                        className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition group cursor-pointer"
+                                        onClick={() => setViewDetailsPurchase(p)}
+                                    >
                                         <td className="px-6 py-4 font-mono text-xs text-gray-500 dark:text-slate-400 bg-gray-50/30 dark:bg-slate-700/30 rounded-r-lg group-hover:bg-slate-100/50 dark:group-hover:bg-slate-600/50 transition">
                                             #{p.id.slice(0, 8)}
                                         </td>
@@ -468,12 +455,9 @@ const Purchases: React.FC = () => {
                                         <td className="px-6 py-4 text-sm text-gray-500 dark:text-slate-400 font-medium">
                                             {new Date(p.date).toLocaleDateString('ar-MA', { year: 'numeric', month: '2-digit', day: '2-digit' })}
                                         </td>
-                                        
-                                        {/* Products Column */}
                                         <td className="px-6 py-4 align-middle">
                                             {renderProductSummary(p.items)}
                                         </td>
-
                                         <td className="px-6 py-4 font-black text-gray-900 dark:text-white">{p.totalCost.toLocaleString()} <span className="text-xs font-normal text-gray-400">{CURRENCY}</span></td>
                                         <td className="px-6 py-4 text-emerald-600 dark:text-emerald-400 font-bold">{p.paidAmount.toLocaleString()}</td>
                                         <td className="px-6 py-4">
@@ -489,7 +473,7 @@ const Purchases: React.FC = () => {
                                                 </span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 text-center relative">
+                                        <td className="px-6 py-4 text-center relative" onClick={(e) => e.stopPropagation()}>
                                             <button 
                                                 onClick={(e) => { 
                                                     e.stopPropagation(); 
@@ -510,13 +494,118 @@ const Purchases: React.FC = () => {
                 </div>
             </div>
 
-            {/* Floating Action Menu */}
+            {/* Purchase Details Modal */}
+            {viewDetailsPurchase && (
+                <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="p-5 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-700/30">
+                            <h3 className="font-bold text-lg text-gray-800 dark:text-white flex items-center gap-2">
+                                <FileText className="text-indigo-600 dark:text-indigo-400" size={20} />
+                                تفاصيل فاتورة المشتريات
+                            </h3>
+                            <div className="flex gap-2">
+                                <button className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-full text-gray-500 dark:text-slate-400 transition" onClick={() => window.print()}>
+                                    <Printer size={18} />
+                                </button>
+                                <button onClick={() => setViewDetailsPurchase(null)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-full text-gray-500 dark:text-slate-400 transition">
+                                    <X size={20} />
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="text-sm text-gray-500 dark:text-slate-400">رقم الفاتورة</p>
+                                    <p className="font-mono font-bold text-gray-800 dark:text-white text-lg">#{viewDetailsPurchase.id.slice(-6)}</p>
+                                </div>
+                                <div className="text-left">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                        (viewDetailsPurchase.totalCost - viewDetailsPurchase.paidAmount) > 0 
+                                        ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' 
+                                        : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                    }`}>
+                                        {(viewDetailsPurchase.totalCost - viewDetailsPurchase.paidAmount) > 0 ? 'غير مكتملة' : 'مدفوعة بالكامل'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-slate-700/30 p-4 rounded-xl border border-gray-100 dark:border-slate-700">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                                        <Truck size={18} />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-500 dark:text-slate-400">المورد</p>
+                                        <p className="font-bold text-sm text-gray-800 dark:text-white">{viewDetailsPurchase.supplierName}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                                        <Calendar size={18} />
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-500 dark:text-slate-400">التاريخ</p>
+                                        <p className="font-bold text-sm text-gray-800 dark:text-white">{new Date(viewDetailsPurchase.date).toLocaleDateString('ar-MA')}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h4 className="text-sm font-bold text-gray-500 dark:text-slate-400 mb-3 flex items-center gap-2">
+                                    <Package size={14} /> المنتجات المشتراة
+                                </h4>
+                                <div className="border border-gray-100 dark:border-slate-700 rounded-xl overflow-hidden">
+                                    <table className="w-full text-sm text-right">
+                                        <thead className="bg-gray-50 dark:bg-slate-700/50 text-gray-500 dark:text-slate-400 font-medium">
+                                            <tr>
+                                                <th className="px-4 py-3">المنتج</th>
+                                                <th className="px-4 py-3 text-center">الكمية</th>
+                                                <th className="px-4 py-3">التكلفة</th>
+                                                <th className="px-4 py-3">المجموع</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+                                            {viewDetailsPurchase.items.map((item, i) => (
+                                                <tr key={i}>
+                                                    <td className="px-4 py-3 text-gray-800 dark:text-white font-medium">{item.productName}</td>
+                                                    <td className="px-4 py-3 text-center text-gray-600 dark:text-slate-300">{item.quantity}</td>
+                                                    <td className="px-4 py-3 text-gray-600 dark:text-slate-300">{item.costPrice}</td>
+                                                    <td className="px-4 py-3 font-bold text-gray-800 dark:text-white">{(item.quantity * item.costPrice).toLocaleString()}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div className="border-t border-dashed border-gray-200 dark:border-slate-600 pt-4 space-y-2">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-500 dark:text-slate-400">إجمالي التكلفة</span>
+                                    <span className="font-bold text-gray-900 dark:text-white text-lg">{viewDetailsPurchase.totalCost.toLocaleString()} {CURRENCY}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><CheckCircle size={14}/> المبلغ المدفوع</span>
+                                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{viewDetailsPurchase.paidAmount.toLocaleString()} {CURRENCY}</span>
+                                </div>
+                                {(viewDetailsPurchase.totalCost - viewDetailsPurchase.paidAmount) > 0 && (
+                                    <div className="flex justify-between items-center text-sm bg-red-50 dark:bg-red-900/20 p-2 rounded-lg mt-2">
+                                        <span className="text-red-600 dark:text-red-400 font-bold flex items-center gap-1"><AlertCircle size={14}/> المتبقي للمورد (دين)</span>
+                                        <span className="font-bold text-red-600 dark:text-red-400">{(viewDetailsPurchase.totalCost - viewDetailsPurchase.paidAmount).toLocaleString()} {CURRENCY}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {activeMenuId && (
                 <>
                 <div className="fixed inset-0 z-40" onClick={() => setActiveMenuId(null)}></div>
                 <div 
                     className="fixed z-50 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 animate-in fade-in zoom-in-95 duration-200 overflow-hidden"
-                    style={{ top: menuPos.top, left: menuPos.left - 150 }} // Adjusted left pos
+                    style={{ top: menuPos.top, left: menuPos.left - 150 }} 
                 >
                     <div className="p-1">
                         <button 
@@ -544,7 +633,6 @@ const Purchases: React.FC = () => {
                 </>
             )}
 
-            {/* Edit Modal */}
             {isEditModalOpen && editingPurchase && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
                     <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
