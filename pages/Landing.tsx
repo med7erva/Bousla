@@ -18,7 +18,10 @@ import {
   Facebook,
   Twitter,
   Instagram,
-  X
+  X,
+  TrendingUp,
+  Sparkles,
+  ArrowUpRight
 } from 'lucide-react';
 import BouslaLogo from '../components/BouslaLogo';
 
@@ -73,8 +76,8 @@ const Landing: React.FC = () => {
       {/* Hero Section */}
       <section className="relative pt-16 pb-24 lg:pt-24 lg:pb-32 overflow-hidden bg-white text-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-16 space-y-6">
-            <span className="inline-flex items-center gap-2 py-2 px-5 rounded-full bg-emerald-50 text-emerald-700 text-sm font-black mb-2 border border-emerald-100 animate-bounce">
+          <div className="mb-24 space-y-6">
+            <span className="inline-flex items-center gap-2 py-2 px-5 rounded-full bg-emerald-50 text-emerald-700 text-sm font-black mb-2 border border-emerald-100 animate-bounce-slow">
                 مع بوصله .. بوتيكك ف ايدك 👋
             </span>
             <h1 className="text-5xl md:text-7xl font-black text-slate-900 leading-tight tracking-tight">
@@ -101,24 +104,65 @@ const Landing: React.FC = () => {
             </div>
           </div>
 
-          {/* iPad Mockup Placeholder - Prepared for /assets/images/dashboard-preview.png */}
-          <div className={`relative max-w-5xl mx-auto transition-all duration-1000 transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
-                <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-[85%] h-20 bg-black/10 blur-[80px] rounded-full"></div>
-                <div className="relative mx-auto w-full max-w-[800px] aspect-[1.4/1] bg-[#080808] rounded-[3rem] p-[12px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] border border-white/5 overflow-hidden">
-                    <div className="w-full h-full bg-slate-100 rounded-[2.5rem] overflow-hidden relative group">
-                        {/* Placeholder for real screenshot */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-200 flex items-center justify-center">
-                             <img 
-                                src="/assets/images/dashboard-mockup.png" 
-                                alt="Bousla Dashboard" 
-                                className="w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity absolute inset-0"
-                                onError={(e) => (e.currentTarget.style.display = 'none')}
-                             />
-                             <div className="text-center p-10">
-                                 <LayoutDashboard size={64} className="mx-auto text-slate-300 mb-4" />
-                                 <p className="text-slate-400 font-bold">معاينة واجهة النظام</p>
-                             </div>
+          {/* Optimized Hero Image Container with Mockupipad.png */}
+          <div className={`relative max-w-5xl mx-auto transition-all duration-1000 delay-300 transform ${isVisible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-20 opacity-0 scale-95'}`}>
+                {/* Background Glow */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-emerald-100/30 blur-[120px] rounded-full -z-10"></div>
+                
+                <div className="relative group perspective-1000">
+                    {/* The Main Mockup Image */}
+                    <img 
+                        src="/assets/images/Mockupipad.png" 
+                        alt="Bousla System Showcase" 
+                        className="w-full h-auto drop-shadow-[0_45px_65px_rgba(0,0,0,0.2)] transition-transform duration-700 group-hover:scale-[1.01]"
+                        onError={(e) => {
+                            // Fallback in case the image is not yet in the folder
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.parentElement?.querySelector('.fallback-placeholder')?.classList.remove('hidden');
+                        }}
+                    />
+
+                    {/* Placeholder shown only if image fails */}
+                    <div className="fallback-placeholder hidden w-full aspect-[1.4/1] bg-slate-900 rounded-[3rem] p-12 flex flex-col items-center justify-center border border-white/10 shadow-2xl">
+                         <LayoutDashboard size={80} className="text-emerald-500 mb-6" />
+                         <h3 className="text-white text-2xl font-black">واجهة بوصلة الذكية</h3>
+                         <p className="text-slate-400 mt-2 font-medium">يرجى رفع ملف Mockupipad.png في مجلد /assets/images/</p>
+                    </div>
+
+                    {/* Floating Element 1: Smart Growth Card */}
+                    <div className="absolute -top-10 -right-4 md:-right-16 bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-emerald-100 dark:border-emerald-900 flex items-center gap-4 animate-float">
+                        <div className="w-14 h-14 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+                            <TrendingUp size={28} />
                         </div>
+                        <div className="text-right">
+                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-0.5">نسبة النمو</p>
+                            <p className="text-xl font-black text-slate-900 dark:text-white">+24.8% <span className="text-[10px] text-emerald-500 mr-1">هذا الشهر</span></p>
+                        </div>
+                    </div>
+
+                    {/* Floating Element 2: AI Advisor Prompt */}
+                    <div className="absolute top-1/2 -left-4 md:-left-20 -translate-y-1/2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-white/20 hidden lg:flex items-center gap-3 animate-float-slow">
+                        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-indigo-200 shadow-lg">
+                            <Sparkles size={20} />
+                        </div>
+                        <div className="text-right max-w-[140px]">
+                            <p className="text-[11px] font-black text-slate-800 dark:text-slate-100 leading-tight">"بناءً على مخزونك، أقترح زيادة طلبات الدراعة الفاخرة."</p>
+                        </div>
+                    </div>
+
+                    {/* Floating Element 3: Active Users Count */}
+                    <div className="absolute -bottom-8 -left-2 md:-left-12 bg-slate-900 dark:bg-white p-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-bounce-slow">
+                         <div className="flex -space-x-3 rtl:space-x-reverse">
+                            {[1,2,3].map(i => (
+                                <div key={i} className="w-9 h-9 rounded-full border-2 border-slate-900 dark:border-white bg-slate-700 flex items-center justify-center overflow-hidden">
+                                    <img src={`https://i.pravatar.cc/100?img=${i+20}`} alt="Merchant" />
+                                </div>
+                            ))}
+                         </div>
+                         <div className="text-right">
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">ثقة التجار</p>
+                            <p className="text-xs font-black text-white dark:text-slate-900">مئات المتاجر انضمت لبوصلة</p>
+                         </div>
                     </div>
                 </div>
           </div>
@@ -222,7 +266,7 @@ const Landing: React.FC = () => {
                     </p>
                     <div className="flex gap-4">
                          <a href="#" className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:border-emerald-100 hover:bg-emerald-50 transition-all shadow-sm"><Facebook size={22} /></a>
-                         <a href="#" className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:border-emerald-100 hover:bg-emerald-50 transition-all shadow-sm"><X size={22} /></a>
+                         <a href="#" className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:border-emerald-100 hover:bg-emerald-50 transition-all shadow-sm"><Twitter size={22} /></a>
                          <a href="#" className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:border-emerald-100 hover:bg-emerald-50 transition-all shadow-sm"><Instagram size={22} /></a>
                          <a href="https://wa.me/22247071347" className="w-12 h-12 rounded-2xl bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:border-emerald-100 hover:bg-emerald-50 transition-all shadow-sm"><MessageCircle size={22} /></a>
                     </div>
