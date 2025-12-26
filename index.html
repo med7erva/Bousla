@@ -81,6 +81,20 @@
       .perspective-1000 {
         perspective: 1000px;
       }
+
+      /* PDF & Print Professional Styles */
+      @media print {
+        .no-print { display: none !important; }
+        body { background: white !important; padding: 0 !important; margin: 0 !important; }
+        .pdf-page-break { page-break-before: always; }
+        table { border-collapse: collapse !important; width: 100% !important; }
+        th, td { border: 1px solid #e2e8f0 !important; padding: 12px !important; text-align: right !important; font-size: 10pt !important; }
+        th { background-color: #f8fafc !important; color: #0f172a !important; font-weight: bold !important; }
+        .pdf-container { padding: 40px !important; background: white !important; }
+        .pdf-header { margin-bottom: 30px !important; border-bottom: 2px solid #10b981 !important; padding-bottom: 20px !important; }
+        .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl { shadow: none !important; box-shadow: none !important; }
+        .rounded-3xl, .rounded-2xl, .rounded-xl { border-radius: 0 !important; }
+      }
     </style>
 <script type="importmap">
 {

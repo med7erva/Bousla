@@ -68,7 +68,6 @@ const Sales: React.FC = () => {
       setCategories(catData);
       setClients(cliData);
       
-      // Filter out Opening Balance invoices from Sales History
       const salesInvoices = invData.filter(inv => 
           !inv.items.some(item => item.productId === 'opening-bal')
       );
@@ -99,9 +98,7 @@ const Sales: React.FC = () => {
         }
     };
     
-    // Close menu on scroll to prevent detached floating menu
     const handleScroll = () => setActiveMenuId(null);
-
     document.addEventListener('mousedown', handleClickOutside);
     window.addEventListener('scroll', handleScroll, true); 
     
@@ -111,7 +108,6 @@ const Sales: React.FC = () => {
     };
   }, [user]);
 
-  // --- Cart Actions ---
   const addToCart = (product: Product) => {
     if (product.stock <= 0) {
         alert("عذراً، هذا المنتج نفد من المخزون.");
@@ -170,13 +166,11 @@ const Sales: React.FC = () => {
     setCart(prev => prev.filter(item => item.productId !== productId));
   };
 
-  // --- Calculations ---
   const calculateSubtotal = () => cart.reduce((sum, item) => sum + (item.quantity * item.priceAtSale), 0);
   const calculateTotal = () => Math.max(0, calculateSubtotal() - paymentDetails.discount);
   const calculateRemaining = () => paymentDetails.amountPaid - calculateTotal();
   const isDebt = () => calculateRemaining() < 0;
 
-  // --- Checkout Process ---
   const openPaymentModal = () => {
       if (cart.length === 0) return;
       const total = calculateTotal();
@@ -186,7 +180,7 @@ const Sales: React.FC = () => {
           discount: 0,
           amountPaid: total,
           paymentMethodId: defaultPm?.id || '',
-          customerName: 'عميل افتراضي' // Reset to default on new sale
+          customerName: 'عميل افتراضي'
       }));
       setCheckoutStep('input');
       setIsPaymentModalOpen(true);
@@ -210,7 +204,7 @@ const Sales: React.FC = () => {
             paymentDetails.invoiceDate
         );
         setCheckoutStep('success');
-        loadData(); // Refresh history
+        loadData(); 
         setTimeout(() => {
             setIsPaymentModalOpen(false);
             setCart([]);
@@ -224,7 +218,6 @@ const Sales: React.FC = () => {
     }
   };
 
-  // --- Invoice Actions ---
   const handleDeleteInvoice = async (id: string) => {
       if(window.confirm('هل أنت متأكد من حذف هذه الفاتورة؟ سيتم إرجاع المنتجات للمخزون وإلغاء أي ديون مسجلة.')) {
           try {
@@ -263,7 +256,6 @@ const Sales: React.FC = () => {
 
   const handleExportPDF = () => {
     setExportingHistory(true);
-    // Force showing all history for the PDF
     const wasShowingAll = showAllHistory;
     setShowAllHistory(true);
 
@@ -271,17 +263,18 @@ const Sales: React.FC = () => {
         const element = document.getElementById('sales-history-container');
         const opt = {
             margin: 0.5,
-            filename: `سجل_المبيعات_${new Date().toISOString().split('T')[0]}.pdf`,
+            filename: `سجل_المبيعات_${user?.storeName}_${new Date().toISOString().split('T')[0]}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
         };
 
         html2pdf().set(opt).from(element).save().then(() => {
             setExportingHistory(false);
-            setShowAllHistory(wasShowingAll); // Restore state
+            setShowAllHistory(wasShowingAll); 
         });
-    }, 500); // Delay to allow render
+    }, 800); 
   };
 
   const filteredProducts = products.filter(p => {
@@ -294,19 +287,16 @@ const Sales: React.FC = () => {
      c.name.toLowerCase().includes(paymentDetails.customerName.toLowerCase())
   );
 
-  // History Slice
   const displayedInvoices = showAllHistory ? invoices : invoices.slice(0, 7);
-
-  // Find active invoice for menu
   const activeInvoice = invoices.find(i => i.id === activeMenuId);
 
   return (
     <div className="flex flex-col gap-6 h-full overflow-y-auto min-h-screen pb-10">
       
-      {/* --- TOP SECTION: POS & CART --- */}
-      <div className="flex flex-col lg:flex-row gap-6 lg:h-[calc(100vh-8rem)] relative shrink-0">
+      {/* POS UI */}
+      <div className="flex flex-col lg:flex-row gap-6 lg:h-[calc(100vh-8rem)] relative shrink-0 no-print">
         
-        {/* Left Side: Product Browser */}
+        {/* Product Browser */}
         <div className="lg:w-2/3 flex flex-col gap-4 h-[500px] lg:h-full">
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex flex-col md:flex-row gap-4 justify-between shrink-0">
             <div className="relative flex-1">
@@ -328,7 +318,6 @@ const Sales: React.FC = () => {
             </button>
             </div>
 
-            {/* Category Filter */}
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide shrink-0 snap-x">
                 <button 
                     onClick={() => setSelectedCategory('All')}
@@ -397,7 +386,7 @@ const Sales: React.FC = () => {
             </div>
         </div>
 
-        {/* Right Side: Cart & Checkout */}
+        {/* Cart */}
         <div className="lg:w-1/3 flex flex-col h-[500px] lg:h-full bg-white dark:bg-slate-800 rounded-3xl shadow-lg border border-gray-100 dark:border-slate-700 overflow-hidden">
             <div className="p-5 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30 flex justify-between items-center shrink-0">
                 <h2 className="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
@@ -421,16 +410,12 @@ const Sales: React.FC = () => {
                                 <p className="font-bold text-gray-800 dark:text-white text-sm line-clamp-1">{item.productName}</p>
                                 <div className="flex items-center gap-2 mt-1.5">
                                     <span className="text-xs text-gray-500 dark:text-slate-400">السعر:</span>
-                                    <div className="relative">
-                                        <input 
-                                            type="number" 
-                                            className="w-20 px-2 py-0.5 text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-white dark:bg-slate-600 border border-gray-200 dark:border-slate-500 rounded focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none"
-                                            value={item.priceAtSale || ''}
-                                            placeholder="0"
-                                            onChange={(e) => updatePrice(item.productId, Number(e.target.value))}
-                                            onFocus={(e) => e.target.select()}
-                                        />
-                                    </div>
+                                    <input 
+                                        type="number" 
+                                        className="w-20 px-2 py-0.5 text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-white dark:bg-slate-600 border border-gray-200 dark:border-slate-500 rounded focus:border-emerald-500 outline-none"
+                                        value={item.priceAtSale || ''}
+                                        onChange={(e) => updatePrice(item.productId, Number(e.target.value))}
+                                    />
                                     <span className="text-[10px] text-gray-400">{CURRENCY}</span>
                                 </div>
                             </div>
@@ -468,7 +453,7 @@ const Sales: React.FC = () => {
                     <button 
                         onClick={openPaymentModal}
                         disabled={cart.length === 0}
-                        className="col-span-3 flex items-center justify-center gap-2 py-4 rounded-xl bg-slate-900 dark:bg-emerald-600 text-white font-bold hover:bg-slate-800 dark:hover:bg-emerald-700 shadow-lg shadow-slate-200 dark:shadow-none transition disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+                        className="col-span-3 flex items-center justify-center gap-2 py-4 rounded-xl bg-slate-900 dark:bg-emerald-600 text-white font-bold hover:bg-slate-800 dark:hover:bg-emerald-700 shadow-lg transition disabled:opacity-50 active:scale-[0.98]"
                     >
                         <CreditCard size={20} />
                         <span>إكمال</span>
@@ -478,92 +463,81 @@ const Sales: React.FC = () => {
         </div>
       </div>
 
-      {/* --- BOTTOM SECTION: SALES HISTORY --- */}
-      <div id="sales-history-container" className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 min-h-[300px]">
-        <div className="flex justify-between items-center mb-6">
+      {/* SALES HISTORY - PDF OPTIMIZED */}
+      <div id="sales-history-container" className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-8 min-h-[300px] pdf-container">
+        <div className="flex justify-between items-center mb-8 no-print">
             <h3 className="font-bold text-gray-800 dark:text-white text-lg flex items-center gap-2">
                 <History className="text-slate-500 dark:text-slate-400" />
-                سجل المبيعات الأخيرة
+                سجل المبيعات
             </h3>
             <button 
                 onClick={handleExportPDF}
                 disabled={exportingHistory}
-                className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 px-3 py-2 rounded-lg transition border border-slate-200 dark:border-slate-600 disabled:opacity-70"
-                data-html2canvas-ignore="true" 
+                className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 px-4 py-2.5 rounded-xl transition border border-slate-200 dark:border-slate-600 disabled:opacity-70 font-bold"
             >
                 {exportingHistory ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
-                تصدير PDF
+                تصدير السجل PDF
             </button>
         </div>
 
-        {/* Hidden Header for PDF only */}
-        <div className="hidden pdf-header-sales mb-4 border-b pb-2">
-             <h2 className="text-xl font-bold">سجل المبيعات - {user?.storeName}</h2>
-             <p className="text-sm text-gray-500">تاريخ الطباعة: {new Date().toLocaleDateString('ar-MA')}</p>
+        {/* PDF Header - Visible only in Print/PDF */}
+        <div className="hidden print:flex pdf-header flex-col items-center mb-10 border-b-2 border-emerald-500 pb-6 text-center">
+             <div className="text-3xl font-black text-slate-900 mb-2">{user?.storeName}</div>
+             <div className="text-xl font-bold text-emerald-600 mb-2">سجل المبيعات والتوريد</div>
+             <p className="text-sm text-gray-500 font-medium">الفترة: {showAllHistory ? 'كامل السجل' : 'آخر العمليات'} | تاريخ التقرير: {new Date().toLocaleDateString('ar-MA')}</p>
         </div>
 
         <div className="overflow-x-auto"> 
-            <table className="w-full text-right">
-                <thead className="bg-gray-50 dark:bg-slate-700/50 text-gray-500 dark:text-slate-400 text-xs uppercase font-semibold">
+            <table className="w-full text-right table-auto border-collapse">
+                <thead className="bg-gray-50 dark:bg-slate-700/50 text-gray-500 dark:text-slate-400 text-xs uppercase font-bold">
                     <tr>
-                        <th className="px-6 py-4 rounded-r-xl">رقم الفاتورة</th>
-                        <th className="px-6 py-4">التاريخ</th>
-                        <th className="px-6 py-4">العميل</th>
-                        <th className="px-6 py-4">العناصر</th>
-                        <th className="px-6 py-4">الإجمالي</th>
-                        <th className="px-6 py-4">المدفوع</th>
-                        <th className="px-6 py-4">الحالة</th>
-                        <th className="px-6 py-4 rounded-l-xl" data-html2canvas-ignore="true">إجراءات</th>
+                        <th className="px-6 py-4 border-b">التاريخ</th>
+                        <th className="px-6 py-4 border-b">رقم الفاتورة</th>
+                        <th className="px-6 py-4 border-b">العميل</th>
+                        <th className="px-6 py-4 border-b">الأصناف</th>
+                        <th className="px-6 py-4 border-b">الإجمالي</th>
+                        <th className="px-6 py-4 border-b">المدفوع</th>
+                        <th className="px-6 py-4 border-b">الحالة</th>
+                        <th className="px-6 py-4 border-b no-print">إجراءات</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
                     {displayedInvoices.length === 0 ? (
-                        <tr><td colSpan={8} className="p-8 text-center text-gray-400">لا توجد مبيعات مسجلة حتى الآن</td></tr>
+                        <tr><td colSpan={8} className="p-12 text-center text-gray-400 font-bold">لا توجد مبيعات مسجلة</td></tr>
                     ) : (
                         displayedInvoices.map(inv => (
                             <tr 
                                 key={inv.id} 
-                                className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition group relative cursor-pointer"
+                                className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition cursor-pointer"
                                 onClick={() => setViewDetailsInvoice(inv)}
                             >
-                                <td className="px-6 py-4 font-mono text-xs text-gray-500 dark:text-slate-400">{inv.id.slice(-6)}</td>
-                                <td className="px-6 py-4 text-sm text-gray-600 dark:text-slate-300">{new Date(inv.date).toLocaleDateString('ar-MA')}</td>
+                                <td className="px-6 py-4 text-sm text-gray-600 dark:text-slate-300 font-mono">{new Date(inv.date).toLocaleDateString('ar-MA')}</td>
+                                <td className="px-6 py-4 font-mono text-xs text-slate-400">#{inv.id.slice(-6).toUpperCase()}</td>
                                 <td className="px-6 py-4 font-bold text-gray-800 dark:text-white">{inv.customerName}</td>
                                 <td className="px-6 py-4">
-                                    <div className="flex flex-col gap-0.5 max-w-[200px]">
-                                        {inv.items.slice(0, 2).map((item, idx) => (
-                                            <div key={idx} className="text-sm font-bold text-gray-700 dark:text-slate-200 truncate" title={item.productName}>
-                                                {item.productName} 
-                                                {item.quantity > 1 && <span className="text-xs text-gray-400 dark:text-slate-500 mr-1">x{item.quantity}</span>}
-                                            </div>
-                                        ))}
-                                        {inv.items.length > 2 && (
-                                            <span className="text-[10px] text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-md w-fit font-bold">
-                                                +{inv.items.length - 2} أصناف أخرى
-                                            </span>
-                                        )}
+                                    <div className="text-xs text-gray-600 dark:text-slate-300 line-clamp-1">
+                                        {inv.items.map(i => i.productName).join('، ')}
                                     </div>
                                 </td>
-                                <td className="px-6 py-4 font-bold text-emerald-600 dark:text-emerald-400">{inv.total} {CURRENCY}</td>
-                                <td className="px-6 py-4 text-sm text-gray-600 dark:text-slate-300">{inv.paidAmount}</td>
+                                <td className="px-6 py-4 font-black text-emerald-600 dark:text-emerald-400">{inv.total} {CURRENCY}</td>
+                                <td className="px-6 py-4 text-sm text-gray-600 dark:text-slate-300 font-bold">{inv.paidAmount}</td>
                                 <td className="px-6 py-4">
-                                    <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                    <span className={`px-2 py-1 rounded text-[10px] font-black uppercase ${
                                         inv.remainingAmount > 0 
-                                        ? 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400' 
-                                        : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                        ? 'bg-red-50 text-red-600 border border-red-100' 
+                                        : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
                                     }`}>
                                         {inv.remainingAmount > 0 ? 'آجل' : 'مكتمل'}
                                     </span>
                                 </td>
-                                <td className="px-6 py-4" data-html2canvas-ignore="true">
+                                <td className="px-6 py-4 no-print" onClick={(e) => e.stopPropagation()}>
                                     <button 
                                         onClick={(e) => { 
-                                            e.stopPropagation(); 
                                             const rect = e.currentTarget.getBoundingClientRect();
                                             setMenuPos({ top: rect.bottom, left: rect.left });
                                             setActiveMenuId(activeMenuId === inv.id ? null : inv.id); 
                                         }}
-                                        className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full text-gray-500 dark:text-slate-400 transition"
+                                        className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full text-gray-400"
                                     >
                                         <MoreVertical size={18} />
                                     </button>
@@ -576,102 +550,70 @@ const Sales: React.FC = () => {
         </div>
 
         {invoices.length > 7 && (
-            <div className="mt-4 flex justify-center border-t border-gray-100 dark:border-slate-700 pt-4" data-html2canvas-ignore="true">
+            <div className="mt-8 flex justify-center border-t border-gray-100 dark:border-slate-700 pt-6 no-print">
                 <button 
                     onClick={() => setShowAllHistory(!showAllHistory)}
-                    className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 text-sm font-medium transition"
+                    className="flex items-center gap-2 text-slate-500 hover:text-emerald-600 text-sm font-black transition-all"
                 >
                     {showAllHistory ? (
-                        <>
-                            <span>إخفاء السجل الكامل</span>
-                            <ChevronUp size={16} />
-                        </>
+                        <><span>طي السجل</span><ChevronUp size={16} /></>
                     ) : (
-                        <>
-                            <span>عرض المزيد ({invoices.length - 7})</span>
-                            <ChevronDown size={16} />
-                        </>
+                        <><span>عرض كل المبيعات ({invoices.length})</span><ChevronDown size={16} /></>
                     )}
                 </button>
             </div>
         )}
+
+        {/* PDF Footer - Visible only in Print/PDF */}
+        <div className="hidden print:block mt-20 border-t pt-6 text-center text-xs text-gray-400 font-bold">
+            تم استخراج هذا التقرير آلياً بواسطة نظام بوصلة للمحاسبة الذكية © 2025
+        </div>
       </div>
 
-      {/* Floating Action Menu (Portal-like) */}
+      {/* Floating Action Menu */}
       {activeMenuId && activeInvoice && (
           <div 
             ref={menuRef}
-            className="fixed z-50 w-40 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-100 dark:border-slate-700 animate-in fade-in zoom-in-95 duration-200"
+            className="fixed z-50 w-40 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-gray-100 dark:border-slate-700 animate-in zoom-in-95 duration-200 no-print"
             style={{ top: menuPos.top, left: menuPos.left }}
           >
-               <button 
-                    onClick={(e) => { e.preventDefault(); openEditInvoiceModal(activeInvoice); }}
-                    className="w-full text-right px-4 py-3 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center gap-2"
-                >
-                    <Edit2 size={14} /> تعديل
-                </button>
-                <button 
-                    onClick={(e) => { e.preventDefault(); handleDeleteInvoice(activeInvoice.id); }}
-                    className="w-full text-right px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-2 rounded-b-lg"
-                >
-                    <Trash2 size={14} /> حذف
-                </button>
+               <button onClick={() => openEditInvoiceModal(activeInvoice)} className="w-full text-right px-4 py-3 text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-50 flex items-center gap-2 transition font-bold"><Edit2 size={14} /> تعديل</button>
+               <button onClick={() => handleDeleteInvoice(activeInvoice.id)} className="w-full text-right px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-b-xl transition font-bold"><Trash2 size={14} /> حذف</button>
           </div>
       )}
 
-      <style>{`
-         .pdf-header-sales { display: none; }
-         .html2pdf__page-break { page-break-before: always; }
-      `}</style>
-
-      {/* --- MODALS --- */}
+      {/* MODALS (Input and Details) */}
       {isPaymentModalOpen && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 no-print">
+              <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in duration-200">
                   <div className="bg-gray-50 dark:bg-slate-700/50 p-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center">
                       <h3 className="font-bold text-lg text-gray-800 dark:text-white flex items-center gap-2">
-                          <Banknote className="text-emerald-600 dark:text-emerald-400" />
+                          <Banknote className="text-emerald-600" />
                           تفاصيل الدفع
                       </h3>
-                      <button onClick={() => setIsPaymentModalOpen(false)} className="text-gray-400 hover:text-gray-800 dark:hover:text-white"><X size={24} /></button>
+                      <button onClick={() => setIsPaymentModalOpen(false)} className="text-gray-400 hover:text-gray-800 p-1"><X size={24} /></button>
                   </div>
 
                   {checkoutStep === 'success' ? (
-                      <div className="p-10 flex flex-col items-center text-center text-gray-800 dark:text-white">
-                          <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mb-6 animate-bounce">
-                              <CheckCircle size={40} />
-                          </div>
-                          <h2 className="text-2xl font-bold mb-2">تمت العملية بنجاح!</h2>
-                          <p className="text-gray-500 dark:text-slate-400">تم تسجيل الفاتورة وتحديث الحسابات.</p>
+                      <div className="p-12 flex flex-col items-center text-center">
+                          <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6 animate-bounce"><CheckCircle size={48} /></div>
+                          <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">تمت العملية بنجاح!</h2>
+                          <p className="text-gray-500 font-medium">تم تسجيل الفاتورة وتحديث المخزون والمالية.</p>
                       </div>
                   ) : (
                       <div className="p-6 space-y-6">
-                          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-5 text-center border border-emerald-100 dark:border-emerald-800">
-                              <p className="text-emerald-700 dark:text-emerald-400 text-sm font-medium mb-1">المبلغ الإجمالي</p>
+                          <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-6 text-center border border-emerald-100 dark:border-emerald-800">
+                              <p className="text-emerald-700 dark:text-emerald-400 text-sm font-black mb-1">المبلغ الإجمالي</p>
                               <p className="text-4xl font-black text-emerald-800 dark:text-emerald-300 tracking-tight">{calculateTotal()} <span className="text-lg font-bold">{CURRENCY}</span></p>
                           </div>
 
                           <div className="space-y-4">
-                              <div>
-                                  <label className="text-xs font-bold text-gray-500 dark:text-slate-400 mb-1 block">تاريخ الفاتورة</label>
-                                  <div className="relative">
-                                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                                    <input 
-                                        type="date"
-                                        className="w-full pl-4 pr-10 py-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white focus:bg-white dark:focus:bg-slate-600 focus:ring-2 focus:ring-emerald-500 outline-none"
-                                        value={paymentDetails.invoiceDate}
-                                        onChange={(e) => setPaymentDetails({...paymentDetails, invoiceDate: e.target.value})}
-                                    />
-                                  </div>
-                              </div>
                               <div className="relative" ref={clientInputRef}>
-                                  <label className="text-xs font-bold text-gray-500 dark:text-slate-400 mb-1 block">اسم العميل {isDebt() && <span className="text-red-500 text-xs">(مطلوب للدين)</span>}</label>
-                                  <div className="relative">
-                                    <User className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                                    <input 
+                                  <label className="text-xs font-black text-gray-400 uppercase mb-1 block pr-1">اسم العميل</label>
+                                  <input 
                                         type="text" 
                                         placeholder="بحث أو إدخال اسم عميل جديد..."
-                                        className={`w-full pl-4 pr-10 py-3 rounded-xl border bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white focus:bg-white dark:focus:bg-slate-600 focus:ring-2 outline-none ${isDebt() && !paymentDetails.customerName ? 'border-red-300 dark:border-red-700 focus:ring-red-500' : 'border-gray-200 dark:border-slate-600 focus:ring-emerald-500'}`}
+                                        className="w-full p-4 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-white focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none font-bold"
                                         value={paymentDetails.customerName}
                                         onFocus={() => setShowClientSuggestions(true)}
                                         onChange={(e) => {
@@ -679,76 +621,43 @@ const Sales: React.FC = () => {
                                             setShowClientSuggestions(true);
                                         }}
                                     />
-                                  </div>
                                   {showClientSuggestions && filteredClients.length > 0 && (
-                                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-700 border border-gray-100 dark:border-slate-600 rounded-xl shadow-xl z-20 max-h-40 overflow-y-auto">
+                                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-700 border border-gray-100 rounded-xl shadow-2xl z-50 max-h-40 overflow-y-auto">
                                         {filteredClients.map(client => (
-                                            <button
-                                                key={client.id}
-                                                className="w-full text-right px-4 py-3 hover:bg-emerald-50 dark:hover:bg-slate-600 text-sm text-gray-700 dark:text-white flex justify-between items-center border-b border-gray-50 dark:border-slate-600 last:border-0"
-                                                onClick={() => {
-                                                    setPaymentDetails({...paymentDetails, customerName: client.name});
-                                                    setShowClientSuggestions(false);
-                                                }}
-                                            >
-                                                <span className="font-bold">{client.name}</span>
-                                                <span className="text-xs text-gray-400 dark:text-slate-400 bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-full" dir="ltr">{client.phone}</span>
+                                            <button key={client.id} className="w-full text-right px-4 py-3 hover:bg-emerald-50 text-sm font-bold flex justify-between items-center border-b last:border-0"
+                                                onClick={() => { setPaymentDetails({...paymentDetails, customerName: client.name}); setShowClientSuggestions(false); }}>
+                                                <span>{client.name}</span>
+                                                <span className="text-[10px] text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">{client.phone}</span>
                                             </button>
                                         ))}
                                     </div>
                                   )}
                               </div>
-                              <div>
-                                  <label className="text-xs font-bold text-gray-500 dark:text-slate-400 mb-1 block">طريقة الاستلام</label>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    {paymentMethods.map(pm => (
-                                        <button
-                                            key={pm.id}
-                                            onClick={() => setPaymentDetails({...paymentDetails, paymentMethodId: pm.id})}
-                                            className={`p-3 rounded-xl border text-sm font-bold transition flex items-center justify-center gap-2 ${paymentDetails.paymentMethodId === pm.id ? 'bg-slate-800 text-white border-slate-800 dark:bg-emerald-600 dark:border-emerald-600' : 'bg-white dark:bg-slate-700 border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-600'}`}
-                                        >
-                                            <Wallet size={16} />
-                                            {pm.name}
-                                        </button>
-                                    ))}
-                                  </div>
-                              </div>
                               <div className="grid grid-cols-2 gap-4">
                                   <div>
-                                      <label className="text-xs font-bold text-gray-500 dark:text-slate-400 mb-1 block">خصم</label>
-                                      <input 
-                                          type="number" 
-                                          className="w-full p-3 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-center"
-                                          value={paymentDetails.discount === 0 ? '' : paymentDetails.discount}
-                                          placeholder="0"
+                                      <label className="text-xs font-black text-gray-400 uppercase mb-1 block pr-1">خصم</label>
+                                      <input type="number" className="w-full p-4 rounded-xl border border-gray-200 bg-gray-50 dark:bg-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-center"
+                                          value={paymentDetails.discount === 0 ? '' : paymentDetails.discount} placeholder="0"
                                           onChange={(e) => setPaymentDetails({...paymentDetails, discount: Number(e.target.value)})}
-                                          onFocus={(e) => e.target.select()}
                                       />
                                   </div>
                                   <div>
-                                      <label className="text-xs font-bold text-gray-500 dark:text-slate-400 mb-1 block">المدفوع</label>
-                                      <input 
-                                          type="number" 
-                                          className="w-full p-3 rounded-xl border-2 border-emerald-500 bg-white dark:bg-slate-600 text-gray-900 dark:text-white focus:ring-4 focus:ring-emerald-100 dark:focus:ring-emerald-900/30 outline-none font-bold text-center text-lg"
-                                          value={paymentDetails.amountPaid === 0 ? '' : paymentDetails.amountPaid}
-                                          placeholder="0"
+                                      <label className="text-xs font-black text-gray-400 uppercase mb-1 block pr-1">المدفوع</label>
+                                      <input type="number" className="w-full p-4 rounded-xl border-2 border-emerald-500 bg-white dark:bg-slate-900 dark:text-white focus:ring-4 focus:ring-emerald-100 outline-none font-black text-center text-lg"
+                                          value={paymentDetails.amountPaid === 0 ? '' : paymentDetails.amountPaid} placeholder="0"
                                           onChange={(e) => setPaymentDetails({...paymentDetails, amountPaid: Number(e.target.value)})}
-                                          onFocus={(e) => e.target.select()}
                                       />
                                   </div>
                               </div>
-                              <div className={`flex justify-between items-center p-4 rounded-xl ${isDebt() ? 'bg-red-50 dark:bg-red-900/20' : 'bg-emerald-50 dark:bg-emerald-900/20'}`}>
-                                  <span className={`font-bold ${isDebt() ? 'text-red-600 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>{isDebt() ? 'المتبقي (دين):' : 'الباقي (للعميل):'}</span>
-                                  <span className={`text-xl font-bold ${isDebt() ? 'text-red-600 dark:text-red-400' : 'text-emerald-700 dark:text-emerald-400'}`}>{Math.abs(calculateRemaining())} {CURRENCY}</span>
+                              <div className={`flex justify-between items-center p-4 rounded-xl ${isDebt() ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                                  <span className="font-black text-sm">{isDebt() ? 'المتبقي (دين):' : 'الباقي (للعميل):'}</span>
+                                  <span className="text-xl font-black">{Math.abs(calculateRemaining())} {CURRENCY}</span>
                               </div>
-                              {isDebt() && !paymentDetails.customerName && (
-                                  <div className="text-red-500 text-xs flex items-center gap-1 font-bold"><AlertCircle size={12} />يجب اختيار عميل لتسجيل الدين</div>
-                              )}
                           </div>
                           <button 
                               onClick={handleFinalizeCheckout}
-                              disabled={checkoutStep === 'processing' || (isDebt() && !paymentDetails.customerName)}
-                              className="w-full py-4 rounded-xl bg-emerald-600 text-white font-bold text-lg hover:bg-emerald-700 shadow-lg shadow-emerald-200 dark:shadow-none transition transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                              disabled={checkoutStep === 'processing'}
+                              className="w-full py-5 rounded-2xl bg-emerald-600 text-white font-black text-xl hover:bg-emerald-700 shadow-xl transition transform active:scale-[0.98] disabled:opacity-50"
                           >
                               {checkoutStep === 'processing' ? 'جاري التنفيذ...' : 'تأكيد العملية'}
                           </button>
@@ -760,179 +669,83 @@ const Sales: React.FC = () => {
       
       {/* Invoice Details Modal */}
       {viewDetailsInvoice && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                <div className="p-5 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-700/30">
-                    <h3 className="font-bold text-lg text-gray-800 dark:text-white flex items-center gap-2">
-                        <FileText className="text-emerald-600 dark:text-emerald-400" size={20} />
-                        تفاصيل الفاتورة
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200 no-print">
+            <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="p-6 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50/50 dark:bg-slate-700/30">
+                    <h3 className="font-black text-lg text-gray-800 dark:text-white flex items-center gap-2">
+                        <FileText className="text-emerald-600" size={20} />
+                        عرض الفاتورة
                     </h3>
                     <div className="flex gap-2">
-                        <button className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-full text-gray-500 dark:text-slate-400 transition" title="طباعة">
-                            <Printer size={18} onClick={() => window.print()} />
-                        </button>
-                        <button onClick={() => setViewDetailsInvoice(null)} className="p-2 hover:bg-white dark:hover:bg-slate-700 rounded-full text-gray-500 dark:text-slate-400 transition">
-                            <X size={20} />
-                        </button>
+                        <button onClick={() => window.print()} className="p-2 hover:bg-white rounded-full text-gray-500 transition"><Printer size={18} /></button>
+                        <button onClick={() => setViewDetailsInvoice(null)} className="p-2 hover:bg-white rounded-full text-gray-500 transition"><X size={20} /></button>
                     </div>
                 </div>
                 
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                    {/* Header Info */}
+                <div className="flex-1 overflow-y-auto p-8 space-y-8">
                     <div className="flex justify-between items-start">
                         <div>
-                            <p className="text-sm text-gray-500 dark:text-slate-400">رقم الفاتورة</p>
-                            <p className="font-mono font-bold text-gray-800 dark:text-white text-lg">#{viewDetailsInvoice.id.slice(-6)}</p>
+                            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-1">رقم الفاتورة</p>
+                            <p className="font-mono font-black text-gray-900 dark:text-white text-xl">#{viewDetailsInvoice.id.slice(-6).toUpperCase()}</p>
                         </div>
                         <div className="text-left">
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
                                 viewDetailsInvoice.remainingAmount > 0 
-                                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' 
-                                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                ? 'bg-red-50 text-red-600 border-red-100' 
+                                : 'bg-emerald-50 text-emerald-600 border-emerald-100'
                             }`}>
-                                {viewDetailsInvoice.remainingAmount > 0 ? 'غير مكتملة' : 'مدفوعة بالكامل'}
+                                {viewDetailsInvoice.remainingAmount > 0 ? 'غير مكتملة' : 'مدفوعة'}
                             </span>
                         </div>
                     </div>
 
-                    {/* Meta Grid */}
-                    <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-slate-700/30 p-4 rounded-xl border border-gray-100 dark:border-slate-700">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-                                <User size={18} />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500 dark:text-slate-400">العميل</p>
-                                <p className="font-bold text-sm text-gray-800 dark:text-white">{viewDetailsInvoice.customerName}</p>
-                            </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-gray-50 dark:bg-slate-700/50 p-4 rounded-2xl border border-gray-100 dark:border-slate-700">
+                            <p className="text-[10px] text-gray-400 font-black uppercase mb-1">العميل</p>
+                            <p className="font-black text-gray-800 dark:text-white">{viewDetailsInvoice.customerName}</p>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-                                <Calendar size={18} />
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-500 dark:text-slate-400">التاريخ</p>
-                                <p className="font-bold text-sm text-gray-800 dark:text-white">{new Date(viewDetailsInvoice.date).toLocaleDateString('ar-MA')}</p>
-                            </div>
+                        <div className="bg-gray-50 dark:bg-slate-700/50 p-4 rounded-2xl border border-gray-100 dark:border-slate-700">
+                            <p className="text-[10px] text-gray-400 font-black uppercase mb-1">التاريخ</p>
+                            <p className="font-black text-gray-800 dark:text-white">{new Date(viewDetailsInvoice.date).toLocaleDateString('ar-MA')}</p>
                         </div>
                     </div>
 
-                    {/* Items List */}
                     <div>
-                        <h4 className="text-sm font-bold text-gray-500 dark:text-slate-400 mb-3 flex items-center gap-2">
-                            <ShoppingBag size={14} /> المنتجات
+                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <ShoppingBag size={14} /> المنتجات المباعة
                         </h4>
-                        <div className="border border-gray-100 dark:border-slate-700 rounded-xl overflow-hidden">
-                            <table className="w-full text-sm text-right">
-                                <thead className="bg-gray-50 dark:bg-slate-700/50 text-gray-500 dark:text-slate-400 font-medium">
-                                    <tr>
-                                        <th className="px-4 py-3">المنتج</th>
-                                        <th className="px-4 py-3 text-center">الكمية</th>
-                                        <th className="px-4 py-3">السعر</th>
-                                        <th className="px-4 py-3">المجموع</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
-                                    {viewDetailsInvoice.items.map((item, i) => (
-                                        <tr key={i}>
-                                            <td className="px-4 py-3 text-gray-800 dark:text-white font-medium">{item.productName}</td>
-                                            <td className="px-4 py-3 text-center text-gray-600 dark:text-slate-300">{item.quantity}</td>
-                                            <td className="px-4 py-3 text-gray-600 dark:text-slate-300">{item.priceAtSale}</td>
-                                            <td className="px-4 py-3 font-bold text-gray-800 dark:text-white">{(item.quantity * item.priceAtSale).toLocaleString()}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        <div className="space-y-3">
+                            {viewDetailsInvoice.items.map((item, i) => (
+                                <div key={i} className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-700/30 rounded-2xl">
+                                    <div>
+                                        <p className="font-bold text-gray-800 dark:text-white">{item.productName}</p>
+                                        <p className="text-[10px] text-gray-400 font-bold mt-1">{item.quantity} × {item.priceAtSale} {CURRENCY}</p>
+                                    </div>
+                                    <p className="font-black text-gray-900 dark:text-white">{item.quantity * item.priceAtSale}</p>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
-                    {/* Financial Summary */}
-                    <div className="border-t border-dashed border-gray-200 dark:border-slate-600 pt-4 space-y-2">
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-500 dark:text-slate-400">المجموع الكلي</span>
-                            <span className="font-bold text-gray-900 dark:text-white text-lg">{viewDetailsInvoice.total.toLocaleString()} {CURRENCY}</span>
+                    <div className="border-t-2 border-dashed border-gray-200 dark:border-slate-600 pt-6 space-y-3">
+                        <div className="flex justify-between items-center text-gray-500 font-bold">
+                            <span>المجموع الكلي</span>
+                            <span className="text-xl font-black text-gray-900 dark:text-white">{viewDetailsInvoice.total.toLocaleString()} {CURRENCY}</span>
                         </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><CheckCircle size={14}/> المدفوع</span>
-                            <span className="font-bold text-emerald-600 dark:text-emerald-400">{viewDetailsInvoice.paidAmount.toLocaleString()} {CURRENCY}</span>
+                        <div className="flex justify-between items-center text-emerald-600 font-black">
+                            <span>المدفوع</span>
+                            <span>{viewDetailsInvoice.paidAmount.toLocaleString()} {CURRENCY}</span>
                         </div>
                         {viewDetailsInvoice.remainingAmount > 0 && (
-                            <div className="flex justify-between items-center text-sm bg-red-50 dark:bg-red-900/20 p-2 rounded-lg mt-2">
-                                <span className="text-red-600 dark:text-red-400 font-bold flex items-center gap-1"><AlertCircle size={14}/> المتبقي (دين)</span>
-                                <span className="font-bold text-red-600 dark:text-red-400">{viewDetailsInvoice.remainingAmount.toLocaleString()} {CURRENCY}</span>
+                            <div className="flex justify-between items-center text-red-600 bg-red-50 p-3 rounded-xl font-black mt-2">
+                                <span>المتبقي (دين)</span>
+                                <span>{viewDetailsInvoice.remainingAmount.toLocaleString()} {CURRENCY}</span>
                             </div>
                         )}
                     </div>
                 </div>
             </div>
         </div>
-      )}
-
-      {/* Edit Invoice Metadata Modal */}
-      {isEditInvoiceModalOpen && editingInvoice && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-sm p-6 shadow-xl animate-in zoom-in-95 duration-200">
-                  <div className="flex justify-between items-center mb-4">
-                      <h3 className="font-bold text-gray-800 dark:text-white">تعديل بيانات الفاتورة</h3>
-                      <button onClick={() => setIsEditInvoiceModalOpen(false)}><X size={20} className="text-gray-400" /></button>
-                  </div>
-                  <form onSubmit={handleUpdateInvoice} className="space-y-4">
-                      <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">اسم العميل</label>
-                          <input 
-                              type="text" 
-                              className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                              value={editingInvoice.customerName}
-                              onChange={(e) => setEditingInvoice({...editingInvoice, customerName: e.target.value})}
-                          />
-                      </div>
-                      <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">تاريخ الفاتورة</label>
-                          <input 
-                              type="date" 
-                              className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                              value={editingInvoice.date.split('T')[0]}
-                              onChange={(e) => setEditingInvoice({...editingInvoice, date: e.target.value})}
-                          />
-                      </div>
-                      <div className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-400 p-2 rounded">
-                          ملاحظة: لتعديل المنتجات أو الكميات، يرجى حذف الفاتورة وإعادة إنشائها لضمان سلامة المخزون والحسابات.
-                      </div>
-                      <button 
-                          type="submit" 
-                          disabled={isUpdating}
-                          className="w-full bg-slate-800 text-white py-3 rounded-lg font-bold hover:bg-slate-900 flex justify-center items-center"
-                      >
-                          {isUpdating ? <Loader2 className="animate-spin" size={20} /> : 'حفظ التعديلات'}
-                      </button>
-                  </form>
-              </div>
-          </div>
-      )}
-
-      {isCustomItemModalOpen && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-sm p-6 shadow-xl">
-                  <div className="flex justify-between items-center mb-4">
-                      <h3 className="font-bold text-gray-800 dark:text-white">إضافة منتج يدوي</h3>
-                      <button onClick={() => setIsCustomItemModalOpen(false)}><X size={20} className="text-gray-400" /></button>
-                  </div>
-                  <form onSubmit={addCustomItemToCart} className="space-y-4">
-                      <input 
-                          autoFocus type="text" placeholder="الاسم" 
-                          className="w-full p-3 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                          value={customItem.name} onChange={(e) => setCustomItem({...customItem, name: e.target.value})} required
-                      />
-                      <div className="grid grid-cols-2 gap-3">
-                        <input type="number" placeholder="السعر" className="w-full p-3 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                            value={customItem.price || ''} onChange={(e) => setCustomItem({...customItem, price: Number(e.target.value)})} required />
-                        <input type="number" placeholder="الكمية" className="w-full p-3 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                            value={customItem.quantity || ''} onChange={(e) => setCustomItem({...customItem, quantity: Number(e.target.value)})} required />
-                      </div>
-                      <button type="submit" className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold">إضافة</button>
-                  </form>
-              </div>
-          </div>
       )}
     </div>
   );
