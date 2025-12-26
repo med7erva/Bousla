@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, MessageCircle, HelpCircle, ArrowRight, Zap, ShieldCheck, Sparkles, Users, Scissors } from 'lucide-react';
+import { Check, MessageCircle, HelpCircle, ArrowRight, Zap, ShieldCheck, Sparkles, Users, Scissors, FileDown, BarChart2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import BouslaLogo from '../components/BouslaLogo';
 
@@ -15,15 +15,16 @@ const Pricing: React.FC = () => {
       name: 'Essential Plus',
       monthlyPrice: 300,
       annualPrice: 3000, // 2 months free
-      desc: 'مثالية للمتاجر الناشئة التي تحتاج لتنظيم مبيعاتها ومخزونها بدقة.',
+      desc: 'الحل المثالي للمتاجر التي تبحث عن تنظيم متكامل للمبيعات والموظفين.',
       features: [
         { text: 'نقطة بيع سريعة (POS)', included: true },
         { text: 'إدارة المخزون والباركود', included: true },
         { text: 'إدارة ديون العملاء والموردين', included: true },
-        { text: 'تقارير المبيعات الأساسية', included: true },
+        { text: 'إدارة الموظفين والرواتب والسلف', included: true },
+        { text: 'تحليل القطع السريعة والبطيئة', included: true },
+        { text: 'تصدير كافة التقارير بصيغة PDF', included: true },
         { text: 'دعم فني عبر الواتساب', included: true },
         { text: 'المساعد المالي بالذكاء الاصطناعي', included: false },
-        { text: 'إدارة الموظفين والرواتب', included: false },
         { text: 'تتبع عمليات التصنيع والخياطة', included: false },
       ],
       recommended: false,
@@ -34,16 +35,16 @@ const Pricing: React.FC = () => {
       name: 'Business Pro',
       monthlyPrice: 550,
       annualPrice: 5500, // 2 months free
-      desc: 'الباقة المتكاملة للنمو؛ تدمج الذكاء الاصطناعي مع إدارة الطاقم والتصنيع.',
+      desc: 'القوة الكاملة للنظام؛ ذكاء اصطناعي مدمج مع أدوات التصنيع المتقدمة.',
       features: [
         { text: 'كل مميزات باقة Plus', included: true },
-        { text: 'المساعد المالي (Gemini AI)', included: true },
-        { text: 'إدارة الموظفين، السلف والرواتب', included: true },
-        { text: 'تتبع عمليات التصنيع والخياطة', included: true },
-        { text: 'تحليل ذكي للأرباح والاتجاهات', included: true },
-        { text: 'تنبيهات تشغيلية حية', included: true },
-        { text: 'تصدير تقارير محاسبية متقدمة', included: true },
-        { text: 'أولوية في الدعم الفني 24/7', included: true },
+        { text: 'المساعد المالي الذكي (Gemini AI)', included: true },
+        { text: 'تتبع عمليات التصنيع والخياطة (مشاغل)', included: true },
+        { text: 'تحليل ذكي معمق للأرباح والاتجاهات', included: true },
+        { text: 'تنبيهات تشغيلية استباقية', included: true },
+        { text: 'تصدير تقارير محاسبية متقدمة (Excel)', included: true },
+        { text: 'ربط الفروع (عند الطلب)', included: true },
+        { text: 'أولوية دعم فني 24/7', included: true },
       ],
       recommended: true,
       color: "indigo"
@@ -72,22 +73,22 @@ const Pricing: React.FC = () => {
       <div className="max-w-7xl mx-auto py-16 px-6">
         {/* Header */}
         <div className="text-center mb-16 space-y-4">
-            <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">استثمر في تنظيم متجرك</h1>
+            <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">استثمر في استقرار وتطور متجرك</h1>
             <p className="text-lg text-slate-500 max-w-2xl mx-auto font-medium">
-                اختر الباقة التي تناسب حجم أعمالك. تفعيل فوري ودعم فني موريتاني 100%.
+                باقات مرنة صُممت لتناسب احتياجات التاجر الموريتاني وتدعم نمو تجارته.
             </p>
 
             {/* Billing Toggle */}
             <div className="flex items-center justify-center gap-4 mt-10">
-                <span className={`text-sm font-bold ${billingCycle === 'monthly' ? 'text-slate-900' : 'text-slate-400'}`}>شهري</span>
+                <span className={`text-sm font-bold ${billingCycle === 'monthly' ? 'text-slate-900' : 'text-slate-400'}`}>اشتراك شهري</span>
                 <button 
                     onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
-                    className="w-16 h-8 bg-slate-200 dark:bg-slate-800 rounded-full relative p-1 transition-colors"
+                    className="w-16 h-8 bg-slate-200 dark:bg-slate-800 rounded-full relative p-1 transition-all"
                 >
                     <div className={`w-6 h-6 bg-white rounded-full shadow-md transition-transform duration-300 ${billingCycle === 'annual' ? '-translate-x-8' : 'translate-x-0'}`}></div>
                 </button>
                 <span className={`text-sm font-bold flex items-center gap-2 ${billingCycle === 'annual' ? 'text-emerald-600' : 'text-slate-400'}`}>
-                    سنوي 
+                    اشتراك سنوي 
                     <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-0.5 rounded-full font-black">وفر شهرين!</span>
                 </span>
             </div>
@@ -108,7 +109,7 @@ const Pricing: React.FC = () => {
               >
                 {plan.recommended && (
                   <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-600 text-white text-[11px] font-black px-6 py-2 rounded-full uppercase tracking-widest shadow-xl flex items-center gap-2">
-                    <Sparkles size={14} /> الخيار الاحترافي
+                    <Sparkles size={14} /> الخيار الأكثر تقدماً
                   </span>
                 )}
                 
@@ -117,12 +118,12 @@ const Pricing: React.FC = () => {
                   <p className={`text-sm font-medium leading-relaxed ${plan.recommended ? 'text-slate-400' : 'text-slate-500'}`}>{plan.desc}</p>
                   <div className="flex items-baseline mt-8 gap-2">
                       <span className="text-6xl font-black tracking-tighter">{currentPrice}</span>
-                      <span className={`text-lg font-bold ${plan.recommended ? 'text-slate-400' : 'text-slate-400'}`}>أوقية / {billingCycle === 'monthly' ? 'شهر' : 'سنة'}</span>
+                      <span className={`text-lg font-bold ${plan.recommended ? 'text-slate-400' : 'text-slate-400'}`}>أوقية / {billingCycle === 'monthly' ? 'شهرياً' : 'سنوياً'}</span>
                   </div>
                 </div>
 
                 <div className="space-y-4 mb-12 flex-1">
-                  <p className={`text-xs font-black uppercase tracking-widest ${plan.recommended ? 'text-slate-500' : 'text-slate-300'}`}>تتضمن الباقة:</p>
+                  <p className={`text-xs font-black uppercase tracking-widest ${plan.recommended ? 'text-slate-500' : 'text-slate-300'}`}>المزايا المشمولة:</p>
                   {plan.features.map((feature, i) => (
                     <div key={i} className={`flex items-start gap-3 text-sm font-bold ${!feature.included && 'opacity-30 grayscale'}`}>
                       <div className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${plan.recommended ? 'bg-indigo-500/20 text-indigo-400' : 'bg-emerald-50 text-emerald-600'}`}>
@@ -151,34 +152,34 @@ const Pricing: React.FC = () => {
           })}
         </div>
 
-        {/* FAQ Section - Unchanged as requested */}
+        {/* FAQ Section */}
         <div className="max-w-4xl mx-auto bg-white rounded-[3rem] p-12 border border-slate-100 shadow-sm">
-            <h2 className="text-3xl font-black text-center mb-12 flex items-center justify-center gap-4">
+            <h2 className="text-3xl font-black text-center mb-12 flex items-center justify-center gap-4 text-slate-800">
                 <HelpCircle className="text-indigo-500" /> أسئلة شائعة
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-right">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 text-right">
                 <div>
-                    <h4 className="font-black text-slate-900 mb-2">كيف يتم التفعيل؟</h4>
-                    <p className="text-slate-500 text-sm font-medium">بعد التحويل، نرسل لك كود تفعيل تدخله في حسابك ويتم تفعيل الباقة فوراً.</p>
+                    <h4 className="font-black text-slate-900 mb-2">كيف يتم تفعيل الحساب؟</h4>
+                    <p className="text-slate-500 text-sm font-medium leading-relaxed">بمجرد التحويل عبر تطبيقاتنا المالية (Bankily/Masrvi)، يتم إرسال كود التفعيل فوراً لتقوم بإدخاله في قسم الملف الشخصي، ويتفعل اشتراكك في ثوانٍ.</p>
                 </div>
                 <div>
-                    <h4 className="font-black text-slate-900 mb-2">هل يمكنني تغيير الباقة؟</h4>
-                    <p className="text-slate-500 text-sm font-medium">نعم، يمكنك ترقية حسابك من Essential إلى Pro في أي وقت بدفع المبلغ المتبقي.</p>
+                    <h4 className="font-black text-slate-900 mb-2">هل يمكنني الترقية من Plus إلى Pro؟</h4>
+                    <p className="text-slate-500 text-sm font-medium leading-relaxed">نعم بالتأكيد، يمكنك الترقية في أي وقت للاستفادة من مميزات الذكاء الاصطناعي والتصنيع عبر دفع فرق السعر للباقة.</p>
                 </div>
                 <div>
-                    <h4 className="font-black text-slate-900 mb-2">ماذا يحدث عند انتهاء الاشتراك؟</h4>
-                    <p className="text-slate-500 text-sm font-medium">تبقى بياناتك محفوظة، ولكن لا يمكنك تسجيل عمليات جديدة حتى تجدد الاشتراك.</p>
+                    <h4 className="font-black text-slate-900 mb-2">هل بياناتي في أمان؟</h4>
+                    <p className="text-slate-500 text-sm font-medium leading-relaxed">نعم، نحن نستخدم قواعد بيانات مشفرة وسحابية تضمن لك الوصول لبياناتك من أي جهاز وفي أي وقت مع حماية كاملة ضد الضياع.</p>
                 </div>
                 <div>
-                    <h4 className="font-black text-slate-900 mb-2">هل أحتاج لإنترنت لاستخدام التطبيق؟</h4>
-                    <p className="text-slate-500 text-sm font-medium">نعم، التطبيق سحابي لضمان مزامنة البيانات بين الهاتف والكمبيوتر وحماية بياناتك.</p>
+                    <h4 className="font-black text-slate-900 mb-2">هل أحتاج لإنترنت لاستخدام بوصلة؟</h4>
+                    <p className="text-slate-500 text-sm font-medium leading-relaxed">نعم، التطبيق يعتمد على التزامن السحابي الفوري لضمان أنك تتابع مبيعاتك من هاتفك بينما يقوم البائع بالتسجيل من جهاز آخر.</p>
                 </div>
             </div>
         </div>
 
         <div className="mt-16 text-center">
             <Link to="/" className="inline-flex items-center gap-2 text-emerald-600 font-black hover:gap-4 transition-all">
-                <ArrowRight className="rotate-180" /> العودة للرئيسية
+                <ArrowRight className="rotate-180" /> العودة للصفحة الرئيسية
             </Link>
         </div>
       </div>
