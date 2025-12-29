@@ -26,8 +26,9 @@ const Expenses: React.FC = () => {
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
+    const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isExporting, setIsExporting] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
     const [aiTips, setAiTips] = useState<string[]>([]);
     const [batchDate, setBatchDate] = useState(new Date().toISOString().split('T')[0]);
     const [batchPaymentMethodId, setBatchPaymentMethodId] = useState('');
@@ -82,6 +83,31 @@ const Expenses: React.FC = () => {
         } finally { setIsSubmitting(false); }
     };
 
+    const handleAddCategory = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!user || !newCategoryName.trim()) return;
+        setIsSubmitting(true);
+        try {
+            await addExpenseCategory(user.id, newCategoryName);
+            setNewCategoryName('');
+            setIsAddCategoryModalOpen(false);
+            loadData();
+        } finally { setIsSubmitting(false); }
+    };
+
+    const handleDeleteCategory = async (id: string) => {
+        if(window.confirm('هل تريد حذف هذا التصنيف؟ سيتم الاحتفاظ بالمصاريف المسجلة تحت "غير مصنف"')) {
+            await deleteExpenseCategory(user!.id, id);
+            loadData();
+        }
+    };
+
+    const getCategoryTotal = (catId: string) => {
+        return expenses
+            .filter(e => e.categoryId === catId)
+            .reduce((sum, e) => sum + e.amount, 0);
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print">
@@ -91,14 +117,14 @@ const Expenses: React.FC = () => {
                         <LayoutList size={18} /> سجل العمليات
                     </button>
                     <button onClick={() => setActiveTab('accounts')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition ${activeTab === 'accounts' ? 'bg-white dark:bg-slate-600 text-emerald-600 shadow-sm' : 'text-gray-500'}`}>
-                        <Layers size={18} /> التصنيفات
+                        <Layers size={18} /> إدارة الحسابات
                     </button>
                 </div>
             </div>
 
             <AIInsightAlert title="تحليل المصاريف" insight={aiTips} icon={TrendingDown} baseColor="rose" />
 
-            {activeTab === 'expenses' && (
+            {activeTab === 'expenses' ? (
                 <>
                     <div className="flex justify-end gap-3 no-print">
                         <button onClick={() => setIsAddExpenseModalOpen(true)} className="flex items-center gap-2 bg-emerald-600 text-white px-5 py-2.5 rounded-xl hover:bg-emerald-700 shadow-lg font-bold">
@@ -141,8 +167,50 @@ const Expenses: React.FC = () => {
                         </div>
                     </div>
                 </>
+            ) : (
+                /* ACCOUNTS TAB - Updated to match image */
+                <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-sm border border-gray-100 dark:border-slate-700">
+                    <div className="flex justify-between items-center mb-8">
+                        <button 
+                            onClick={() => setIsAddCategoryModalOpen(true)}
+                            className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-4 py-2 rounded-xl font-bold text-sm hover:bg-emerald-100 transition-all flex items-center gap-2"
+                        >
+                            <Plus size={18} />
+                            إضافة تصنيف
+                        </button>
+                        <h2 className="text-xl font-black text-slate-800 dark:text-white">تصنيفات المصاريف</h2>
+                    </div>
+
+                    <div className="space-y-3 max-w-2xl mx-auto">
+                        {categories.map((cat) => (
+                            <div key={cat.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-700 rounded-2xl group hover:shadow-md transition-all">
+                                <div className="flex items-center gap-4">
+                                    <button 
+                                        onClick={() => !cat.isDefault && handleDeleteCategory(cat.id)}
+                                        className={`p-2 transition-colors ${cat.isDefault ? 'opacity-0 cursor-default' : 'text-slate-300 hover:text-red-500'}`}
+                                        disabled={cat.isDefault}
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                    
+                                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 px-4 py-1.5 rounded-lg text-sm font-black text-slate-700 dark:text-slate-200 shadow-sm min-w-[100px] text-center">
+                                        {getCategoryTotal(cat.id).toLocaleString()} <span className="text-[10px] font-bold opacity-60">أوقية</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                    {cat.isDefault && (
+                                        <span className="bg-gray-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 px-2 py-0.5 rounded text-[10px] font-bold">افتراضي</span>
+                                    )}
+                                    <span className="font-black text-slate-800 dark:text-white text-base">{cat.name}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             )}
 
+            {/* MODAL: ADD EXPENSE */}
             {isAddExpenseModalOpen && (
                 <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200 no-print">
                     <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -201,6 +269,32 @@ const Expenses: React.FC = () => {
                                 {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} حفظ
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: ADD CATEGORY */}
+            {isAddCategoryModalOpen && (
+                <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+                        <h2 className="text-xl font-black mb-6 text-gray-800 dark:text-white text-center">إضافة تصنيف مصروفات</h2>
+                        <form onSubmit={handleAddCategory} className="space-y-4">
+                            <input 
+                                required 
+                                autoFocus
+                                type="text" 
+                                placeholder="اسم التصنيف (مثلاً: الكهرباء)" 
+                                className="w-full p-4 border dark:border-slate-600 rounded-2xl bg-gray-50 dark:bg-slate-700 dark:text-white font-bold outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all"
+                                value={newCategoryName} 
+                                onChange={e => setNewCategoryName(e.target.value)} 
+                            />
+                            <div className="flex gap-3 pt-2">
+                                <button type="submit" disabled={isSubmitting} className="flex-1 bg-emerald-600 text-white py-3 rounded-xl font-black shadow-lg hover:bg-emerald-700 transition disabled:opacity-50">
+                                    {isSubmitting ? <Loader2 className="animate-spin mx-auto" /> : 'حفظ التصنيف'}
+                                </button>
+                                <button type="button" onClick={() => setIsAddCategoryModalOpen(false)} className="flex-1 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 py-3 rounded-xl font-bold">إلغاء</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
