@@ -23,7 +23,7 @@ const Sales: React.FC = () => {
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [exportingHistory, setExportingHistory] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 }); // Position for fixed menu
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 }); 
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Edit Invoice State
@@ -83,7 +83,7 @@ const Sales: React.FC = () => {
       } else {
           setPaymentMethods(pmData);
           const defaultMethod = pmData.find(m => m.isDefault) || pmData[0];
-          setPaymentDetails(prev => ({...prev, paymentMethodId: defaultMethod?.id || ''}));
+          setPaymentDetails(prev => ({...prev, paymentMethodId: defaultMethod?.id || '', invoiceDate: new Date().toISOString().split('T')[0]}));
       }
   };
 
@@ -180,7 +180,8 @@ const Sales: React.FC = () => {
           discount: 0,
           amountPaid: total,
           paymentMethodId: defaultPm?.id || '',
-          customerName: 'عميل افتراضي'
+          customerName: 'عميل افتراضي',
+          invoiceDate: new Date().toISOString().split('T')[0]
       }));
       setCheckoutStep('input');
       setIsPaymentModalOpen(true);
@@ -190,6 +191,10 @@ const Sales: React.FC = () => {
     if (!user) return;
     if (isDebt() && !paymentDetails.customerName.trim()) {
         alert("يجب تحديد اسم العميل لتسجيل الدين عليه.");
+        return;
+    }
+    if (!paymentDetails.paymentMethodId) {
+        alert("يرجى اختيار الحساب المالي (طريقة الدفع)");
         return;
     }
     setCheckoutStep('processing');
@@ -633,6 +638,28 @@ const Sales: React.FC = () => {
                                     </div>
                                   )}
                               </div>
+
+                              <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                      <label className="text-xs font-black text-blue-600 uppercase mb-1 block pr-1 flex items-center gap-1"><Calendar size={12} /> تاريخ الفاتورة</label>
+                                      <input type="date" className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-center"
+                                          value={paymentDetails.invoiceDate}
+                                          onChange={(e) => setPaymentDetails({...paymentDetails, invoiceDate: e.target.value})}
+                                      />
+                                  </div>
+                                  <div>
+                                      <label className="text-xs font-black text-blue-600 uppercase mb-1 block pr-1 flex items-center gap-1"><Wallet size={12} /> الحساب المستلم</label>
+                                      <select className="w-full p-3.5 rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none font-bold text-center text-xs"
+                                          value={paymentDetails.paymentMethodId}
+                                          onChange={(e) => setPaymentDetails({...paymentDetails, paymentMethodId: e.target.value})}
+                                      >
+                                          {paymentMethods.map(pm => (
+                                              <option key={pm.id} value={pm.id}>{pm.name}</option>
+                                          ))}
+                                      </select>
+                                  </div>
+                              </div>
+
                               <div className="grid grid-cols-2 gap-4">
                                   <div>
                                       <label className="text-xs font-black text-gray-400 uppercase mb-1 block pr-1">خصم</label>
